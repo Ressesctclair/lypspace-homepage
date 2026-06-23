@@ -2,12 +2,12 @@ jest.mock('../../_lib/supabase', () => ({ getSupabase: jest.fn() }));
 jest.mock('../../_lib/auth', () => ({ requireAuth: jest.fn() }));
 jest.mock('stripe');
 
-const Stripe = require('stripe');
-let handler, getSupabase, requireAuth;
+let handler, getSupabase, requireAuth, Stripe;
 
 beforeEach(() => {
   jest.resetModules();
   jest.clearAllMocks();
+  Stripe = require('stripe');
   getSupabase = require('../../_lib/supabase').getSupabase;
   requireAuth = require('../../_lib/auth').requireAuth;
   requireAuth.mockReturnValue({ userId: 'u1', email: 'a@b.com' });
