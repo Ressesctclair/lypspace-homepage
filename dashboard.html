@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Account — lypspace</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #111111;
+      --white: #ffffff;
+      --gray: #6b6b6b;
+      --light-gray: #f5f5f5;
+      --border: #e0e0e0;
+      --font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--white);
+      color: var(--black);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── HEADER ─────────────────────────────────────────── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 60px;
+    }
+
+    .logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    nav {
+      display: flex;
+      gap: 36px;
+      align-items: center;
+    }
+
+    nav a {
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--black);
+    }
+
+    nav button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--black);
+      font-family: var(--font);
+      padding: 0;
+    }
+
+    nav button:hover { text-decoration: underline; }
+
+    /* ── CONTENT ─────────────────────────────────────────── */
+    .wrap {
+      max-width: 800px;
+      margin: 48px auto;
+      padding: 0 40px;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--black);
+      color: var(--white);
+      font-size: 11px;
+      padding: 2px 8px;
+      vertical-align: middle;
+      margin-left: 8px;
+      letter-spacing: 0.06em;
+    }
+
+    .sub {
+      font-size: 14px;
+      color: var(--gray);
+      margin-bottom: 40px;
+    }
+
+    .sec {
+      margin-bottom: 40px;
+    }
+
+    .sec-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--gray);
+      margin-bottom: 14px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      padding: 18px 20px;
+      margin-bottom: 10px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .date {
+      font-size: 12px;
+      color: var(--gray);
+      margin-bottom: 4px;
+    }
+
+    .amt {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .chip {
+      font-size: 11px;
+      padding: 2px 8px;
+      border: 1px solid;
+      display: inline-block;
+      letter-spacing: 0.04em;
+    }
+
+    .chip.shipped { border-color: var(--black); color: var(--black); }
+    .chip.processing { border-color: var(--border); color: var(--gray); }
+
+    .item-name {
+      font-size: 14px;
+      color: #333;
+      margin-top: 4px;
+    }
+
+    .empty {
+      font-size: 14px;
+      color: var(--gray);
+    }
+
+    .view-all {
+      font-size: 13px;
+      color: var(--black);
+      text-decoration: underline;
+      display: inline-block;
+      margin-top: 12px;
+      letter-spacing: 0.04em;
+    }
+
+    .addr {
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: #333;
+    }
+
+    .links {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .link-btn {
+      border: 1px solid var(--border);
+      padding: 12px 20px;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--black);
+      transition: background 0.2s;
+    }
+
+    .link-btn:hover {
+      background: var(--light-gray);
+      text-decoration: none;
+    }
+
+    /* ── RESPONSIVE ──────────────────────────────────────── */
+    @media (max-width: 768px) {
+      header { padding: 0 20px; }
+      nav { gap: 20px; }
+      .wrap { padding: 0 20px; margin: 32px auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <a href="/" class="logo">LYP SPACE</a>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/catalog">Catalog</a>
+      <a href="/orders">订单</a>
+      <a href="/profile">地址</a>
+      <button onclick="logout()">退出登录</button>
+    </nav>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="wrap">
+    <h1 id="welcome">你好</h1>
+    <p class="sub" id="useremail"></p>
+
+    <div class="sec">
+      <div class="sec-title">最近订单</div>
+      <div id="orders-list"><p class="empty">加载中…</p></div>
+      <a href="/orders" class="view-all">查看全部</a>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">默认收货地址</div>
+      <div id="addr-box"><p class="empty">加载中…</p></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">快捷入口</div>
+      <div class="links">
+        <a href="/orders" class="link-btn">订单历史</a>
+        <a href="/profile" class="link-btn">地址管理</a>
+        <button class="link-btn" style="border: 1px solid var(--border); background: var(--white); cursor: pointer; font-family: var(--font);" onclick="logout()">退出登录</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function esc(s) {
+      return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout');
+      location.href = '/';
+    }
+
+    async function init() {
+      const mr = await fetch('/api/auth/me');
+      if (!mr.ok) { location.href = '/login'; return; }
+      const { user } = await mr.json();
+
+      document.getElementById('welcome').innerHTML =
+        '你好，' + esc(user.name || user.email.split('@')[0]) +
+        (user.is_member ? ' <span class="badge">会员</span>' : '');
+      document.getElementById('useremail').textContent = user.email;
+
+      // Load recent orders
+      const or = await fetch('/api/user/orders');
+      const { orders } = await or.json();
+      const ol = document.getElementById('orders-list');
+      if (!orders || !orders.length) {
+        ol.innerHTML = '<p class="empty">暂无订单记录</p>';
+      } else {
+        ol.innerHTML = orders.slice(0, 3).map(o => `
+          <div class="card">
+            <div class="row">
+              <div>
+                <div class="date">${new Date(o.date).toLocaleDateString('zh-CN')}</div>
+                <div class="item-name">${esc(o.items.map(i => i.name).join(', '))}</div>
+              </div>
+              <div style="text-align: right;">
+                <div class="amt">¥${(o.amount / 100).toFixed(2)}</div>
+                <span class="chip ${o.status === 'shipped' ? 'shipped' : 'processing'}">${o.status === 'shipped' ? '已发货' : '处理中'}</span>
+              </div>
+            </div>
+          </div>`).join('');
+      }
+
+      // Load default address
+      const ar = await fetch('/api/user/addresses');
+      const { addresses } = await ar.json();
+      const def = addresses && addresses.find(a => a.is_default);
+      const addrBox = document.getElementById('addr-box');
+      if (def) {
+        addrBox.innerHTML = `<div class="addr">${esc(def.name)}<br>${esc(def.street)}<br>${esc(def.city)} ${esc(def.postal_code)}<br>${esc(def.country)}</div>`;
+      } else {
+        addrBox.innerHTML = '<p class="empty">暂无默认地址 · 前往地址管理添加</p>';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

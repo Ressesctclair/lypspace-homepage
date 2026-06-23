@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — lypspace</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #111111;
+      --white: #ffffff;
+      --gray: #6b6b6b;
+      --light-gray: #f5f5f5;
+      --border: #e0e0e0;
+      --font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--white);
+      color: var(--black);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── HEADER ─────────────────────────────────────────── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 60px;
+    }
+
+    .logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    nav {
+      display: flex;
+      gap: 36px;
+      align-items: center;
+    }
+
+    nav a {
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--black);
+    }
+
+    nav button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--black);
+      font-family: var(--font);
+      padding: 0;
+    }
+
+    nav button:hover { text-decoration: underline; }
+
+    /* ── CONTENT ─────────────────────────────────────────── */
+    .wrap {
+      max-width: 600px;
+      margin: 48px auto;
+      padding: 0 40px;
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 600;
+      margin-bottom: 32px;
+      letter-spacing: 0.02em;
+    }
+
+    .sec {
+      margin-bottom: 40px;
+    }
+
+    .sec-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--gray);
+      margin-bottom: 14px;
+    }
+
+    .addr-card {
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      line-height: 1.8;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      color: #333;
+    }
+
+    .addr-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+      align-items: flex-start;
+    }
+
+    .sm {
+      font-size: 12px;
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      background: var(--white);
+      cursor: pointer;
+      font-family: var(--font);
+      color: var(--black);
+      letter-spacing: 0.04em;
+      transition: background 0.15s;
+    }
+
+    .sm:hover { background: var(--light-gray); }
+    .sm.del:hover { border-color: #c00; color: #c00; background: var(--white); }
+
+    .def-badge {
+      font-size: 11px;
+      background: var(--black);
+      color: var(--white);
+      padding: 1px 7px;
+      display: inline-block;
+      margin-top: 4px;
+      letter-spacing: 0.06em;
+    }
+
+    .group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: var(--gray);
+    }
+
+    input[type=text],
+    input[type=password] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      font-family: var(--font);
+      outline: none;
+      background: var(--white);
+      color: var(--black);
+    }
+
+    input:focus { border-color: var(--black); }
+
+    .chk {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--black);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--black);
+      color: var(--white);
+      border: none;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-family: var(--font);
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-submit:hover { background: #333; }
+
+    .msg {
+      font-size: 13px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .msg.ok { color: #080; }
+    .msg.err { color: #c00; }
+
+    .empty {
+      font-size: 14px;
+      color: var(--gray);
+    }
+
+    /* ── RESPONSIVE ──────────────────────────────────────── */
+    @media (max-width: 768px) {
+      header { padding: 0 20px; }
+      nav { gap: 20px; }
+      .wrap { padding: 0 20px; margin: 32px auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <a href="/" class="logo">LYP SPACE</a>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/catalog">Catalog</a>
+      <a href="/dashboard">账户</a>
+      <a href="/orders">订单</a>
+      <button onclick="logout()">退出登录</button>
+    </nav>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="wrap">
+    <h1>地址管理</h1>
+
+    <!-- Saved Addresses -->
+    <div class="sec">
+      <div class="sec-title">已保存的地址</div>
+      <div id="addr-list"><p class="empty">加载中…</p></div>
+    </div>
+
+    <!-- Add Address Form -->
+    <div class="sec">
+      <div class="sec-title">新增地址</div>
+      <form onsubmit="addAddr(event)">
+        <div class="group">
+          <label>姓名</label>
+          <input id="a-name" type="text" required>
+        </div>
+        <div class="group">
+          <label>街道地址</label>
+          <input id="a-street" type="text" required>
+        </div>
+        <div class="group">
+          <label>城市</label>
+          <input id="a-city" type="text" required>
+        </div>
+        <div class="group">
+          <label>邮政编码</label>
+          <input id="a-postal" type="text" required>
+        </div>
+        <div class="group">
+          <label>国家</label>
+          <input id="a-country" type="text" required>
+        </div>
+        <div class="group">
+          <label class="chk">
+            <input id="a-def" type="checkbox"> 设为默认地址
+          </label>
+        </div>
+        <button type="submit" class="btn-submit">保存地址</button>
+        <div class="msg" id="add-msg"></div>
+      </form>
+    </div>
+
+    <!-- Change Password (hidden for Google-only accounts) -->
+    <div class="sec" id="pw-sec" style="display: none;">
+      <div class="sec-title">修改密码</div>
+      <form onsubmit="changePw(event)">
+        <div class="group">
+          <label>当前密码</label>
+          <input id="pw-cur" type="password" required>
+        </div>
+        <div class="group">
+          <label>新密码（至少 8 位）</label>
+          <input id="pw-new" type="password" required minlength="8">
+        </div>
+        <div class="group">
+          <label>确认新密码</label>
+          <input id="pw-new2" type="password" required>
+        </div>
+        <button type="submit" class="btn-submit">更新密码</button>
+        <div class="msg" id="pw-msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function esc(s) {
+      return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    let addrs = [];
+
+    async function logout() {
+      await fetch('/api/auth/logout');
+      location.href = '/';
+    }
+
+    async function load() {
+      const r = await fetch('/api/user/addresses');
+      addrs = (await r.json()).addresses || [];
+      render();
+    }
+
+    function render() {
+      const el = document.getElementById('addr-list');
+      if (!addrs.length) {
+        el.innerHTML = '<p class="empty">暂无地址</p>';
+        return;
+      }
+      el.innerHTML = addrs.map(a => `
+        <div class="addr-card">
+          <div>
+            ${esc(a.name)}<br>
+            ${esc(a.street)}<br>
+            ${esc(a.city)} ${esc(a.postal_code)}<br>
+            ${esc(a.country)}
+            ${a.is_default ? '<br><span class="def-badge">默认</span>' : ''}
+          </div>
+          <div class="addr-actions">
+            ${!a.is_default ? `<button class="sm" onclick="setDef('${esc(a.id)}')">设为默认</button>` : ''}
+            <button class="sm del" onclick="del('${esc(a.id)}')">删除</button>
+          </div>
+        </div>`).join('');
+    }
+
+    async function setDef(id) {
+      await fetch('/api/user/addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, is_default: true }),
+      });
+      await load();
+    }
+
+    async function del(id) {
+      if (!confirm('确定删除？')) return;
+      await fetch(`/api/user/addresses?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      await load();
+    }
+
+    async function addAddr(e) {
+      e.preventDefault();
+      const msg = document.getElementById('add-msg');
+      msg.style.display = 'none';
+      const r = await fetch('/api/user/addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('a-name').value,
+          street: document.getElementById('a-street').value,
+          city: document.getElementById('a-city').value,
+          postal_code: document.getElementById('a-postal').value,
+          country: document.getElementById('a-country').value,
+          is_default: document.getElementById('a-def').checked,
+        }),
+      });
+      if (r.ok) {
+        e.target.reset();
+        msg.textContent = '地址已保存';
+        msg.className = 'msg ok';
+        msg.style.display = 'block';
+        await load();
+      } else {
+        msg.textContent = (await r.json()).error || '保存失败';
+        msg.className = 'msg err';
+        msg.style.display = 'block';
+      }
+    }
+
+    async function changePw(e) {
+      e.preventDefault();
+      const msg = document.getElementById('pw-msg');
+      msg.style.display = 'none';
+      const np = document.getElementById('pw-new').value;
+      if (np !== document.getElementById('pw-new2').value) {
+        msg.textContent = '两次密码不一致';
+        msg.className = 'msg err';
+        msg.style.display = 'block';
+        return;
+      }
+      const r = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: document.getElementById('pw-cur').value,
+          newPassword: np,
+        }),
+      });
+      if (r.ok) {
+        e.target.reset();
+        msg.textContent = '密码已更新';
+        msg.className = 'msg ok';
+      } else {
+        msg.textContent = (await r.json()).error || '修改失败';
+        msg.className = 'msg err';
+      }
+      msg.style.display = 'block';
+    }
+
+    async function init() {
+      const mr = await fetch('/api/auth/me');
+      if (!mr.ok) { location.href = '/login'; return; }
+      const { user } = await mr.json();
+      if (user.hasPassword) {
+        document.getElementById('pw-sec').style.display = 'block';
+      }
+      await load();
+    }
+
+    init();
+  </script>
+</body>
+</html>
