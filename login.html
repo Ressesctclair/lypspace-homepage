@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — lypspace</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #111111;
+      --white: #ffffff;
+      --gray: #6b6b6b;
+      --light-gray: #f5f5f5;
+      --border: #e0e0e0;
+      --font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--white);
+      color: var(--black);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── HEADER ─────────────────────────────────────────── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 60px;
+    }
+
+    .logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    nav {
+      display: flex;
+      gap: 36px;
+    }
+
+    nav a {
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--black);
+    }
+
+    .header-icons {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .header-icons button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--black);
+      font-family: var(--font);
+    }
+
+    /* ── LOGIN FORM LAYOUT ───────────────────────────────── */
+    .wrap {
+      max-width: 440px;
+      margin: 80px auto;
+      padding: 0 24px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 28px;
+      letter-spacing: 0.02em;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      padding: 10px 0;
+      margin-right: 24px;
+      font-size: 14px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      font-family: var(--font);
+      color: var(--black);
+    }
+
+    .tab.active {
+      border-bottom-color: var(--black);
+      font-weight: 600;
+    }
+
+    .group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: var(--gray);
+    }
+
+    input[type=email],
+    input[type=password] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      font-family: var(--font);
+      outline: none;
+      background: var(--white);
+      color: var(--black);
+    }
+
+    input:focus {
+      border-color: var(--black);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--black);
+      color: var(--white);
+      border: none;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-family: var(--font);
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-submit:hover {
+      background: #333;
+    }
+
+    .btn-google {
+      background: var(--white);
+      color: var(--black);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-decoration: none;
+      padding: 13px;
+      font-size: 14px;
+      font-family: var(--font);
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-google:hover {
+      background: var(--light-gray);
+      text-decoration: none;
+    }
+
+    .divider {
+      text-align: center;
+      font-size: 13px;
+      color: var(--gray);
+      margin: 20px 0;
+    }
+
+    .err {
+      color: #c00;
+      font-size: 13px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .back {
+      font-size: 13px;
+      color: var(--gray);
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 24px;
+      letter-spacing: 0.04em;
+    }
+
+    .back:hover {
+      color: var(--black);
+      text-decoration: none;
+    }
+
+    /* ── FOOTER ──────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 40px;
+      margin-top: 80px;
+    }
+
+    .footer-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-bottom p {
+      font-size: 12px;
+      color: var(--gray);
+    }
+
+    /* ── RESPONSIVE ──────────────────────────────────────── */
+    @media (max-width: 768px) {
+      header { padding: 0 20px; }
+      nav { gap: 20px; }
+    }
+
+    @media (max-width: 480px) {
+      .wrap { margin: 40px auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <a href="/" class="logo">LYP SPACE</a>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/catalog">Catalog</a>
+      <a href="/contact">Contact</a>
+    </nav>
+    <div class="header-icons">
+      <button onclick="location.href='/login'">Sign in</button>
+    </div>
+  </header>
+
+  <!-- LOGIN / REGISTER FORM -->
+  <div class="wrap">
+    <a href="/" class="back">← lypspace</a>
+    <h1>账户</h1>
+
+    <div class="tabs">
+      <button class="tab active" onclick="show('login')">登录</button>
+      <button class="tab" onclick="show('register')">注册</button>
+    </div>
+
+    <form id="f-login" onsubmit="doLogin(event)">
+      <div class="group">
+        <label>邮箱</label>
+        <input id="l-email" type="email" required placeholder="your@email.com">
+      </div>
+      <div class="group">
+        <label>密码</label>
+        <input id="l-pw" type="password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn-submit">登录</button>
+      <div class="err" id="l-err"></div>
+    </form>
+
+    <form id="f-register" class="hidden" onsubmit="doRegister(event)">
+      <div class="group">
+        <label>邮箱</label>
+        <input id="r-email" type="email" required placeholder="your@email.com">
+      </div>
+      <div class="group">
+        <label>密码（至少 8 位）</label>
+        <input id="r-pw" type="password" required minlength="8" placeholder="••••••••">
+      </div>
+      <div class="group">
+        <label>确认密码</label>
+        <input id="r-pw2" type="password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn-submit">注册</button>
+      <div class="err" id="r-err"></div>
+    </form>
+
+    <div class="divider">或</div>
+
+    <a href="/api/auth/google" class="btn-google">
+      <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+        <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+        <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+      </svg>
+      用 Google 账号继续
+    </a>
+
+    <div class="err" id="g-err"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-bottom">
+      <p>© 2026 LYP SPACE.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Redirect to dashboard if already logged in
+    fetch('/api/auth/me').then(r => { if (r.ok) location.href = '/dashboard'; });
+
+    // Show Google error if ?error=google_failed in query string
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('error') === 'google_failed') {
+        const el = document.getElementById('g-err');
+        el.textContent = 'Google 登录失败，请重试';
+        el.style.display = 'block';
+      }
+    })();
+
+    function show(tab) {
+      document.getElementById('f-login').classList.toggle('hidden', tab !== 'login');
+      document.getElementById('f-register').classList.toggle('hidden', tab !== 'register');
+      document.querySelectorAll('.tab').forEach((t, i) =>
+        t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'))
+      );
+    }
+
+    async function doLogin(e) {
+      e.preventDefault();
+      const err = document.getElementById('l-err');
+      err.style.display = 'none';
+      const r = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('l-email').value,
+          password: document.getElementById('l-pw').value,
+        }),
+      });
+      if (r.ok) { location.href = '/dashboard'; return; }
+      err.textContent = (await r.json()).error || '登录失败';
+      err.style.display = 'block';
+    }
+
+    async function doRegister(e) {
+      e.preventDefault();
+      const err = document.getElementById('r-err');
+      err.style.display = 'none';
+      const pw = document.getElementById('r-pw').value;
+      if (pw !== document.getElementById('r-pw2').value) {
+        err.textContent = '两次密码不一致';
+        err.style.display = 'block';
+        return;
+      }
+      const r = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('r-email').value,
+          password: pw,
+        }),
+      });
+      if (r.ok) { location.href = '/dashboard'; return; }
+      err.textContent = (await r.json()).error || '注册失败';
+      err.style.display = 'block';
+    }
+  </script>
+
+</body>
+</html>
