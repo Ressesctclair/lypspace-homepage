@@ -191,6 +191,18 @@
       background: #333;
     }
 
+    .size-btn {
+      width: 48px; height: 48px;
+      border: 1px solid #e0e0e0;
+      background: #fff;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .size-btn:hover { border-color: #111; }
+    .size-btn.active { border-color: #111; background: #111; color: #fff; }
+
     .product-details {
       margin-top: 40px;
       border-top: 1px solid var(--border);
@@ -276,6 +288,27 @@
         <strong>Size note:</strong> Although labeled size L, this piece runs small and fits more like S or small M.
       </div>
 
+      <!-- Size selector -->
+      <div style="margin-bottom:24px;">
+        <p style="font-size:12px;color:#6b6b6b;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;">Size</p>
+        <div style="display:flex;gap:8px;">
+          <button class="size-btn" data-size="S" onclick="selectSize('S')">S</button>
+          <button class="size-btn" data-size="M" onclick="selectSize('M')">M</button>
+          <button class="size-btn" data-size="L" onclick="selectSize('L')">L</button>
+        </div>
+        <p id="size-error" style="font-size:12px;color:#c00;margin-top:6px;display:none;">Please select a size</p>
+      </div>
+
+      <!-- Quantity selector -->
+      <div style="margin-bottom:32px;">
+        <p style="font-size:12px;color:#6b6b6b;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;">Quantity</p>
+        <div style="display:flex;align-items:center;gap:0;border:1px solid #e0e0e0;width:fit-content;">
+          <button onclick="changeQty(-1)" style="width:40px;height:40px;background:none;border:none;font-size:18px;cursor:pointer;color:#111;">−</button>
+          <span id="qty-display" style="width:40px;text-align:center;font-size:14px;">1</span>
+          <button onclick="changeQty(1)" style="width:40px;height:40px;background:none;border:none;font-size:18px;cursor:pointer;color:#111;">+</button>
+        </div>
+      </div>
+
       <button class="buy-btn" onclick="goToCheckout()">Buy Now — $126.00</button>
 
       <div class="product-details">
@@ -304,8 +337,28 @@
   </footer>
 
   <script>
+    let selectedSize = null;
+    let qty = 1;
+
+    function selectSize(s) {
+      selectedSize = s;
+      document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`.size-btn[data-size="${s}"]`).classList.add('active');
+      document.getElementById('size-error').style.display = 'none';
+    }
+
+    function changeQty(delta) {
+      qty = Math.max(1, qty + delta);
+      document.getElementById('qty-display').textContent = qty;
+    }
+
     function goToCheckout() {
-      window.location.href = '/checkout?price_id=price_1SfHnN4IZcEaiWjkyJz96vJX&name=Rip+Curl+Striped+Bikini';
+      if (!selectedSize) {
+        document.getElementById('size-error').style.display = 'block';
+        return;
+      }
+      const name = encodeURIComponent('Rip Curl Striped Bikini (Size: ' + selectedSize + ')');
+      window.location.href = '/checkout?price_id=price_1SfHnN4IZcEaiWjkyJz96vJX&name=' + name + '&qty=' + qty;
     }
   </script>
 

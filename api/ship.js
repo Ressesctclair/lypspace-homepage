@@ -64,17 +64,17 @@ module.exports = async (req, res) => {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: customerEmail,
-      subject: '您的订单已发货 - LYP SPACE',
+      subject: 'Your order has shipped — LYP SPACE',
       html: `
         <div style="font-family:Helvetica Neue,Arial,sans-serif;max-width:600px;margin:0 auto;color:#111;padding:40px 0;">
-          <h2 style="font-weight:400;letter-spacing:0.04em;margin-bottom:24px;">您的订单已发货</h2>
-          <p style="margin-bottom:24px;">您好，您的包裹已经发出，请注意查收。</p>
+          <h2 style="font-weight:400;letter-spacing:0.04em;margin-bottom:24px;">Your order is on its way</h2>
+          <p style="margin-bottom:24px;">Great news! Your package has been shipped. You can track it using the information below.</p>
           <table style="width:100%;border-collapse:collapse;margin:24px 0;border-top:1px solid #e0e0e0;">
-            ${orderRef ? `<tr><td style="padding:12px 0;color:#6b6b6b;border-bottom:1px solid #e0e0e0;">订单参考</td><td style="padding:12px 0;border-bottom:1px solid #e0e0e0;">${escHtml(orderRef)}</td></tr>` : ''}
-            <tr><td style="padding:12px 0;color:#6b6b6b;border-bottom:1px solid #e0e0e0;">快递公司</td><td style="padding:12px 0;border-bottom:1px solid #e0e0e0;">${escHtml(carrier)}</td></tr>
-            <tr><td style="padding:12px 0;color:#6b6b6b;">快递单号</td><td style="padding:12px 0;">${escHtml(trackingNumber)}</td></tr>
+            ${orderRef ? `<tr><td style="padding:12px 0;color:#6b6b6b;border-bottom:1px solid #e0e0e0;">Order reference</td><td style="padding:12px 0;border-bottom:1px solid #e0e0e0;">${escHtml(orderRef)}</td></tr>` : ''}
+            <tr><td style="padding:12px 0;color:#6b6b6b;border-bottom:1px solid #e0e0e0;">Carrier</td><td style="padding:12px 0;border-bottom:1px solid #e0e0e0;">${escHtml(carrier)}</td></tr>
+            <tr><td style="padding:12px 0;color:#6b6b6b;">Tracking number</td><td style="padding:12px 0;">${escHtml(trackingNumber)}</td></tr>
           </table>
-          <a href="${escHtml(trackingUrl)}" style="display:inline-block;padding:12px 28px;background:#111;color:#fff;text-decoration:none;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;">查看物流</a>
+          <a href="${escHtml(trackingUrl)}" style="display:inline-block;padding:12px 28px;background:#111;color:#fff;text-decoration:none;font-size:13px;letter-spacing:0.08em;text-transform:uppercase;">Track your order</a>
           <p style="margin-top:40px;color:#6b6b6b;font-size:12px;border-top:1px solid #e0e0e0;padding-top:24px;">LYP SPACE</p>
         </div>
       `,
