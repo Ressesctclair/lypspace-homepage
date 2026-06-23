@@ -3,6 +3,13 @@ const { Resend } = require('resend');
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 
+const escHtml = (str) =>
+  String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
 const getRawBody = (req) =>
   new Promise((resolve, reject) => {
     const chunks = [];
@@ -32,6 +39,10 @@ module.exports = async (req, res) => {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const customerEmail = session.customer_details?.email;
+    if (!customerEmail) {
+      console.error('checkout.session.completed: no customer email, skipping confirmation');
+      return res.status(200).json({ received: true });
+    }
     const customerName = session.customer_details?.name || '亲爱的客户';
     const amount = ((session.amount_total || 0) / 100).toFixed(2);
     const currency = (session.currency || 'USD').toUpperCase();
@@ -45,16 +56,16 @@ module.exports = async (req, res) => {
         html: `
           <div style="font-family:Helvetica Neue,Arial,sans-serif;max-width:600px;margin:0 auto;color:#111;padding:40px 0;">
             <h2 style="font-weight:400;letter-spacing:0.04em;margin-bottom:24px;">感谢您的购买</h2>
-            <p style="margin-bottom:16px;">您好 ${customerName}，</p>
+            <p style="margin-bottom:16px;">您好 ${escHtml(customerName)}，</p>
             <p style="margin-bottom:24px;">我们已收到您的订单，正在为您精心准备发货。</p>
             <table style="width:100%;border-collapse:collapse;margin:24px 0;border-top:1px solid #e0e0e0;">
               <tr>
                 <td style="padding:12px 0;color:#6b6b6b;border-bottom:1px solid #e0e0e0;">订单编号</td>
-                <td style="padding:12px 0;border-bottom:1px solid #e0e0e0;">${orderId}</td>
+                <td style="padding:12px 0;border-bottom:1px solid #e0e0e0;">${escHtml(orderId)}</td>
               </tr>
               <tr>
                 <td style="padding:12px 0;color:#6b6b6b;">订单金额</td>
-                <td style="padding:12px 0;">${currency} ${amount}</td>
+                <td style="padding:12px 0;">${escHtml(currency)} ${escHtml(amount)}</td>
               </tr>
             </table>
             <p style="margin-bottom:40px;">我们会在发货后再次发送物流信息，请留意邮件。</p>
