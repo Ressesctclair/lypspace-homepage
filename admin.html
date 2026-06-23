@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>发货管理 - LYP SPACE</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Helvetica Neue, Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .card { background: #fff; padding: 48px; width: 100%; max-width: 480px; }
+    h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 32px; }
+    label { display: block; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #6b6b6b; margin-top: 20px; margin-bottom: 6px; }
+    input, select {
+      width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0;
+      font-size: 14px; font-family: inherit; outline: none; background: #fff; appearance: none;
+    }
+    input:focus, select:focus { border-color: #111; }
+    button {
+      margin-top: 32px; width: 100%; padding: 14px; background: #111; color: #fff;
+      border: none; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+      font-family: inherit; cursor: pointer; transition: background 0.2s;
+    }
+    button:hover:not(:disabled) { background: #333; }
+    button:disabled { background: #999; cursor: not-allowed; }
+    .msg { margin-top: 16px; font-size: 13px; text-align: center; min-height: 20px; }
+    .msg.ok { color: #2a7a2a; }
+    .msg.err { color: #c0392b; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>发货通知</h1>
+    <form id="form">
+      <label>管理员密码</label>
+      <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password" />
+
+      <label>客户邮箱</label>
+      <input type="email" id="customerEmail" required placeholder="customer@example.com" />
+
+      <label>快递公司</label>
+      <select id="carrier" required>
+        <option value="">请选择快递公司</option>
+        <option>顺丰</option>
+        <option>中通</option>
+        <option>圆通</option>
+        <option>申通</option>
+        <option>韵达</option>
+        <option>邮政EMS</option>
+        <option>其他</option>
+      </select>
+
+      <label>快递单号</label>
+      <input type="text" id="trackingNumber" required placeholder="SF1234567890" />
+
+      <label>订单备注（可选）</label>
+      <input type="text" id="orderRef" placeholder="订单编号或备注" />
+
+      <button type="submit" id="btn">发送物流通知</button>
+      <div class="msg" id="msg"></div>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn');
+      const msg = document.getElementById('msg');
+      btn.disabled = true;
+      btn.textContent = '发送中...';
+      msg.textContent = '';
+      msg.className = 'msg';
+
+      try {
+        const res = await fetch('/api/ship', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            password: document.getElementById('password').value,
+            customerEmail: document.getElementById('customerEmail').value,
+            carrier: document.getElementById('carrier').value,
+            trackingNumber: document.getElementById('trackingNumber').value,
+            orderRef: document.getElementById('orderRef').value,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          msg.textContent = '✓ 物流通知已发送至客户邮箱';
+          msg.classList.add('ok');
+          document.getElementById('customerEmail').value = '';
+          document.getElementById('carrier').value = '';
+          document.getElementById('trackingNumber').value = '';
+          document.getElementById('orderRef').value = '';
+        } else {
+          msg.textContent = data.error || '发送失败，请重试';
+          msg.classList.add('err');
+        }
+      } catch {
+        msg.textContent = '网络错误，请检查连接后重试';
+        msg.classList.add('err');
+      }
+
+      btn.disabled = false;
+      btn.textContent = '发送物流通知';
+    });
+  </script>
+</body>
+</html>
