@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LYP SPACE</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #111111;
+      --white: #ffffff;
+      --gray: #6b6b6b;
+      --light-gray: #f5f5f5;
+      --border: #e0e0e0;
+      --font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--white);
+      color: var(--black);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── HEADER ─────────────────────────────────────────── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 60px;
+    }
+
+    .logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    nav {
+      display: flex;
+      gap: 36px;
+    }
+
+    nav a {
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--black);
+    }
+
+    .header-icons {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .header-icons button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--black);
+      font-family: var(--font);
+    }
+
+    .cart-count {
+      font-size: 12px;
+      color: var(--gray);
+    }
+
+    /* ── HERO BANNER ─────────────────────────────────────── */
+    .hero {
+      width: 100%;
+      aspect-ratio: 16 / 7;
+      background: var(--light-gray);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-placeholder {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #e8e8e8 0%, #d0d0d0 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-cta {
+      position: absolute;
+      bottom: 48px;
+      left: 48px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 28px;
+      background: var(--black);
+      color: var(--white);
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: 1px solid var(--black);
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--white);
+      color: var(--black);
+      text-decoration: none;
+    }
+
+    .btn-outline {
+      background: var(--white);
+      color: var(--black);
+    }
+
+    .btn-outline:hover {
+      background: var(--black);
+      color: var(--white);
+    }
+
+    /* ── FEATURED PRODUCTS ───────────────────────────────── */
+    .section {
+      padding: 72px 40px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gray);
+      margin-bottom: 40px;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .product-card {
+      cursor: pointer;
+    }
+
+    .product-image {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      background: var(--light-gray);
+      margin-bottom: 16px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .product-image-inner {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(160deg, #ececec 0%, #d8d8d8 100%);
+      transition: transform 0.4s ease;
+    }
+
+    .product-card:hover .product-image-inner {
+      transform: scale(1.03);
+    }
+
+    .product-name {
+      font-size: 13px;
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
+    }
+
+    .product-price {
+      font-size: 13px;
+      color: var(--gray);
+    }
+
+    /* ── BANNER WITH CTA ─────────────────────────────────── */
+    .banner {
+      width: 100%;
+      aspect-ratio: 16 / 6;
+      background: var(--light-gray);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .banner-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #e0e0e0 0%, #c8c8c8 100%);
+    }
+
+    .banner-content {
+      position: relative;
+      padding: 48px;
+    }
+
+    .banner-content h2 {
+      font-size: 28px;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      margin-bottom: 20px;
+    }
+
+    .banner-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+    }
+
+    .banner-half {
+      aspect-ratio: 8 / 6;
+      background: var(--light-gray);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .banner-half-bg {
+      position: absolute;
+      inset: 0;
+    }
+
+    .banner-half:first-child .banner-half-bg {
+      background: linear-gradient(135deg, #e4e4e4 0%, #d0d0d0 100%);
+    }
+
+    .banner-half:last-child .banner-half-bg {
+      background: linear-gradient(135deg, #d8d8d8 0%, #c4c4c4 100%);
+    }
+
+    .banner-half-content {
+      position: relative;
+      padding: 40px;
+    }
+
+    .banner-half-content h3 {
+      font-size: 20px;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      margin-bottom: 16px;
+    }
+
+    /* ── BRAND VALUES ────────────────────────────────────── */
+    .values-section {
+      padding: 72px 40px;
+      border-top: 1px solid var(--border);
+    }
+
+    .values-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 60px;
+    }
+
+    .value-item h3 {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .value-item p {
+      font-size: 13px;
+      color: var(--gray);
+      line-height: 1.7;
+    }
+
+    /* ── BRAND STATEMENT ─────────────────────────────────── */
+    .brand-statement {
+      padding: 80px 40px;
+      background: var(--light-gray);
+      text-align: center;
+    }
+
+    .brand-statement p {
+      font-size: 16px;
+      line-height: 1.8;
+      max-width: 600px;
+      margin: 0 auto 48px;
+      color: var(--black);
+    }
+
+    .brand-pillars {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0;
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    .pillar {
+      padding: 40px;
+      border-top: 1px solid var(--border);
+    }
+
+    .pillar:nth-child(odd) {
+      border-right: 1px solid var(--border);
+    }
+
+    .pillar h4 {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .pillar p {
+      font-size: 13px;
+      color: var(--gray);
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    /* ── EMAIL SIGNUP ────────────────────────────────────── */
+    .signup-section {
+      padding: 72px 40px;
+      text-align: center;
+      border-top: 1px solid var(--border);
+    }
+
+    .signup-section h2 {
+      font-size: 20px;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+
+    .signup-section p {
+      font-size: 13px;
+      color: var(--gray);
+      margin-bottom: 28px;
+    }
+
+    .signup-form {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+
+    .signup-form input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid var(--black);
+      border-right: none;
+      font-size: 13px;
+      font-family: var(--font);
+      outline: none;
+      background: var(--white);
+    }
+
+    .signup-form input::placeholder {
+      color: var(--gray);
+    }
+
+    .signup-form button {
+      padding: 12px 20px;
+      background: var(--black);
+      color: var(--white);
+      border: 1px solid var(--black);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-family: var(--font);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .signup-form button:hover {
+      background: var(--white);
+      color: var(--black);
+    }
+
+    /* ── FAQ ─────────────────────────────────────────────── */
+    .faq-section {
+      padding: 72px 40px;
+      border-top: 1px solid var(--border);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .faq-section h2 {
+      font-size: 20px;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      margin-bottom: 40px;
+    }
+
+    .faq-item {
+      border-top: 1px solid var(--border);
+    }
+
+    .faq-question {
+      width: 100%;
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 20px 0;
+      font-size: 14px;
+      font-family: var(--font);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--black);
+    }
+
+    .faq-question span {
+      font-size: 18px;
+      font-weight: 300;
+      transition: transform 0.2s;
+    }
+
+    .faq-item.open .faq-question span {
+      transform: rotate(45deg);
+    }
+
+    .faq-answer {
+      display: none;
+      font-size: 13px;
+      color: var(--gray);
+      line-height: 1.7;
+      padding-bottom: 20px;
+    }
+
+    .faq-item.open .faq-answer {
+      display: block;
+    }
+
+    /* ── FOOTER ──────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px;
+    }
+
+    .footer-top {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .footer-col h4 {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .footer-col ul {
+      list-style: none;
+    }
+
+    .footer-col ul li {
+      margin-bottom: 10px;
+    }
+
+    .footer-col ul li a {
+      font-size: 13px;
+      color: var(--gray);
+    }
+
+    .footer-col ul li a:hover {
+      color: var(--black);
+      text-decoration: none;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-bottom p {
+      font-size: 12px;
+      color: var(--gray);
+    }
+
+    .footer-bottom-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-bottom-links a {
+      font-size: 12px;
+      color: var(--gray);
+    }
+
+    .footer-bottom-links a:hover {
+      color: var(--black);
+      text-decoration: none;
+    }
+
+    /* ── RESPONSIVE ──────────────────────────────────────── */
+    @media (max-width: 768px) {
+      header { padding: 0 20px; }
+      nav { gap: 20px; }
+      .section { padding: 48px 20px; }
+      .product-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+      .values-grid { grid-template-columns: 1fr; gap: 32px; }
+      .brand-pillars { grid-template-columns: 1fr; }
+      .pillar:nth-child(odd) { border-right: none; }
+      .banner-split { grid-template-columns: 1fr; }
+      .footer-top { grid-template-columns: 1fr; }
+      .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
+      .banner-content { padding: 24px; }
+      .banner-content h2 { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <a href="/" class="logo">LYP SPACE</a>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/catalog">Catalog</a>
+      <a href="/contact">Contact</a>
+    </nav>
+    <div class="header-icons">
+      <button>Sign in</button>
+      <button>Cart <span class="cart-count">(0)</span></button>
+    </div>
+  </header>
+
+  <!-- HERO BANNER -->
+  <div class="hero">
+    <div class="hero-placeholder"></div>
+    <div class="hero-cta">
+      <a href="/catalog" class="btn">Shop all</a>
+    </div>
+  </div>
+
+  <!-- FEATURED PRODUCTS -->
+  <section class="section">
+    <p class="section-title">Featured</p>
+    <div class="product-grid">
+      <div class="product-card">
+        <div class="product-image">
+          <div class="product-image-inner"></div>
+        </div>
+        <p class="product-name">A banana republic</p>
+        <p class="product-price">$65.00</p>
+      </div>
+      <div class="product-card">
+        <div class="product-image">
+          <div class="product-image-inner"></div>
+        </div>
+        <p class="product-name">A Earring</p>
+        <p class="product-price">$97.60</p>
+      </div>
+      <div class="product-card">
+        <div class="product-image">
+          <div class="product-image-inner"></div>
+        </div>
+        <p class="product-name">A earring</p>
+        <p class="product-price">$68.50</p>
+      </div>
+      <div class="product-card">
+        <div class="product-image">
+          <div class="product-image-inner"></div>
+        </div>
+        <p class="product-name">A earring</p>
+        <p class="product-price">$68.00</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- BANNER 1 - FULL WIDTH -->
+  <div class="banner">
+    <div class="banner-bg"></div>
+    <div class="banner-content">
+      <h2>New arrivals</h2>
+      <a href="/catalog" class="btn btn-outline">Shop now</a>
+    </div>
+  </div>
+
+  <!-- BANNER 2 - SPLIT -->
+  <div class="banner-split">
+    <div class="banner-half">
+      <div class="banner-half-bg"></div>
+      <div class="banner-half-content">
+        <h3>Earrings</h3>
+        <a href="/catalog" class="btn btn-outline">Shop now</a>
+      </div>
+    </div>
+    <div class="banner-half">
+      <div class="banner-half-bg"></div>
+      <div class="banner-half-content">
+        <h3>Accessories</h3>
+        <a href="/catalog" class="btn btn-outline">Shop now</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRAND VALUES (3 pillars) -->
+  <section class="values-section">
+    <div class="values-grid">
+      <div class="value-item">
+        <h3>Intentional design</h3>
+        <p>Everything we do starts with why</p>
+      </div>
+      <div class="value-item">
+        <h3>Made with care</h3>
+        <p>We believe in building better</p>
+      </div>
+      <div class="value-item">
+        <h3>A team with a goal</h3>
+        <p>Real people making great products</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- BRAND STATEMENT -->
+  <section class="brand-statement">
+    <p>We create with intention. Our products solve real problems with clean design and honest materials.</p>
+    <div class="brand-pillars">
+      <div class="pillar">
+        <h4>Quality first</h4>
+        <p>We obsess over the details and strive to deliver the best products at the best prices, every time.</p>
+      </div>
+      <div class="pillar">
+        <h4>Customer care</h4>
+        <p>We're always on your side: keeping our loyal customers happy is our top priority and number one goal.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- EMAIL SIGNUP -->
+  <section class="signup-section">
+    <h2>Stay in the loop</h2>
+    <p>Get exclusive deals and early access to new products</p>
+    <form class="signup-form" onsubmit="return false;">
+      <input type="email" placeholder="Your email address" />
+      <button type="submit">Subscribe</button>
+    </form>
+  </section>
+
+  <!-- FAQ -->
+  <section style="padding: 72px 0; border-top: 1px solid var(--border);">
+    <div class="faq-section" style="border-top: none; padding-top: 0;">
+      <h2>Frequently asked questions</h2>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          What is your return policy?
+          <span>+</span>
+        </button>
+        <div class="faq-answer">
+          We want you to be completely satisfied with your purchase. If you're not happy with your order, you can return most items within 30 days of delivery for a full refund or exchange.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Are there any final sale items?
+          <span>+</span>
+        </button>
+        <div class="faq-answer">
+          Some items may be marked as final sale and are not eligible for returns or exchanges. These will be clearly noted on the product page before purchase.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          How long does shipping take?
+          <span>+</span>
+        </button>
+        <div class="faq-answer">
+          Standard shipping typically takes 5–8 business days. Expedited options are available at checkout. You'll receive a tracking number as soon as your order ships.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Where are your products manufactured?
+          <span>+</span>
+        </button>
+        <div class="faq-answer">
+          We work with trusted manufacturing partners who share our commitment to quality and ethical production. We carefully vet every partner to ensure our standards are met.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          How much does shipping cost?
+          <span>+</span>
+        </button>
+        <div class="faq-answer">
+          We offer transparent, fair shipping rates calculated at checkout based on your location and order size. Free shipping is available on qualifying orders.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-top">
+      <div class="footer-col">
+        <h4>Information</h4>
+        <ul>
+          <li><a href="#">Return policy</a></li>
+          <li><a href="#">Shipping</a></li>
+          <li><a href="#">Manufacturing</a></li>
+          <li><a href="#">Contact information</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Policies</h4>
+        <ul>
+          <li><a href="#">Privacy policy</a></li>
+          <li><a href="#">Refund policy</a></li>
+          <li><a href="#">Terms of service</a></li>
+          <li><a href="#">Shipping policy</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>LYP SPACE</h4>
+        <ul>
+          <li><a href="#">Home</a></li>
+          <li><a href="#">Catalog</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 LYP SPACE. Powered by Shopify.</p>
+      <div class="footer-bottom-links">
+        <a href="#">Privacy policy</a>
+        <a href="#">Refund policy</a>
+        <a href="#">Terms of service</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleFaq(btn) {
+      const item = btn.closest('.faq-item');
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    }
+  </script>
+
+</body>
+</html>
