@@ -297,7 +297,7 @@
       // Load default address
       const ar = await fetch('/api/user/addresses');
       const { addresses } = await ar.json();
-      const def = addresses && addresses.find(a => a.is_default);
+      const def = addresses && (addresses.find(a => a.is_default) || addresses[0]);
       const addrBox = document.getElementById('addr-box');
       if (def) {
         addrBox.innerHTML = `<div class="addr">${esc(def.name)}<br>${esc(def.street)}<br>${esc(def.city)} ${esc(def.postal_code)}<br>${esc(def.country)}</div>`;
