@@ -32,10 +32,11 @@ beforeEach(() => {
 const makeRes = () => ({ status: jest.fn().mockReturnThis(), json: jest.fn() });
 
 it('returns empty array when user has no orders', async () => {
+  const emptyEq = jest.fn().mockResolvedValue({ data: [], error: null });
   getSupabase.mockReturnValue({
     from: jest.fn().mockReturnValue({
       select: jest.fn().mockReturnValue({
-        or: jest.fn().mockResolvedValue({ data: [], error: null }),
+        eq: emptyEq,
       }),
     }),
   });
@@ -52,12 +53,21 @@ it('returns 401 when not authenticated', async () => {
 });
 
 it('returns orders with shipping status', async () => {
+  const orderLinkRow = { data: [{ stripe_session_id: 'cs_test' }], error: null };
   const mockFrom = jest.fn()
+    // byUser query (first call in Promise.all)
     .mockReturnValueOnce({
       select: jest.fn().mockReturnValue({
-        or: jest.fn().mockResolvedValue({ data: [{ stripe_session_id: 'cs_test' }] }),
+        eq: jest.fn().mockResolvedValue(orderLinkRow),
       }),
     })
+    // byEmail query (second call in Promise.all)
+    .mockReturnValueOnce({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+    })
+    // shipments query for the session
     .mockReturnValue({
       select: jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({

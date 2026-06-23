@@ -12,16 +12,20 @@ module.exports = async (req, res) => {
 
   const supabase = getSupabase();
 
-  const { data: links } = await supabase
-    .from('order_links')
-    .select('stripe_session_id')
-    .or(`user_id.eq.${payload.userId},customer_email.eq.${payload.email}`);
-
-  if (!links || links.length === 0)
-    return res.status(200).json({ orders: [] });
+  const [byUser, byEmail] = await Promise.all([
+    supabase.from('order_links').select('stripe_session_id').eq('user_id', payload.userId),
+    supabase.from('order_links').select('stripe_session_id').eq('customer_email', payload.email),
+  ]);
+  const sessionIds = [
+    ...new Set([
+      ...(byUser.data || []).map(r => r.stripe_session_id),
+      ...(byEmail.data || []).map(r => r.stripe_session_id),
+    ])
+  ];
+  if (sessionIds.length === 0) return res.status(200).json({ orders: [] });
 
   const orders = await Promise.all(
-    links.map(async ({ stripe_session_id }) => {
+    sessionIds.map(async (stripe_session_id) => {
       const [session, shipment] = await Promise.all([
         stripe.checkout.sessions.retrieve(stripe_session_id, {
           expand: ['line_items'],

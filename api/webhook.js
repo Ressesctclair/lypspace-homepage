@@ -86,7 +86,12 @@ module.exports = async (req, res) => {
         { onConflict: 'stripe_session_id' }
       );
     } catch (err) {
-      console.error('Failed to write order_links:', err.message);
+      console.error('[webhook] order_links upsert failed — MANUAL RECOVERY NEEDED', {
+        stripe_session_id: session.id,
+        user_id: userId,
+        customer_email: customerEmail,
+        error: err.message,
+      });
     }
   }
 
