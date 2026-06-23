@@ -36,14 +36,18 @@ module.exports = async (req, res) => {
       ? { percent_off: Number(value), duration: 'once' }
       : { amount_off: Math.round(Number(value) * 100), currency: 'usd', duration: 'once' };
 
-    const coupon = await stripe.coupons.create(couponParams);
+    try {
+      const coupon = await stripe.coupons.create(couponParams);
 
-    const promoParams = { coupon: coupon.id, code: code.toUpperCase() };
-    if (max_uses) promoParams.max_redemptions = Number(max_uses);
-    if (expires_at) promoParams.expires_at = Math.floor(new Date(expires_at).getTime() / 1000);
+      const promoParams = { coupon: coupon.id, code: code.toUpperCase() };
+      if (max_uses) promoParams.max_redemptions = Number(max_uses);
+      if (expires_at) promoParams.expires_at = Math.floor(new Date(expires_at).getTime() / 1000);
 
-    const promoCode = await stripe.promotionCodes.create(promoParams);
-    return res.status(201).json({ created: true, id: promoCode.id, code: promoCode.code });
+      const promoCode = await stripe.promotionCodes.create(promoParams);
+      return res.status(201).json({ created: true, id: promoCode.id, code: promoCode.code });
+    } catch (err) {
+      return res.status(400).json({ error: err.message || '创建失败' });
+    }
   }
 
   if (req.method === 'DELETE') {
