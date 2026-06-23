@@ -34,14 +34,16 @@ module.exports = async (req, res) => {
       if (postal_code !== undefined) updates.postal_code = postal_code;
       if (country !== undefined) updates.country = country;
       if (is_default !== undefined) updates.is_default = !!is_default;
-      const { data, error } = await supabase
+      if (Object.keys(updates).length === 0)
+        return res.status(400).json({ error: 'no fields to update' });
+      const { data } = await supabase
         .from('addresses')
         .update(updates)
         .eq('id', id)
         .eq('user_id', payload.userId)
         .select()
-        .single();
-      if (error || !data) return res.status(404).json({ error: 'address not found' });
+        .maybeSingle();
+      if (!data) return res.status(404).json({ error: 'address not found' });
       return res.status(200).json({ address: data });
     }
 

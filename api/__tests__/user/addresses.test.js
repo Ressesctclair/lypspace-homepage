@@ -39,10 +39,12 @@ it('POST returns 400 when required fields missing', async () => {
 });
 
 it('DELETE removes address', async () => {
-  const eqFn = jest.fn().mockReturnValue({ eq: jest.fn().mockResolvedValue({}) });
-  const delFn = jest.fn().mockReturnValue({ eq: eqFn });
+  const userIdEqFn = jest.fn().mockResolvedValue({});
+  const idEqFn = jest.fn().mockReturnValue({ eq: userIdEqFn });
+  const delFn = jest.fn().mockReturnValue({ eq: idEqFn });
   getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ delete: delFn }) });
   const res = makeRes();
   await handler({ method: 'DELETE', query: { id: 'addr1' }, body: {} }, res);
   expect(res.json).toHaveBeenCalledWith({ ok: true });
+  expect(userIdEqFn).toHaveBeenCalledWith('user_id', 'u1');
 });

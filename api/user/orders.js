@@ -2,14 +2,15 @@ const Stripe = require('stripe');
 const { requireAuth } = require('../_lib/auth');
 const { getSupabase } = require('../_lib/supabase');
 
-module.exports = async (req, res) => {
-  if (req.method !== 'GET') return res.status(405).end();
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
+module.exports = async (req, res) => {
   const payload = requireAuth(req, res);
   if (!payload) return;
 
+  if (req.method !== 'GET') return res.status(405).end();
+
   const supabase = getSupabase();
-  const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
   const { data: links } = await supabase
     .from('order_links')
