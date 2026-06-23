@@ -11,13 +11,14 @@ const escHtml = (str) =>
     .replace(/"/g, '&quot;');
 
 const CARRIER_LINKS = {
-  顺丰: 'https://www.sf-express.com/cn/sc/dynamic_function/waybill/#search/bill-number/',
-  中通: 'https://www.zto.com/express/waybilltracking.html?bill_codes=',
-  圆通: 'https://www.yto.net.cn/express/index.html?no=',
-  申通: 'https://www.sto.cn/query-result.html?mailno=',
-  韵达: 'https://www.yundaex.com/cn/index.php?number=',
-  邮政EMS: 'http://www.ems.com.cn/queryList.html?mailNum=',
-  其他: 'https://www.kuaidi100.com/?nu=',
+  UPS: 'https://www.ups.com/track?tracknum=',
+  FedEx: 'https://www.fedex.com/fedextrack/?tracknumbers=',
+  DHL: 'https://www.dhl.com/en/express/tracking.html?AWB=',
+  USPS: 'https://tools.usps.com/go/TrackConfirmAction?tLabels=',
+  'Royal Mail': 'https://www.royalmail.com/track-your-item#/tracking-results/',
+  'Canada Post': 'https://www.canadapost-postescanada.ca/track-reperer/alternate#!/details/',
+  'Australia Post': 'https://auspost.com.au/mypost/track/#/details/',
+  Other: 'https://parcelsapp.com/en/tracking/',
 };
 
 const getBody = (req) =>
@@ -57,7 +58,7 @@ module.exports = async (req, res) => {
     });
   }
 
-  const trackingBase = CARRIER_LINKS[carrier] || CARRIER_LINKS['其他'];
+  const trackingBase = CARRIER_LINKS[carrier] || CARRIER_LINKS['Other'];
   const trackingUrl = `${trackingBase}${trackingNumber}`;
 
   try {

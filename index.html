@@ -536,6 +536,7 @@
       .banner-content h2 { font-size: 20px; }
     }
   </style>
+  <script src="/js/i18n.js"></script>
 </head>
 <body>
 
@@ -543,9 +544,9 @@
   <header>
     <a href="/" class="logo">LYP SPACE</a>
     <nav>
-      <a href="/">Home</a>
-      <a href="/catalog">Catalog</a>
-      <a href="/contact">Contact</a>
+      <a href="/" data-i18n="nav_home">Home</a>
+      <a href="/catalog" data-i18n="nav_catalog">Catalog</a>
+      <a href="/contact" data-i18n="nav_contact">Contact</a>
     </nav>
     <div class="header-icons">
       <button>Sign in</button>
@@ -557,13 +558,13 @@
   <div class="hero">
     <div class="hero-placeholder"></div>
     <div class="hero-cta">
-      <a href="/catalog" class="btn">Shop all</a>
+      <a href="/catalog" class="btn" data-i18n="hero_cta">Shop all</a>
     </div>
   </div>
 
   <!-- FEATURED PRODUCTS -->
   <section class="section">
-    <p class="section-title">Featured</p>
+    <p class="section-title" data-i18n="featured_title">Featured</p>
     <div class="product-grid">
       <a href="/rip-curl-bikini" class="product-card" style="display:block;">
         <div class="product-image">
@@ -600,8 +601,8 @@
   <div class="banner">
     <div class="banner-bg"></div>
     <div class="banner-content">
-      <h2>New arrivals</h2>
-      <a href="/catalog" class="btn btn-outline">Shop now</a>
+      <h2 data-i18n="new_arrivals">New arrivals</h2>
+      <a href="/catalog" class="btn btn-outline" data-i18n="shop_now">Shop now</a>
     </div>
   </div>
 
@@ -610,15 +611,15 @@
     <div class="banner-half">
       <div class="banner-half-bg"></div>
       <div class="banner-half-content">
-        <h3>Earrings</h3>
-        <a href="/catalog" class="btn btn-outline">Shop now</a>
+        <h3 data-i18n="cat_earrings">Earrings</h3>
+        <a href="/catalog" class="btn btn-outline" data-i18n="shop_now">Shop now</a>
       </div>
     </div>
     <div class="banner-half">
       <div class="banner-half-bg"></div>
       <div class="banner-half-content">
-        <h3>Accessories</h3>
-        <a href="/catalog" class="btn btn-outline">Shop now</a>
+        <h3 data-i18n="cat_accessories">Accessories</h3>
+        <a href="/catalog" class="btn btn-outline" data-i18n="shop_now">Shop now</a>
       </div>
     </div>
   </div>
@@ -627,96 +628,96 @@
   <section class="values-section">
     <div class="values-grid">
       <div class="value-item">
-        <h3>Intentional design</h3>
-        <p>Everything we do starts with why</p>
+        <h3 data-i18n="val_title1">Intentional design</h3>
+        <p data-i18n="val_body1">Everything we do starts with why</p>
       </div>
       <div class="value-item">
-        <h3>Made with care</h3>
-        <p>We believe in building better</p>
+        <h3 data-i18n="val_title2">Made with care</h3>
+        <p data-i18n="val_body2">We believe in building better</p>
       </div>
       <div class="value-item">
-        <h3>A team with a goal</h3>
-        <p>Real people making great products</p>
+        <h3 data-i18n="val_title3">A team with a goal</h3>
+        <p data-i18n="val_body3">Real people making great products</p>
       </div>
     </div>
   </section>
 
   <!-- BRAND STATEMENT -->
   <section class="brand-statement">
-    <p>We create with intention. Our products solve real problems with clean design and honest materials.</p>
+    <p data-i18n="brand_stmt">We create with intention. Our products solve real problems with clean design and honest materials.</p>
     <div class="brand-pillars">
       <div class="pillar">
-        <h4>Quality first</h4>
-        <p>We obsess over the details and strive to deliver the best products at the best prices, every time.</p>
+        <h4 data-i18n="pillar_title1">Quality first</h4>
+        <p data-i18n="pillar_body1">We obsess over the details and strive to deliver the best products at the best prices, every time.</p>
       </div>
       <div class="pillar">
-        <h4>Customer care</h4>
-        <p>We're always on your side: keeping our loyal customers happy is our top priority and number one goal.</p>
+        <h4 data-i18n="pillar_title2">Customer care</h4>
+        <p data-i18n="pillar_body2">We're always on your side: keeping our loyal customers happy is our top priority and number one goal.</p>
       </div>
     </div>
   </section>
 
   <!-- EMAIL SIGNUP -->
   <section class="signup-section">
-    <h2>Stay in the loop</h2>
-    <p>Get exclusive deals and early access to new products</p>
+    <h2 data-i18n="signup_title">Stay in the loop</h2>
+    <p data-i18n="signup_body">Get exclusive deals and early access to new products</p>
     <form class="signup-form" onsubmit="return false;">
-      <input type="email" placeholder="Your email address" />
-      <button type="submit">Subscribe</button>
+      <input type="email" data-i18n-ph="signup_ph" placeholder="Your email address" />
+      <button type="submit" data-i18n="subscribe_btn">Subscribe</button>
     </form>
   </section>
 
   <!-- FAQ -->
   <section style="padding: 72px 0; border-top: 1px solid var(--border);">
     <div class="faq-section" style="border-top: none; padding-top: 0;">
-      <h2>Frequently asked questions</h2>
+      <h2 data-i18n="faq_title">Frequently asked questions</h2>
 
       <div class="faq-item">
         <button class="faq-question" onclick="toggleFaq(this)">
-          What is your return policy?
+          <span data-i18n="faq_q1">What is your return policy?</span>
           <span>+</span>
         </button>
-        <div class="faq-answer">
+        <div class="faq-answer" data-i18n="faq_a1">
           We want you to be completely satisfied with your purchase. If you're not happy with your order, you can return most items within 30 days of delivery for a full refund or exchange.
         </div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question" onclick="toggleFaq(this)">
-          Are there any final sale items?
+          <span data-i18n="faq_q2">Are there any final sale items?</span>
           <span>+</span>
         </button>
-        <div class="faq-answer">
+        <div class="faq-answer" data-i18n="faq_a2">
           Some items may be marked as final sale and are not eligible for returns or exchanges. These will be clearly noted on the product page before purchase.
         </div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question" onclick="toggleFaq(this)">
-          How long does shipping take?
+          <span data-i18n="faq_q3">How long does shipping take?</span>
           <span>+</span>
         </button>
-        <div class="faq-answer">
+        <div class="faq-answer" data-i18n="faq_a3">
           Standard shipping typically takes 5–8 business days. Expedited options are available at checkout. You'll receive a tracking number as soon as your order ships.
         </div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question" onclick="toggleFaq(this)">
-          Where are your products manufactured?
+          <span data-i18n="faq_q4">Where are your products manufactured?</span>
           <span>+</span>
         </button>
-        <div class="faq-answer">
+        <div class="faq-answer" data-i18n="faq_a4">
           We work with trusted manufacturing partners who share our commitment to quality and ethical production. We carefully vet every partner to ensure our standards are met.
         </div>
       </div>
 
       <div class="faq-item">
         <button class="faq-question" onclick="toggleFaq(this)">
-          How much does shipping cost?
+          <span data-i18n="faq_q5">How much does shipping cost?</span>
           <span>+</span>
         </button>
-        <div class="faq-answer">
+        <div class="faq-answer" data-i18n="faq_a5">
           We offer transparent, fair shipping rates calculated at checkout based on your location and order size. Free shipping is available on qualifying orders.
         </div>
       </div>
@@ -727,29 +728,29 @@
   <footer>
     <div class="footer-top">
       <div class="footer-col">
-        <h4>Information</h4>
+        <h4 data-i18n="footer_info">Information</h4>
         <ul>
-          <li><a href="#">Return policy</a></li>
-          <li><a href="#">Shipping</a></li>
-          <li><a href="#">Manufacturing</a></li>
-          <li><a href="#">Contact information</a></li>
+          <li><a href="#" data-i18n="footer_return">Return policy</a></li>
+          <li><a href="#" data-i18n="footer_shipping">Shipping</a></li>
+          <li><a href="#" data-i18n="footer_mfg">Manufacturing</a></li>
+          <li><a href="#" data-i18n="footer_contact">Contact information</a></li>
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Policies</h4>
+        <h4 data-i18n="footer_policies">Policies</h4>
         <ul>
-          <li><a href="#">Privacy policy</a></li>
-          <li><a href="#">Refund policy</a></li>
-          <li><a href="#">Terms of service</a></li>
-          <li><a href="#">Shipping policy</a></li>
+          <li><a href="#" data-i18n="footer_privacy">Privacy policy</a></li>
+          <li><a href="#" data-i18n="footer_refund">Refund policy</a></li>
+          <li><a href="#" data-i18n="footer_terms">Terms of service</a></li>
+          <li><a href="#" data-i18n="footer_ship_policy">Shipping policy</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>LYP SPACE</h4>
         <ul>
-          <li><a href="#">Home</a></li>
-          <li><a href="#">Catalog</a></li>
-          <li><a href="#">Contact</a></li>
+          <li><a href="#" data-i18n="nav_home">Home</a></li>
+          <li><a href="#" data-i18n="nav_catalog">Catalog</a></li>
+          <li><a href="#" data-i18n="nav_contact">Contact</a></li>
         </ul>
       </div>
     </div>
@@ -780,10 +781,10 @@
     const link = document.createElement('a');
     if (r.ok) {
       link.href = '/dashboard';
-      link.textContent = '我的账户';
+      link.textContent = window.i18n ? window.i18n.t('nav_my_account') : 'My Account';
     } else {
       link.href = '/login';
-      link.textContent = '登录';
+      link.textContent = window.i18n ? window.i18n.t('nav_signin') : 'Sign in';
     }
     link.style.cssText = 'margin-left:20px;font-size:14px;color:#000;text-decoration:none;';
     nav.appendChild(link);
