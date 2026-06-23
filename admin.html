@@ -118,5 +118,46 @@
       btn.textContent = '发送物流通知';
     });
   </script>
+
+  <hr style="margin:40px 0;border:none;border-top:1px solid #e5e5e5;">
+  <div style="max-width:480px;margin:0 auto;padding:0 24px 40px;">
+    <h2 style="font-size:18px;font-weight:600;margin-bottom:24px;">会员管理</h2>
+    <div style="margin-bottom:16px;">
+      <label style="display:block;margin-bottom:6px;font-size:13px;color:#666;">管理员密码</label>
+      <input id="m-pw" type="password" style="width:100%;padding:12px;border:1px solid #e5e5e5;font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="display:block;margin-bottom:6px;font-size:13px;color:#666;">用户邮箱</label>
+      <input id="m-email" type="email" style="width:100%;padding:12px;border:1px solid #e5e5e5;font-size:14px;outline:none;" placeholder="user@example.com">
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="display:block;margin-bottom:8px;font-size:13px;color:#666;">会员状态</label>
+      <label style="margin-right:20px;font-size:14px;"><input type="radio" name="m-status" value="true" checked> 设为会员</label>
+      <label style="font-size:14px;"><input type="radio" name="m-status" value="false"> 取消会员</label>
+    </div>
+    <button onclick="setMember()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;font-size:14px;cursor:pointer;">提交</button>
+    <div id="m-msg" style="margin-top:12px;font-size:13px;display:none;"></div>
+  </div>
+  <script>
+    async function setMember() {
+      const msg = document.getElementById('m-msg');
+      msg.style.display = 'none';
+      const is_member = document.querySelector('input[name="m-status"]:checked').value === 'true';
+      const r = await fetch('/api/admin/set-member', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: document.getElementById('m-pw').value,
+          email: document.getElementById('m-email').value,
+          is_member,
+        }),
+      });
+      const d = await r.json();
+      msg.textContent = r.ok ? '✓ 已更新' : (d.error || '失败');
+      msg.style.color = r.ok ? '#080' : '#c00';
+      msg.style.display = 'block';
+      if (r.ok) document.getElementById('m-email').value = '';
+    }
+  </script>
 </body>
 </html>

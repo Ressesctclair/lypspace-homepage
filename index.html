@@ -772,5 +772,23 @@
     }
   </script>
 
+  <script>
+  (async () => {
+    const r = await fetch('/api/auth/me');
+    const nav = document.querySelector('header nav') || document.querySelector('nav');
+    if (!nav) return;
+    const link = document.createElement('a');
+    if (r.ok) {
+      link.href = '/dashboard';
+      link.textContent = '我的账户';
+    } else {
+      link.href = '/login';
+      link.textContent = '登录';
+    }
+    link.style.cssText = 'margin-left:20px;font-size:14px;color:#000;text-decoration:none;';
+    nav.appendChild(link);
+  })();
+  </script>
+
 </body>
 </html>
