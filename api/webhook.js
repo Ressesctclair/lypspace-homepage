@@ -1,5 +1,6 @@
 const Stripe = require('stripe');
 const { Resend } = require('resend');
+const { getSupabase } = require('./_lib/supabase');
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 
@@ -75,6 +76,17 @@ module.exports = async (req, res) => {
       });
     } catch (err) {
       console.error('Failed to send order confirmation:', err.message);
+    }
+
+    const supabase = getSupabase();
+    const userId = session.metadata?.userId || null;
+    try {
+      await supabase.from('order_links').upsert(
+        { stripe_session_id: session.id, user_id: userId, customer_email: customerEmail },
+        { onConflict: 'stripe_session_id' }
+      );
+    } catch (err) {
+      console.error('Failed to write order_links:', err.message);
     }
   }
 

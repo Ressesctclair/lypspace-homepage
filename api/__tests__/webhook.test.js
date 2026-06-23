@@ -2,6 +2,7 @@ const { Readable } = require('stream');
 
 jest.mock('stripe');
 jest.mock('resend');
+jest.mock('../_lib/supabase', () => ({ getSupabase: jest.fn() }));
 
 const Stripe = require('stripe');
 const { Resend } = require('resend');
@@ -16,6 +17,11 @@ beforeEach(() => {
   mockConstructEvent = jest.fn();
   Resend.mockImplementation(() => ({ emails: { send: mockEmailSend } }));
   Stripe.mockImplementation(() => ({ webhooks: { constructEvent: mockConstructEvent } }));
+  const { getSupabase } = require('../_lib/supabase');
+  const mockUpsert = jest.fn().mockResolvedValue({});
+  getSupabase.mockReturnValue({
+    from: jest.fn().mockReturnValue({ upsert: mockUpsert }),
+  });
   handler = require('../webhook');
 });
 
@@ -88,4 +94,28 @@ test('returns 200 without sending email for other event types', async () => {
   await handler(req, res);
   expect(mockEmailSend).not.toHaveBeenCalled();
   expect(res.status).toHaveBeenCalledWith(200);
+});
+
+test('writes to order_links on checkout.session.completed', async () => {
+  const session = {
+    id: 'cs_test_abc123',
+    metadata: { userId: 'user-uuid-123' },
+    customer_details: { email: 'customer@test.com', name: 'Test User' },
+    amount_total: 9760,
+    currency: 'usd',
+  };
+  mockConstructEvent.mockReturnValue({
+    type: 'checkout.session.completed',
+    data: { object: session },
+  });
+  const { getSupabase } = require('../_lib/supabase');
+  const mockUpsert = jest.fn().mockResolvedValue({});
+  getSupabase.mockReturnValue({
+    from: jest.fn().mockReturnValue({ upsert: mockUpsert }),
+  });
+  await handler(makeReq(JSON.stringify(session)), makeRes());
+  expect(mockUpsert).toHaveBeenCalledWith(
+    expect.objectContaining({ stripe_session_id: 'cs_test_abc123', customer_email: 'customer@test.com' }),
+    { onConflict: 'stripe_session_id' }
+  );
 });

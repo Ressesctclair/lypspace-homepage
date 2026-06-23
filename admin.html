@@ -60,6 +60,11 @@
       <label>快递单号</label>
       <input type="text" id="trackingNumber" required placeholder="SF1234567890" />
 
+      <div style="margin-bottom:16px;">
+        <label style="display:block;margin-bottom:6px;font-size:13px;color:#666;">Stripe Session ID（可选）</label>
+        <input id="stripeSessionId" type="text" placeholder="cs_live_..." style="width:100%;padding:12px;border:1px solid #e5e5e5;font-size:14px;outline:none;">
+      </div>
+
       <label>订单备注（可选）</label>
       <input type="text" id="orderRef" placeholder="订单编号或备注" />
 
@@ -87,6 +92,7 @@
             customerEmail: document.getElementById('customerEmail').value,
             carrier: document.getElementById('carrier').value,
             trackingNumber: document.getElementById('trackingNumber').value,
+            stripeSessionId: document.getElementById('stripeSessionId').value || undefined,
             orderRef: document.getElementById('orderRef').value,
           }),
         });
@@ -97,6 +103,7 @@
           document.getElementById('customerEmail').value = '';
           document.getElementById('carrier').value = '';
           document.getElementById('trackingNumber').value = '';
+          document.getElementById('stripeSessionId').value = '';
           document.getElementById('orderRef').value = '';
         } else {
           msg.textContent = data.error || '发送失败，请重试';

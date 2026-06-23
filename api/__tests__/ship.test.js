@@ -1,6 +1,7 @@
 const { Readable } = require('stream');
 
 jest.mock('resend');
+jest.mock('../_lib/supabase', () => ({ getSupabase: jest.fn() }));
 const { Resend } = require('resend');
 
 let handler;
@@ -11,6 +12,10 @@ beforeEach(() => {
   process.env.ADMIN_PASSWORD = 'test-admin-pass-123';
   mockEmailSend = jest.fn().mockResolvedValue({ id: 'email-456' });
   Resend.mockImplementation(() => ({ emails: { send: mockEmailSend } }));
+  const { getSupabase } = require('../_lib/supabase');
+  getSupabase.mockReturnValue({
+    from: jest.fn().mockReturnValue({ insert: jest.fn().mockResolvedValue({}) }),
+  });
   handler = require('../ship');
 });
 
@@ -88,4 +93,14 @@ test('includes carrier tracking link in email', async () => {
   const html = mockEmailSend.mock.calls[0][0].html;
   expect(html).toContain('SF1234567890');
   expect(html).toContain('sf-express.com');
+});
+
+test('writes shipment record to supabase', async () => {
+  const { getSupabase } = require('../_lib/supabase');
+  const mockInsert = jest.fn().mockResolvedValue({});
+  getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ insert: mockInsert }) });
+  await handler(makeReq(validBody), makeRes());
+  expect(mockInsert).toHaveBeenCalledWith(
+    expect.objectContaining({ carrier: '顺丰', tracking_number: 'SF1234567890' })
+  );
 });

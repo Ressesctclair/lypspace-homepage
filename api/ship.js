@@ -1,4 +1,5 @@
 const { Resend } = require('resend');
+const { getSupabase } = require('./_lib/supabase');
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 
@@ -78,6 +79,18 @@ module.exports = async (req, res) => {
         </div>
       `,
     });
+
+    const supabase = getSupabase();
+    try {
+      await supabase.from('shipments').insert({
+        stripe_session_id: body.stripeSessionId || null,
+        carrier,
+        tracking_number: trackingNumber,
+      });
+    } catch (err) {
+      console.error('Failed to write shipments:', err.message);
+    }
+
     return res.status(200).json({ sent: true });
   } catch (err) {
     console.error('Failed to send shipping notification:', err.message);
