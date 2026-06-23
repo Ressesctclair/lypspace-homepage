@@ -93,6 +93,17 @@ module.exports = async (req, res) => {
         error: err.message,
       });
     }
+
+    if (session.metadata?.coupon_code && customerEmail) {
+      try {
+        await supabase.from('coupon_uses').upsert(
+          { coupon_code: session.metadata.coupon_code, email: customerEmail, session_id: session.id },
+          { onConflict: 'coupon_code,email', ignoreDuplicates: true }
+        );
+      } catch (err) {
+        console.error('Failed to write coupon_uses:', err.message);
+      }
+    }
   }
 
   return res.status(200).json({ received: true });

@@ -122,3 +122,52 @@ test('writes to order_links on checkout.session.completed', async () => {
     { onConflict: 'stripe_session_id' }
   );
 });
+
+test('writes coupon_uses when session has metadata.coupon_code', async () => {
+  const session = {
+    id: 'cs_coupon_test',
+    metadata: { coupon_code: 'SAVE10' },
+    customer_details: { email: 'buyer@test.com', name: 'Buyer' },
+    amount_total: 5000,
+    currency: 'usd',
+  };
+  mockConstructEvent.mockReturnValue({
+    type: 'checkout.session.completed',
+    data: { object: session },
+  });
+  const { getSupabase } = require('../_lib/supabase');
+  const mockUpsert = jest.fn().mockResolvedValue({});
+  const mockFrom = jest.fn().mockReturnValue({ upsert: mockUpsert });
+  getSupabase.mockReturnValue({ from: mockFrom });
+
+  await handler(makeReq(JSON.stringify(session)), makeRes());
+
+  expect(mockFrom).toHaveBeenCalledWith('coupon_uses');
+  expect(mockUpsert).toHaveBeenCalledWith(
+    { coupon_code: 'SAVE10', email: 'buyer@test.com', session_id: 'cs_coupon_test' },
+    { onConflict: 'coupon_code,email', ignoreDuplicates: true }
+  );
+});
+
+test('does not write coupon_uses when metadata.coupon_code is empty', async () => {
+  const session = {
+    id: 'cs_no_coupon',
+    metadata: { coupon_code: '' },
+    customer_details: { email: 'buyer@test.com', name: 'Buyer' },
+    amount_total: 5000,
+    currency: 'usd',
+  };
+  mockConstructEvent.mockReturnValue({
+    type: 'checkout.session.completed',
+    data: { object: session },
+  });
+  const { getSupabase } = require('../_lib/supabase');
+  const mockUpsert = jest.fn().mockResolvedValue({});
+  const mockFrom = jest.fn().mockReturnValue({ upsert: mockUpsert });
+  getSupabase.mockReturnValue({ from: mockFrom });
+
+  await handler(makeReq(JSON.stringify(session)), makeRes());
+
+  const couponFromCalls = mockFrom.mock.calls.filter(c => c[0] === 'coupon_uses');
+  expect(couponFromCalls).toHaveLength(0);
+});
