@@ -159,5 +159,139 @@
       if (r.ok) document.getElementById('m-email').value = '';
     }
   </script>
+
+  <!-- ── Coupon Management ────────────────────────────── -->
+  <section style="margin-top:56px;max-width:480px;margin-left:auto;margin-right:auto;padding:0 24px 40px;">
+    <h2 style="font-size:18px;font-weight:600;margin-bottom:20px">折扣券管理</h2>
+
+    <!-- Create coupon -->
+    <div style="border:1px solid #e5e5e5;padding:24px;margin-bottom:32px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;text-transform:uppercase;letter-spacing:.05em">创建折扣码</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <label style="display:block;font-size:12px;color:#666;margin-bottom:4px">折扣码</label>
+          <input id="c-code" type="text" placeholder="SAVE10" style="width:100%;padding:9px 12px;border:1px solid #d0d0d0;font-size:14px">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;color:#666;margin-bottom:4px">类型</label>
+          <select id="c-type" style="width:100%;padding:9px 12px;border:1px solid #d0d0d0;font-size:14px;background:#fff">
+            <option value="percent">百分比折扣 (%)</option>
+            <option value="amount">固定金额 (USD)</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;color:#666;margin-bottom:4px">折扣值</label>
+          <input id="c-value" type="number" min="0" step="0.01" placeholder="10" style="width:100%;padding:9px 12px;border:1px solid #d0d0d0;font-size:14px">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;color:#666;margin-bottom:4px">最大使用次数（留空=无限）</label>
+          <input id="c-max" type="number" min="1" placeholder="100" style="width:100%;padding:9px 12px;border:1px solid #d0d0d0;font-size:14px">
+        </div>
+        <div style="grid-column:1/-1">
+          <label style="display:block;font-size:12px;color:#666;margin-bottom:4px">到期日期（可选）</label>
+          <input id="c-expires" type="date" style="width:100%;padding:9px 12px;border:1px solid #d0d0d0;font-size:14px">
+        </div>
+      </div>
+      <button onclick="createCoupon()" style="padding:10px 24px;background:#000;color:#fff;border:none;font-size:13px;cursor:pointer">创建</button>
+      <span id="c-msg" style="margin-left:12px;font-size:13px"></span>
+    </div>
+
+    <!-- List coupons -->
+    <div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+        <h3 style="font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">折扣码列表</h3>
+        <button onclick="loadCoupons()" style="padding:6px 14px;font-size:12px;background:#fff;border:1px solid #d0d0d0;cursor:pointer">刷新</button>
+      </div>
+      <div id="coupon-list" style="font-size:13px;color:#666">点击刷新加载列表</div>
+    </div>
+  </section>
+
+  <script>
+    function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    async function createCoupon() {
+      const pw = document.getElementById('m-pw').value;
+      const code = document.getElementById('c-code').value.trim();
+      const type = document.getElementById('c-type').value;
+      const value = document.getElementById('c-value').value;
+      const max_uses = document.getElementById('c-max').value;
+      const expires_at = document.getElementById('c-expires').value;
+      const msgEl = document.getElementById('c-msg');
+      msgEl.style.color = '#555';
+      msgEl.textContent = '创建中…';
+      try {
+        const body = { password: pw, code, type, value: Number(value) };
+        if (max_uses) body.max_uses = Number(max_uses);
+        if (expires_at) body.expires_at = expires_at;
+        const r = await fetch('/api/admin/coupon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const d = await r.json();
+        if (d.created) {
+          msgEl.style.color = '#1a7f37';
+          msgEl.textContent = '✓ 创建成功：' + escHtml(d.code);
+          document.getElementById('c-code').value = '';
+          document.getElementById('c-value').value = '';
+          document.getElementById('c-max').value = '';
+          document.getElementById('c-expires').value = '';
+          loadCoupons();
+        } else {
+          msgEl.style.color = '#c00';
+          msgEl.textContent = d.error || '创建失败';
+        }
+      } catch {
+        msgEl.style.color = '#c00';
+        msgEl.textContent = '请求失败';
+      }
+    }
+
+    async function loadCoupons() {
+      const pw = document.getElementById('m-pw').value;
+      const listEl = document.getElementById('coupon-list');
+      listEl.textContent = '加载中…';
+      try {
+        const r = await fetch('/api/admin/coupon?password=' + encodeURIComponent(pw));
+        const d = await r.json();
+        if (!d.coupons) { listEl.textContent = d.error || '加载失败'; return; }
+        if (d.coupons.length === 0) { listEl.textContent = '暂无折扣码'; return; }
+        listEl.innerHTML = d.coupons.map(c => {
+          const disc = c.discount.type === 'percent'
+            ? escHtml(c.discount.value + '% 折扣')
+            : 'USD ' + escHtml(c.discount.value.toFixed(2)) + ' 减免';
+          const uses = c.max_uses ? c.used + '/' + c.max_uses : c.used + '/无限';
+          const exp = c.expires_at ? new Date(c.expires_at * 1000).toLocaleDateString('zh-CN') : '无到期';
+          const status = c.active ? '<span style="color:#1a7f37">有效</span>' : '<span style="color:#c00">已停用</span>';
+          const deactivateBtn = c.active
+            ? '<button onclick="deactivateCoupon(\'' + escHtml(c.id) + '\')" style="padding:4px 10px;font-size:12px;cursor:pointer;color:#c00;border:1px solid #d0d0d0;background:#fff">停用</button>'
+            : '';
+          return '<div style="display:flex;align-items:center;gap:16px;padding:10px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap">'
+            + '<strong style="min-width:80px">' + escHtml(c.code) + '</strong>'
+            + '<span>' + disc + '</span>'
+            + '<span>用量：' + escHtml(String(uses)) + '</span>'
+            + '<span>到期：' + escHtml(exp) + '</span>'
+            + status
+            + deactivateBtn
+            + '</div>';
+        }).join('');
+      } catch {
+        listEl.textContent = '加载失败';
+      }
+    }
+
+    async function deactivateCoupon(id) {
+      if (!confirm('确认停用该折扣码？')) return;
+      const pw = document.getElementById('m-pw').value;
+      const r = await fetch('/api/admin/coupon/deactivate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw, promotion_code_id: id }),
+      });
+      const d = await r.json();
+      if (d.deactivated) { loadCoupons(); }
+      else { alert(d.error || '停用失败'); }
+    }
+  </script>
 </body>
 </html>
