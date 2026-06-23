@@ -1,5 +1,5 @@
 jest.mock('../../_lib/supabase', () => ({ getSupabase: jest.fn() }));
-jest.mock('../../_lib/auth', () => ({ setAuthCookie: jest.fn() }));
+jest.mock('../../_lib/auth', () => ({ setAuthCookie: jest.fn(), requireAuth: jest.fn() }));
 
 let handler, getSupabase, setAuthCookie;
 
@@ -62,5 +62,6 @@ it('redirects to /dashboard on successful OAuth with existing google_id user', a
 
   const res = makeRes();
   await handler({ query: { code: 'abc' } }, res);
+  expect(setAuthCookie).toHaveBeenCalledWith(res, expect.objectContaining({ userId: expect.any(String) }));
   expect(res.redirect).toHaveBeenCalledWith('/dashboard');
 });

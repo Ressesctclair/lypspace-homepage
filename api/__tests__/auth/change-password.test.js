@@ -2,12 +2,12 @@ jest.mock('../../_lib/supabase', () => ({ getSupabase: jest.fn() }));
 jest.mock('../../_lib/auth', () => ({ requireAuth: jest.fn() }));
 jest.mock('bcryptjs');
 
-const bcrypt = require('bcryptjs');
-let handler, getSupabase, requireAuth;
+let handler, getSupabase, requireAuth, bcrypt;
 
 beforeEach(() => {
   jest.resetModules();
   jest.clearAllMocks();
+  bcrypt = require('bcryptjs');
   bcrypt.compare.mockResolvedValue(true);
   bcrypt.hash.mockResolvedValue('new_hash');
   getSupabase = require('../../_lib/supabase').getSupabase;
