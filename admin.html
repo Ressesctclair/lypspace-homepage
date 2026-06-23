@@ -231,7 +231,7 @@
         const d = await r.json();
         if (d.created) {
           msgEl.style.color = '#1a7f37';
-          msgEl.textContent = '✓ 创建成功：' + escHtml(d.code);
+          msgEl.textContent = '✓ 创建成功：' + d.code;
           document.getElementById('c-code').value = '';
           document.getElementById('c-value').value = '';
           document.getElementById('c-max').value = '';
