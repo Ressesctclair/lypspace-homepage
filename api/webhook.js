@@ -94,7 +94,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    if (session.metadata?.coupon_code && customerEmail) {
+    if (session.metadata?.coupon_code && customerEmail && session.discounts?.length) {
       try {
         await supabase.from('coupon_uses').upsert(
           { coupon_code: session.metadata.coupon_code, email: customerEmail, session_id: session.id },

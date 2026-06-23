@@ -55,13 +55,13 @@ test('creates session without coupon', async () => {
   expect(res.json).toHaveBeenCalledWith({ url: 'https://checkout.stripe.com/abc' });
 });
 
-test('creates session with promotion code and coupon_code in metadata', async () => {
+test('creates session with promotion code and uppercases coupon_code in metadata', async () => {
   const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/xyz' });
   Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });
   const res = makeRes();
   await handler({
     method: 'POST',
-    body: { price_id: 'price_xxx', email: 'a@b.com', promotion_code_id: 'promo_yyy', coupon_code: 'SAVE10' },
+    body: { price_id: 'price_xxx', email: 'a@b.com', promotion_code_id: 'promo_yyy', coupon_code: 'save10' },
   }, res);
   const call = mockCreate.mock.calls[0][0];
   expect(call.discounts).toEqual([{ promotion_code: 'promo_yyy' }]);

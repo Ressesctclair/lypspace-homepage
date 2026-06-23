@@ -4,6 +4,7 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).end();
 
   const { price_id, email, promotion_code_id, coupon_code } = req.body || {};
+  const normalizedCouponCode = coupon_code ? coupon_code.toUpperCase() : '';
   if (!price_id) return res.status(400).json({ error: 'price_id required' });
   if (!email) return res.status(400).json({ error: 'email required' });
 
@@ -15,7 +16,7 @@ module.exports = async (req, res) => {
     customer_email: email,
     success_url: `${process.env.SITE_URL}/dashboard?checkout=success`,
     cancel_url: `${process.env.SITE_URL}/checkout`,
-    metadata: { coupon_code: coupon_code || '' },
+    metadata: { coupon_code: normalizedCouponCode },
   };
 
   if (promotion_code_id) {
