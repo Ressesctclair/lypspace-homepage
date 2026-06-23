@@ -16,7 +16,7 @@ const makeRes = () => ({ status: jest.fn().mockReturnThis(), json: jest.fn() });
 it('returns 401 if not authenticated', async () => {
   requireAuth.mockReturnValue(null);
   const res = makeRes();
-  await handler({}, res);
+  await handler({ method: 'GET' }, res);
   expect(res.json).not.toHaveBeenCalled();
 });
 
@@ -29,7 +29,7 @@ it('returns user with hasPassword flag', async () => {
     from: jest.fn().mockReturnValue({ select: jest.fn().mockReturnValue({ eq: jest.fn().mockReturnValue({ single }) }) }),
   });
   const res = makeRes();
-  await handler({}, res);
+  await handler({ method: 'GET' }, res);
   expect(res.json).toHaveBeenCalledWith({
     user: expect.objectContaining({ hasPassword: true, is_member: false }),
   });

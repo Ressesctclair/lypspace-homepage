@@ -46,5 +46,15 @@ module.exports = async (req, res) => {
     return res.status(201).json({ created: true, id: promoCode.id, code: promoCode.code });
   }
 
+  if (req.method === 'DELETE') {
+    const { password, promotion_code_id } = req.body || {};
+    if (password !== process.env.ADMIN_PASSWORD)
+      return res.status(401).json({ error: 'Unauthorized' });
+    if (!promotion_code_id)
+      return res.status(400).json({ error: 'promotion_code_id required' });
+    await stripe.promotionCodes.update(promotion_code_id, { active: false });
+    return res.status(200).json({ deactivated: true });
+  }
+
   return res.status(405).end();
 };

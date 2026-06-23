@@ -87,10 +87,10 @@
       }
       msgEl.textContent = '验证中…';
       try {
-        const r = await fetch('/api/coupon/validate', {
+        const r = await fetch('/api/checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, email }),
+          body: JSON.stringify({ action: 'validate', code, email }),
         });
         const d = await r.json();
         if (d.valid) {

@@ -311,7 +311,7 @@
     }
 
     async function load() {
-      const r = await fetch('/api/user/addresses');
+      const r = await fetch('/api/user/orders?resource=addresses');
       addrs = (await r.json()).addresses || [];
       render();
     }
@@ -339,7 +339,7 @@
     }
 
     async function setDef(id) {
-      await fetch('/api/user/addresses', {
+      await fetch('/api/user/orders?resource=addresses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, is_default: true }),
@@ -349,7 +349,7 @@
 
     async function del(id) {
       if (!confirm('确定删除？')) return;
-      await fetch(`/api/user/addresses?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      await fetch(`/api/user/orders?resource=addresses&id=${encodeURIComponent(id)}`, { method: 'DELETE' });
       await load();
     }
 
@@ -357,7 +357,7 @@
       e.preventDefault();
       const msg = document.getElementById('add-msg');
       msg.style.display = 'none';
-      const r = await fetch('/api/user/addresses', {
+      const r = await fetch('/api/user/orders?resource=addresses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -393,7 +393,7 @@
         msg.style.display = 'block';
         return;
       }
-      const r = await fetch('/api/auth/change-password', {
+      const r = await fetch('/api/auth/me', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

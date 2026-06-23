@@ -154,8 +154,8 @@ test('POST includes expires_at as unix timestamp when provided', async () => {
 });
 
 test('returns 405 for other methods', async () => {
-  Stripe.mockReturnValue({});
+  Stripe.mockReturnValue({ promotionCodes: { update: jest.fn() } });
   const res = makeRes();
-  await handler({ method: 'DELETE', body: {}, query: {} }, res);
+  await handler({ method: 'PATCH', body: {}, query: {} }, res);
   expect(res.status).toHaveBeenCalledWith(405);
 });

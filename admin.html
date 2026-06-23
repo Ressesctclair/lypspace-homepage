@@ -283,8 +283,8 @@
     async function deactivateCoupon(id) {
       if (!confirm('确认停用该折扣码？')) return;
       const pw = document.getElementById('m-pw').value;
-      const r = await fetch('/api/admin/coupon/deactivate', {
-        method: 'POST',
+      const r = await fetch('/api/admin/coupon', {
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: pw, promotion_code_id: id }),
       });

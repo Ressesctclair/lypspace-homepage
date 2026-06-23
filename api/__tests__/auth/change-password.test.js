@@ -13,7 +13,7 @@ beforeEach(() => {
   getSupabase = require('../../_lib/supabase').getSupabase;
   requireAuth = require('../../_lib/auth').requireAuth;
   requireAuth.mockReturnValue({ userId: 'u1', email: 'a@b.com' });
-  handler = require('../../auth/change-password');
+  handler = require('../../auth/me');
 });
 
 const makeRes = () => ({ status: jest.fn().mockReturnThis(), json: jest.fn() });
@@ -29,9 +29,13 @@ function mockUser(passwordHash) {
   });
 }
 
-it('returns 405 for non-POST methods', async () => {
+it('returns 405 for non-POST, non-GET methods', async () => {
+  const single = jest.fn().mockResolvedValue({ data: { id: 'u1', email: 'a@b.com', is_member: false, name: null, password_hash: null } });
+  getSupabase.mockReturnValue({
+    from: jest.fn().mockReturnValue({ select: jest.fn().mockReturnValue({ eq: jest.fn().mockReturnValue({ single }) }) }),
+  });
   const res = { status: jest.fn().mockReturnThis(), end: jest.fn() };
-  await handler({ method: 'GET' }, res);
+  await handler({ method: 'DELETE' }, res);
   expect(res.status).toHaveBeenCalledWith(405);
 });
 
