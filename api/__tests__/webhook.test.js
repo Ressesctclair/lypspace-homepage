@@ -4,8 +4,8 @@ jest.mock('stripe');
 jest.mock('resend');
 jest.mock('../_lib/supabase', () => ({ getSupabase: jest.fn() }));
 
-const Stripe = require('stripe');
-const { Resend } = require('resend');
+let Stripe;
+let Resend;
 
 let handler;
 let mockConstructEvent;
@@ -13,6 +13,9 @@ let mockEmailSend;
 
 beforeEach(() => {
   jest.resetModules();
+  jest.clearAllMocks();
+  Stripe = require('stripe');
+  ({ Resend } = require('resend'));
   mockEmailSend = jest.fn().mockResolvedValue({ id: 'email-123' });
   mockConstructEvent = jest.fn();
   Resend.mockImplementation(() => ({ emails: { send: mockEmailSend } }));

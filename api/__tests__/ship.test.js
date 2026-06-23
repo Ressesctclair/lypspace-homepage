@@ -2,13 +2,16 @@ const { Readable } = require('stream');
 
 jest.mock('resend');
 jest.mock('../_lib/supabase', () => ({ getSupabase: jest.fn() }));
-const { Resend } = require('resend');
+
+let Resend;
 
 let handler;
 let mockEmailSend;
 
 beforeEach(() => {
   jest.resetModules();
+  jest.clearAllMocks();
+  ({ Resend } = require('resend'));
   process.env.ADMIN_PASSWORD = 'test-admin-pass-123';
   mockEmailSend = jest.fn().mockResolvedValue({ id: 'email-456' });
   Resend.mockImplementation(() => ({ emails: { send: mockEmailSend } }));
