@@ -1,12 +1,13 @@
 {
   "version": 2,
   "functions": {
-    "api/*.js": {
-      "memory": 128,
-      "maxDuration": 10
-    }
+    "api/**/*.js": { "memory": 128, "maxDuration": 10 }
   },
   "rewrites": [
-    { "source": "/admin", "destination": "/admin.html" }
+    { "source": "/admin",     "destination": "/admin.html" },
+    { "source": "/login",     "destination": "/login.html" },
+    { "source": "/dashboard", "destination": "/dashboard.html" },
+    { "source": "/orders",    "destination": "/orders.html" },
+    { "source": "/profile",   "destination": "/profile.html" }
   ]
 }
