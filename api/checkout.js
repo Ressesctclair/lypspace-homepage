@@ -52,14 +52,22 @@ module.exports = async (req, res) => {
     return res.status(200).json({ valid: true, discount, promotion_code_id: promo.id, message });
   }
 
-  const { price_id, email, promotion_code_id, coupon_code, quantity } = req.body || {};
+  const { price_id, email, items, promotion_code_id, coupon_code, quantity } = req.body || {};
   const normalizedCouponCode = coupon_code ? coupon_code.toUpperCase() : '';
-  if (!price_id) return res.status(400).json({ error: 'price_id required' });
   if (!email) return res.status(400).json({ error: 'email required' });
+
+  let line_items;
+  if (items && Array.isArray(items) && items.length) {
+    line_items = items.map(i => ({ price: i.price_id, quantity: Math.max(1, parseInt(i.quantity) || 1) }));
+  } else if (price_id) {
+    line_items = [{ price: price_id, quantity: Math.max(1, parseInt(quantity) || 1) }];
+  } else {
+    return res.status(400).json({ error: 'price_id or items required' });
+  }
 
   const params = {
     mode: 'payment',
-    line_items: [{ price: price_id, quantity: Math.max(1, parseInt(quantity) || 1) }],
+    line_items,
     customer_email: email,
     success_url: `${process.env.SITE_URL}/dashboard?checkout=success`,
     cancel_url: `${process.env.SITE_URL}/checkout`,

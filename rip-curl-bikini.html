@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rip Curl Striped Bikini — LYP SPACE</title>
   <script src="/js/i18n.js"></script>
+  <script src="/js/cart.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -310,6 +311,7 @@
         </div>
       </div>
 
+      <button class="buy-btn" onclick="addToCart()" style="background:#fff;color:#111;border:1px solid #111;margin-bottom:12px;" data-i18n="prod_add_cart">加入购物车</button>
       <button class="buy-btn" onclick="goToCheckout()" data-i18n="prod_buy_btn">Buy Now — $126.00</button>
 
       <div class="product-details">
@@ -351,6 +353,14 @@
     function changeQty(delta) {
       qty = Math.max(1, qty + delta);
       document.getElementById('qty-display').textContent = qty;
+    }
+
+    function addToCart() {
+      if (!selectedSize) {
+        document.getElementById('size-error').style.display = 'block';
+        return;
+      }
+      Cart.add({ price_id: 'price_1SfHnN4IZcEaiWjkyJz96vJX', name: 'Rip Curl Striped Bikini (Size: ' + selectedSize + ')', price: 126.00, qty: qty });
     }
 
     function goToCheckout() {

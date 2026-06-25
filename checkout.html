@@ -32,6 +32,7 @@
   </style>
 </head>
 <body>
+  <script src="/js/cart.js"></script>
   <header>
     <a href="/" class="logo">LYP SPACE</a>
   </header>
@@ -58,6 +59,7 @@
 
   <script>
     const params = new URLSearchParams(location.search);
+    const isCart = params.get('cart') === '1';
     const priceId = params.get('price_id');
     const productName = params.get('name') || 'Product';
     const qty = parseInt(params.get('qty') || '1', 10);
@@ -65,8 +67,24 @@
     const btn = document.getElementById('checkout-btn');
 
     function tr(k) { return window.i18n ? window.i18n.t(k) : k; }
+    function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    if (!priceId) {
+    if (isCart) {
+      const cartItems = Cart.getItems();
+      if (!cartItems.length) {
+        location.href = '/';
+      } else {
+        nameEl.style.cssText = 'border:1px solid #e5e5e5;padding:16px 18px;margin-bottom:28px;font-size:14px;';
+        nameEl.innerHTML = cartItems.map(i =>
+          '<div style="display:flex;justify-content:space-between;padding:4px 0;">' +
+          '<span>' + esc(i.name) + (i.qty > 1 ? ' × ' + i.qty : '') + '</span>' +
+          '<span style="color:#555;">$' + (i.price * i.qty).toFixed(2) + '</span>' +
+          '</div>'
+        ).join('') +
+        '<div style="display:flex;justify-content:space-between;border-top:1px solid #e5e5e5;margin-top:10px;padding-top:10px;font-weight:600;">' +
+          '<span>总计</span><span>$' + Cart.total().toFixed(2) + ' USD</span></div>';
+      }
+    } else if (!priceId) {
       nameEl.textContent = tr('co_no_product');
       nameEl.style.color = '#c00';
       btn.disabled = true;
@@ -117,11 +135,17 @@
     async function startCheckout() {
       const email = document.getElementById('email').value.trim();
       if (!email) { alert(tr('co_email_req')); return; }
-      if (!priceId) return;
+      if (!isCart && !priceId) return;
       btn.disabled = true;
       btn.textContent = tr('co_redirecting');
       try {
-        const body = { price_id: priceId, email, quantity: qty };
+        const body = { email };
+        if (isCart) {
+          body.items = Cart.getItems().map(i => ({ price_id: i.price_id, quantity: i.qty }));
+        } else {
+          body.price_id = priceId;
+          body.quantity = qty;
+        }
         if (promoCodeId) { body.promotion_code_id = promoCodeId; body.coupon_code = appliedCouponCode; }
         const r = await fetch('/api/checkout', {
           method: 'POST',
@@ -130,6 +154,7 @@
         });
         const d = await r.json();
         if (d.url) {
+          if (isCart) Cart.clear();
           location.href = d.url;
         } else {
           btn.disabled = false;

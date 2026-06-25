@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Test Product — LYP SPACE</title>
   <script src="/js/i18n.js"></script>
+  <script src="/js/cart.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -231,6 +232,7 @@
         </div>
       </div>
 
+      <button class="buy-btn" onclick="addToCart()" style="background:#fff;color:#111;border:1px solid #111;margin-bottom:12px;">加入购物车</button>
       <button class="buy-btn" onclick="goToCheckout()">Buy Now — $0.05</button>
 
       <div class="product-details">
@@ -256,6 +258,10 @@
     function changeQty(delta) {
       qty = Math.max(1, qty + delta);
       document.getElementById('qty-display').textContent = qty;
+    }
+
+    function addToCart() {
+      Cart.add({ price_id: 'price_1TkGPN4IZcEaiWjkNLV0xOKH', name: 'Test Product', price: 0.05, qty: qty });
     }
 
     function goToCheckout() {
