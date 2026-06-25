@@ -161,6 +161,44 @@
     }
   </script>
 
+  <!-- ── User List ─────────────────────────────────────── -->
+  <section style="margin-top:40px;max-width:480px;margin-left:auto;margin-right:auto;padding:0 24px 40px;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+      <h2 style="font-size:18px;font-weight:600;">用户列表</h2>
+      <button onclick="loadUsers()" style="padding:6px 14px;font-size:12px;background:#fff;border:1px solid #d0d0d0;cursor:pointer;text-transform:none;margin-top:0;width:auto;">刷新</button>
+    </div>
+    <div id="user-list" style="font-size:13px;color:#666;">（输入上方管理员密码后点刷新）</div>
+  </section>
+
+  <script>
+    async function loadUsers() {
+      const pw = document.getElementById('m-pw').value;
+      if (!pw) { document.getElementById('user-list').textContent = '请先填写上方管理员密码'; return; }
+      const el = document.getElementById('user-list');
+      el.textContent = '加载中…';
+      try {
+        const r = await fetch('/api/admin/set-member?password=' + encodeURIComponent(pw));
+        const d = await r.json();
+        if (!d.users) { el.textContent = d.error || '加载失败'; return; }
+        if (d.users.length === 0) { el.textContent = '暂无用户'; return; }
+        el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+          + '<tr style="border-bottom:2px solid #eee;text-align:left;"><th style="padding:8px 4px;">邮箱</th><th style="padding:8px 4px;">会员</th><th style="padding:8px 4px;">注册时间</th></tr>'
+          + d.users.map(u => {
+            const date = new Date(u.created_at).toLocaleDateString('zh-CN');
+            const badge = u.is_member
+              ? '<span style="color:#1a7f37;font-weight:600;">✓ 是</span>'
+              : '<span style="color:#999;">否</span>';
+            return '<tr style="border-bottom:1px solid #f0f0f0;">'
+              + '<td style="padding:8px 4px;">' + escHtml(u.email) + '</td>'
+              + '<td style="padding:8px 4px;">' + badge + '</td>'
+              + '<td style="padding:8px 4px;color:#999;">' + date + '</td>'
+              + '</tr>';
+          }).join('')
+          + '</table>';
+      } catch { el.textContent = '请求失败'; }
+    }
+  </script>
+
   <!-- ── Coupon Management ────────────────────────────── -->
   <section style="margin-top:56px;max-width:480px;margin-left:auto;margin-right:auto;padding:0 24px 40px;">
     <h2 style="font-size:18px;font-weight:600;margin-bottom:20px">折扣券管理</h2>
