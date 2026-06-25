@@ -496,8 +496,10 @@
       border-top: 1px solid var(--border);
       padding-top: 24px;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
+      gap: 12px;
+      text-align: center;
     }
 
     .footer-bottom p {
@@ -567,7 +569,6 @@
       .pillar:nth-child(odd) { border-right: none; }
       .banner-split { grid-template-columns: 1fr; }
       .footer-top { grid-template-columns: 1fr; }
-      .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
       .banner-content { padding: 24px; }
       .banner-content h2 { font-size: 20px; }
     }
