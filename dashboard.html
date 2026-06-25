@@ -247,6 +247,7 @@
       <div class="links">
         <a href="/orders" class="link-btn">订单历史</a>
         <a href="/profile" class="link-btn">地址管理</a>
+        <a id="admin-link" href="/admin" class="link-btn" style="display:none;">管理后台</a>
         <button class="link-btn" style="border: 1px solid var(--border); background: var(--white); cursor: pointer; font-family: var(--font);" onclick="logout()">退出登录</button>
       </div>
     </div>
@@ -271,6 +272,10 @@
         '你好，' + esc(user.name || user.email.split('@')[0]) +
         (user.is_member ? ' <span class="badge">会员</span>' : '');
       document.getElementById('useremail').textContent = user.email;
+
+      if (user.email === 'imlorennn888@gmail.com') {
+        document.getElementById('admin-link').style.display = 'inline-block';
+      }
 
       // Load recent orders
       const or = await fetch('/api/user/orders');
