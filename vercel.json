@@ -10,6 +10,7 @@
     { "source": "/orders",    "destination": "/orders.html" },
     { "source": "/profile",   "destination": "/profile.html" },
     { "source": "/checkout",  "destination": "/checkout.html" },
-    { "source": "/rip-curl-bikini", "destination": "/rip-curl-bikini.html" }
+    { "source": "/rip-curl-bikini", "destination": "/rip-curl-bikini.html" },
+    { "source": "/test-product", "destination": "/test-product.html" }
   ]
 }
