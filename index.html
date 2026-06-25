@@ -550,8 +550,7 @@
       <a href="/contact" data-i18n="nav_contact">Contact</a>
     </nav>
     <div class="header-icons">
-      <button>Sign in</button>
-      <button>Cart <span class="cart-count">(0)</span></button>
+      <button id="signin-btn" onclick="location.href='/login'">Sign in</button>
     </div>
   </header>
 
@@ -777,18 +776,12 @@
   <script>
   (async () => {
     const r = await fetch('/api/auth/me');
-    const nav = document.querySelector('header nav') || document.querySelector('nav');
-    if (!nav) return;
-    const link = document.createElement('a');
+    const btn = document.getElementById('signin-btn');
+    if (!btn) return;
     if (r.ok) {
-      link.href = '/dashboard';
-      link.textContent = window.i18n ? window.i18n.t('nav_my_account') : 'My Account';
-    } else {
-      link.href = '/login';
-      link.textContent = window.i18n ? window.i18n.t('nav_signin') : 'Sign in';
+      btn.textContent = 'My Account';
+      btn.onclick = () => location.href = '/dashboard';
     }
-    link.style.cssText = 'margin-left:20px;font-size:14px;color:#000;text-decoration:none;';
-    nav.appendChild(link);
   })();
   </script>
 
