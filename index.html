@@ -775,7 +775,7 @@
 
   <script>
   (async () => {
-    const r = await fetch('/api/auth/me');
+    const r = await fetch('/api/auth/me', { cache: 'no-store' });
     const btn = document.getElementById('signin-btn');
     if (!btn) return;
     if (r.ok) {

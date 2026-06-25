@@ -42,6 +42,7 @@ module.exports = async (req, res) => {
 
   if (!user) return res.status(401).json({ error: 'unauthenticated' });
 
+  res.setHeader('Cache-Control', 'no-store');
   return res.status(200).json({
     user: {
       id: user.id,
