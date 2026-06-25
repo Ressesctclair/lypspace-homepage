@@ -11,5 +11,7 @@ module.exports = (req, res) => {
       path: '/',
     })
   );
-  return res.status(200).json({ ok: true });
+  // Redirect directly so the browser applies the Set-Cookie before loading the next page
+  res.setHeader('Location', '/');
+  return res.status(302).end();
 };

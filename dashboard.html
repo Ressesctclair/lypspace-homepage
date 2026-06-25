@@ -258,9 +258,8 @@
       return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    async function logout() {
-      await fetch('/api/auth/logout');
-      location.href = '/';
+    function logout() {
+      location.href = '/api/auth/logout';
     }
 
     async function init() {
