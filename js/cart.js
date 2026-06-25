@@ -47,7 +47,7 @@
     const items = getItems();
 
     if (!items.length) {
-      list.innerHTML = '<p style="text-align:center;color:#6b6b6b;font-size:13px;padding:56px 0;">购物车为空</p>';
+      list.innerHTML = '<p style="text-align:center;color:#6b6b6b;font-size:13px;padding:56px 0;">Your cart is empty</p>';
       document.getElementById('_crt-footer').style.display = 'none';
       return;
     }
@@ -91,16 +91,16 @@
     sidebar.id = '_crt-sidebar';
     sidebar.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid #e0e0e0;flex-shrink:0;">' +
-        '<span style="font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;">购物车</span>' +
+        '<span style="font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;">Cart</span>' +
         '<button onclick="Cart.close()" style="background:none;border:none;cursor:pointer;font-size:24px;color:#111;line-height:1;padding:0;font-family:inherit;">×</button>' +
       '</div>' +
       '<div id="_crt-items" style="flex:1;overflow-y:auto;padding:0 24px;"></div>' +
       '<div id="_crt-footer" style="padding:20px 24px;border-top:1px solid #e0e0e0;flex-shrink:0;display:none;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:16px;">' +
-          '<span style="letter-spacing:.06em;text-transform:uppercase;">总计</span>' +
+          '<span style="letter-spacing:.06em;text-transform:uppercase;">Total</span>' +
           '<span id="_crt-total" style="font-weight:600;font-size:15px;"></span>' +
         '</div>' +
-        '<button onclick="Cart.goCheckout()" style="display:block;width:100%;padding:15px;background:#111;color:#fff;border:none;font-size:12px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:inherit;transition:background .2s;" onmouseover="this.style.background=\'#333\'" onmouseout="this.style.background=\'#111\'">前往结账</button>' +
+        '<button onclick="Cart.goCheckout()" style="display:block;width:100%;padding:15px;background:#111;color:#fff;border:none;font-size:12px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:inherit;transition:background .2s;" onmouseover="this.style.background=\'#333\'" onmouseout="this.style.background=\'#111\'">Checkout</button>' +
       '</div>';
     document.body.appendChild(sidebar);
 
