@@ -21,9 +21,11 @@
     document.getElementById('_crt-sidebar').classList.add('open');
     document.getElementById('_crt-overlay').classList.add('open');
     document.body.style.overflow = 'hidden';
-    // Render PayPal after cart animation completes so element is visible
     setTimeout(function () {
-      if (window.Cart.count() > 0) _renderPayPal();
+      if (window.Cart.count() > 0) {
+        _renderPayPal();
+        _renderStripeExpress();
+      }
     }, 350);
   }
 
@@ -112,6 +114,7 @@
             '<div style="flex:1;border-top:1px solid #e0e0e0;"></div>' +
           '</div>' +
           '<div id="_crt-paypal"></div>' +
+          '<div id="_crt-stripe" style="margin-top:8px;"></div>' +
         '</div>' +
       '</div>';
     document.body.appendChild(sidebar);
@@ -181,6 +184,60 @@
           alert('PayPal payment failed, please try again.');
         },
       }).render('#_crt-paypal');
+    });
+  }
+
+  var _stripeLoaded = false;
+  var _stripeLoading = false;
+
+  function _loadStripe(cb) {
+    if (_stripeLoaded) { cb(); return; }
+    if (_stripeLoading) { document.addEventListener('_crt-stripe-ready', cb, { once: true }); return; }
+    _stripeLoading = true;
+    var s = document.createElement('script');
+    s.src = 'https://js.stripe.com/v3/';
+    s.onload = function () {
+      _stripeLoaded = true;
+      _stripeLoading = false;
+      document.dispatchEvent(new Event('_crt-stripe-ready'));
+      cb();
+    };
+    document.head.appendChild(s);
+  }
+
+  function _renderStripeExpress() {
+    var container = document.getElementById('_crt-stripe');
+    if (!container) return;
+    container.innerHTML = '';
+    var amount = window.Cart.total();
+    if (amount <= 0) return;
+    _loadStripe(function () {
+      var stripe = Stripe('pk_live_51SV6CM4IZcEaiWjkmNbTeM0bdf5FBh1upPyZOcns3jMR78rmUMnGroBhD1jzQzHJpS3B5oaaSKaagynJsEaGZWFT00fEX6D4sF');
+      var elements = stripe.elements({ mode: 'payment', amount: Math.round(amount * 100), currency: 'usd' });
+      var expressEl = elements.create('expressCheckout', { buttonHeight: 44 });
+      expressEl.mount('#_crt-stripe');
+      expressEl.on('confirm', function () {
+        elements.submit().then(function (result) {
+          if (result.error) { console.error(result.error); return; }
+          fetch('https://pro.lypspace.digital/api/payment-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: amount }),
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              return stripe.confirmPayment({
+                elements: elements,
+                clientSecret: data.clientSecret,
+                confirmParams: { return_url: window.location.origin + '/?payment=success' },
+              });
+            })
+            .then(function (result) {
+              if (result && result.error) console.error(result.error);
+            })
+            .catch(function (err) { console.error('Stripe error', err); });
+        });
+      });
     });
   }
 
