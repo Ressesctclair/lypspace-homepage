@@ -71,17 +71,6 @@
       '</div>';
     }).join('');
 
-    // Append OR + PayPal at bottom of items area
-    list.innerHTML +=
-      '<div style="padding:16px 0 8px;">' +
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
-          '<div style="flex:1;border-top:1px solid #e0e0e0;"></div>' +
-          '<span style="font-size:11px;color:#999;letter-spacing:.06em;">OR</span>' +
-          '<div style="flex:1;border-top:1px solid #e0e0e0;"></div>' +
-        '</div>' +
-        '<div id="_crt-paypal"></div>' +
-      '</div>';
-
     document.getElementById('_crt-footer').style.display = 'block';
     document.getElementById('_crt-total').textContent = '$' + window.Cart.total().toFixed(2) + ' USD';
   }
@@ -116,6 +105,14 @@
           '<span id="_crt-total" style="font-weight:600;font-size:15px;"></span>' +
         '</div>' +
         '<button onclick="Cart.goCheckout()" style="display:block;width:100%;padding:15px;background:#111;color:#fff;border:none;font-size:12px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:inherit;transition:background .2s;" onmouseover="this.style.background=\'#333\'" onmouseout="this.style.background=\'#111\'">Checkout</button>' +
+        '<div style="margin-top:12px;">' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
+            '<div style="flex:1;border-top:1px solid #e0e0e0;"></div>' +
+            '<span style="font-size:11px;color:#999;letter-spacing:.06em;">OR</span>' +
+            '<div style="flex:1;border-top:1px solid #e0e0e0;"></div>' +
+          '</div>' +
+          '<div id="_crt-paypal"></div>' +
+        '</div>' +
       '</div>';
     document.body.appendChild(sidebar);
 
