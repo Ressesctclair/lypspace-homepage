@@ -21,6 +21,10 @@
     document.getElementById('_crt-sidebar').classList.add('open');
     document.getElementById('_crt-overlay').classList.add('open');
     document.body.style.overflow = 'hidden';
+    // Render PayPal after cart animation completes so element is visible
+    setTimeout(function () {
+      if (window.Cart.count() > 0) _renderPayPal();
+    }, 350);
   }
 
   function closeCart() {
@@ -69,7 +73,6 @@
 
     document.getElementById('_crt-footer').style.display = 'block';
     document.getElementById('_crt-total').textContent = '$' + window.Cart.total().toFixed(2) + ' USD';
-    _renderPayPal();
   }
 
   function _init() {
