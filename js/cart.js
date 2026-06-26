@@ -69,6 +69,7 @@
 
     document.getElementById('_crt-footer').style.display = 'block';
     document.getElementById('_crt-total').textContent = '$' + window.Cart.total().toFixed(2) + ' USD';
+    _renderPayPal();
   }
 
   function _init() {
@@ -101,6 +102,12 @@
           '<span id="_crt-total" style="font-weight:600;font-size:15px;"></span>' +
         '</div>' +
         '<button onclick="Cart.goCheckout()" style="display:block;width:100%;padding:15px;background:#111;color:#fff;border:none;font-size:12px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:inherit;transition:background .2s;" onmouseover="this.style.background=\'#333\'" onmouseout="this.style.background=\'#111\'">Checkout</button>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin:12px 0;">' +
+          '<div style="flex:1;border-top:1px solid #e0e0e0;"></div>' +
+          '<span style="font-size:11px;color:#999;letter-spacing:.06em;">OR</span>' +
+          '<div style="flex:1;border-top:1px solid #e0e0e0;"></div>' +
+        '</div>' +
+        '<div id="_crt-paypal"></div>' +
       '</div>';
     document.body.appendChild(sidebar);
 
@@ -119,6 +126,57 @@
     }
 
     _render();
+  }
+
+  var _paypalLoaded = false;
+  var _paypalLoading = false;
+
+  function _loadPayPal(cb) {
+    if (_paypalLoaded) { cb(); return; }
+    if (_paypalLoading) { document.addEventListener('_crt-paypal-ready', cb, { once: true }); return; }
+    _paypalLoading = true;
+    var s = document.createElement('script');
+    s.src = 'https://www.paypal.com/sdk/js?client-id=AUmkFmI5PLrqaiashs6HaXJIj8aKsWWIcA18GvKpBXTmngf7-zs-qI8pbbb9IxuZgMwAqXuVhATx8O7-&currency=USD';
+    s.onload = function () {
+      _paypalLoaded = true;
+      _paypalLoading = false;
+      document.dispatchEvent(new Event('_crt-paypal-ready'));
+      cb();
+    };
+    document.head.appendChild(s);
+  }
+
+  function _renderPayPal() {
+    var container = document.getElementById('_crt-paypal');
+    if (!container) return;
+    container.innerHTML = '';
+    _loadPayPal(function () {
+      if (typeof paypal === 'undefined') return;
+      paypal.Buttons({
+        style: { layout: 'horizontal', color: 'gold', shape: 'rect', label: 'paypal', height: 45 },
+        createOrder: function (data, actions) {
+          var amount = window.Cart.total().toFixed(2);
+          if (parseFloat(amount) <= 0) return;
+          return actions.order.create({
+            purchase_units: [{ amount: { value: amount, currency_code: 'USD' } }],
+            application_context: { shipping_preference: 'NO_SHIPPING' },
+          });
+        },
+        onApprove: function (data, actions) {
+          return actions.order.capture().then(function (details) {
+            window.Cart.clear();
+            closeCart();
+            var name = (details.payer && details.payer.name && details.payer.name.given_name) || '';
+            alert('Payment successful! Thank you' + (name ? ', ' + name : '') + '.');
+            location.href = '/?paypal=success';
+          });
+        },
+        onError: function (err) {
+          console.error('PayPal error', err);
+          alert('PayPal payment failed, please try again.');
+        },
+      }).render('#_crt-paypal');
+    });
   }
 
   window.Cart = {
