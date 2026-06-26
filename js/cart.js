@@ -71,6 +71,17 @@
       '</div>';
     }).join('');
 
+    // Append OR + PayPal at bottom of items area
+    list.innerHTML +=
+      '<div style="padding:16px 0 8px;">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
+          '<div style="flex:1;border-top:1px solid #e0e0e0;"></div>' +
+          '<span style="font-size:11px;color:#999;letter-spacing:.06em;">OR</span>' +
+          '<div style="flex:1;border-top:1px solid #e0e0e0;"></div>' +
+        '</div>' +
+        '<div id="_crt-paypal"></div>' +
+      '</div>';
+
     document.getElementById('_crt-footer').style.display = 'block';
     document.getElementById('_crt-total').textContent = '$' + window.Cart.total().toFixed(2) + ' USD';
   }
@@ -82,8 +93,7 @@
       '#_crt-overlay.open{opacity:1;pointer-events:all;}' +
       '#_crt-sidebar{position:fixed;top:0;right:0;width:400px;max-width:100vw;height:100%;background:#fff;z-index:1999;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.1);}' +
       '#_crt-sidebar.open{transform:translateX(0);}' +
-      '#_crt-body{flex:1;overflow-y:auto;}' +
-      '#_crt-items{padding:0 24px;}' +
+      '#_crt-items{flex:1;overflow-y:auto;padding:0 24px;}' +
       '._crt-badge{background:#111;color:#fff;font-size:10px;border-radius:50%;width:17px;height:17px;display:none;align-items:center;justify-content:center;margin-left:4px;vertical-align:middle;font-weight:600;line-height:1;}';
     document.head.appendChild(style);
 
@@ -99,22 +109,14 @@
         '<span style="font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;">Cart</span>' +
         '<button onclick="Cart.close()" style="background:none;border:none;cursor:pointer;font-size:24px;color:#111;line-height:1;padding:0;font-family:inherit;">×</button>' +
       '</div>' +
-      '<div id="_crt-body" style="flex:1;overflow-y:auto;">' +
-        '<div id="_crt-items" style="padding:0 24px;"></div>' +
-        '<div id="_crt-footer" style="padding:20px 24px;border-top:1px solid #e0e0e0;display:none;">' +
+      '<div id="_crt-items" style="flex:1;overflow-y:auto;padding:0 24px;"></div>' +
+      '<div id="_crt-footer" style="padding:20px 24px;border-top:1px solid #e0e0e0;flex-shrink:0;display:none;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:16px;">' +
           '<span style="letter-spacing:.06em;text-transform:uppercase;">Total</span>' +
           '<span id="_crt-total" style="font-weight:600;font-size:15px;"></span>' +
         '</div>' +
         '<button onclick="Cart.goCheckout()" style="display:block;width:100%;padding:15px;background:#111;color:#fff;border:none;font-size:12px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:inherit;transition:background .2s;" onmouseover="this.style.background=\'#333\'" onmouseout="this.style.background=\'#111\'">Checkout</button>' +
-        '<div style="display:flex;align-items:center;gap:10px;margin:12px 0;">' +
-          '<div style="flex:1;border-top:1px solid #e0e0e0;"></div>' +
-          '<span style="font-size:11px;color:#999;letter-spacing:.06em;">OR</span>' +
-          '<div style="flex:1;border-top:1px solid #e0e0e0;"></div>' +
-        '</div>' +
-        '<div id="_crt-paypal"></div>' +
-      '</div>' +   // close _crt-footer
-      '</div>';    // close _crt-body
+      '</div>';
     document.body.appendChild(sidebar);
 
     // Inject cart button into header
