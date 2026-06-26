@@ -144,7 +144,7 @@
     if (_paypalLoading) { document.addEventListener('_crt-paypal-ready', cb, { once: true }); return; }
     _paypalLoading = true;
     var s = document.createElement('script');
-    s.src = 'https://www.paypal.com/sdk/js?client-id=AUmkFmI5PLrqaiashs6HaXJIj8aKsWWIcA18GvKpBXTmngf7-zs-qI8pbbb9IxuZgMwAqXuVhATx8O7-&currency=USD';
+    s.src = 'https://www.paypal.com/sdk/js?client-id=AbzZAwXFIFXZejrP_WdyL92tc2UUciabwIaRwqh9LJcUQKESNg_-QfVQ9nHnf4bfbGScrH6Iv_6CGhk_&currency=USD';
     s.onload = function () {
       _paypalLoaded = true;
       _paypalLoading = false;
