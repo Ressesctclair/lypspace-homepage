@@ -39,8 +39,23 @@
   <div class="card">
     <div style="margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #eee;">
       <a href="/admin-products" style="display:inline-block;padding:10px 20px;background:#111;color:#fff;font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;margin-right:12px;">产品管理（库存/价格/简介）→</a>
-      <a href="/admin-settings" style="display:inline-block;padding:10px 20px;background:#444;color:#fff;font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;">Homepage Settings →</a>
+      <a href="/admin-settings" style="display:inline-block;padding:10px 20px;background:#444;color:#fff;font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;margin-right:12px;">Homepage Settings →</a>
+      <button onclick="exportData()" style="padding:10px 20px;background:#1a6e3c;color:#fff;border:none;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">导出全部数据 ↓</button>
     </div>
+    <script>
+    async function exportData() {
+      const pw = document.getElementById('password').value;
+      if (!pw) { alert('请先输入管理员密码'); return; }
+      const r = await fetch('/api/checkout?action=export&password=' + encodeURIComponent(pw));
+      if (!r.ok) { alert('密码错误或导出失败'); return; }
+      const data = await r.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'lypspace-export-' + new Date().toISOString().slice(0,10) + '.json';
+      a.click();
+    }
+    </script>
     <h1>发货通知</h1>
     <form id="form">
       <label>管理员密码</label>

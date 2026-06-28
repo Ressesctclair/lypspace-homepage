@@ -1,10 +1,143 @@
 const Stripe = require('stripe');
 
 module.exports = async (req, res) => {
+  const { getSupabase } = require('./_lib/supabase');
+
+  // ── Product overrides (GET, public) ────────────────────────────
+  if (req.method === 'GET' && req.query.action === 'inventory') {
+    const supabase = getSupabase();
+    const { data } = await supabase.from('product_overrides').select('*');
+    const map = {};
+    (data || []).forEach(r => { map[r.handle] = r; });
+    return res.status(200).json({ inventory: map });
+  }
+
+  // ── Full data export (GET, admin) ────────────────────────────
+  if (req.method === 'GET' && req.query.action === 'export') {
+    if (req.query.password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
+    const supabase = getSupabase();
+    const [{ data: products }, { data: overrides }, { data: settings }] = await Promise.all([
+      supabase.from('custom_products').select('*').order('created_at', { ascending: false }),
+      supabase.from('product_overrides').select('*'),
+      supabase.from('site_settings').select('*'),
+    ]);
+    return res.status(200).json({
+      exported_at: new Date().toISOString(),
+      site: 'lypspace.digital',
+      custom_products: products || [],
+      product_overrides: overrides || [],
+      site_settings: settings || [],
+    });
+  }
+
+  // ── Cloudinary signed upload (GET, admin) ──────────────────────
+  if (req.method === 'GET' && req.query.action === 'sign-upload') {
+    const crypto = require('crypto');
+    const timestamp = Math.round(Date.now() / 1000);
+    const folder = 'lyp-space';
+    const str = `folder=${folder}&timestamp=${timestamp}${process.env.CLOUDINARY_API_SECRET}`;
+    const signature = crypto.createHash('sha1').update(str).digest('hex');
+    return res.status(200).json({
+      timestamp, signature,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      cloud_name: 'dhsgdejtf',
+      folder
+    });
+  }
+
+  // ── Site settings (GET, public) ───────────────────────────────
+  if (req.method === 'GET' && req.query.action === 'settings') {
+    const supabase = getSupabase();
+    const { data } = await supabase.from('site_settings').select('key,value');
+    const settings = {};
+    (data || []).forEach(r => { settings[r.key] = r.value; });
+    return res.status(200).json({ settings });
+  }
+
+  // ── Custom products (GET) ──────────────────────────────────────
+  if (req.method === 'GET' && req.query.action === 'products') {
+    const isAdmin = req.query.pw === process.env.ADMIN_PASSWORD;
+    const supabase = getSupabase();
+    const { data } = await supabase.from('custom_products').select('*').order('created_at', { ascending: false });
+    let products = data || [];
+    if (!isAdmin) {
+      // Read hidden handles from site_settings
+      const { data: settRows } = await supabase.from('site_settings').select('value').eq('key', 'hidden_products').single();
+      const hiddenHandles = settRows ? JSON.parse(settRows.value || '[]') : [];
+      products = products.filter(p => !hiddenHandles.includes(p.handle));
+    }
+    return res.status(200).json({ products });
+  }
+
   if (req.method !== 'POST') return res.status(405).end();
 
   const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
   const { action, code, email: validateEmail } = req.body || {};
+
+  // ── Product update (admin) ───────────────────────────────────────
+  if (action === 'product-update') {
+    const { password, handle, in_stock, price, description, variant_qtys } = req.body || {};
+    if (password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
+    if (!handle) return res.status(400).json({ error: 'handle required' });
+    const supabase = getSupabase();
+    const update = { handle, updated_at: new Date().toISOString() };
+    if (typeof in_stock === 'boolean') update.in_stock = in_stock;
+    if (price !== undefined) update.price = price === '' ? null : parseFloat(price);
+    if (description !== undefined) update.description = description;
+    if (variant_qtys !== undefined) update.variant_qtys = variant_qtys;
+    await supabase.from('product_overrides').upsert(update);
+    return res.status(200).json({ ok: true });
+  }
+
+  // ── Create / update custom product (admin) ─────────────────────
+  if (action === 'create-product') {
+    const { password, handle, title, type, price, description, images, variants } = req.body || {};
+    if (password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
+    if (!handle || !title) return res.status(400).json({ error: 'handle and title required' });
+    const supabase = getSupabase();
+    const total_qty = (variants || []).reduce((s, v) => s + (parseInt(v.qty) || 0), 0);
+    await supabase.from('custom_products').upsert({
+      handle, title, type: type || '', price: parseFloat(price) || 0,
+      description: description || '', images: images || [], variants: variants || [],
+      total_qty, created_at: new Date().toISOString()
+    });
+    return res.status(200).json({ ok: true });
+  }
+
+  // ── Save site setting (admin) ──────────────────────────────────
+  if (action === 'save-setting') {
+    const { password, key, value } = req.body || {};
+    if (password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
+    if (!key) return res.status(400).json({ error: 'key required' });
+    const supabase = getSupabase();
+    await supabase.from('site_settings').upsert({ key, value, updated_at: new Date().toISOString() });
+    return res.status(200).json({ ok: true });
+  }
+
+  // ── Toggle product visibility (admin) ─────────────────────────
+  if (action === 'toggle-hidden') {
+    const { password, handle, hidden } = req.body || {};
+    if (password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
+    const supabase = getSupabase();
+    const { data: row } = await supabase.from('site_settings').select('value').eq('key', 'hidden_products').single();
+    let hiddenHandles = row ? JSON.parse(row.value || '[]') : [];
+    if (hidden) {
+      if (!hiddenHandles.includes(handle)) hiddenHandles.push(handle);
+    } else {
+      hiddenHandles = hiddenHandles.filter(h => h !== handle);
+    }
+    await supabase.from('site_settings').upsert({ key: 'hidden_products', value: JSON.stringify(hiddenHandles), updated_at: new Date().toISOString() });
+    return res.status(200).json({ ok: true });
+  }
+
+  // ── Delete custom product (admin) ──────────────────────────────
+  if (action === 'delete-product') {
+    const { password, handle } = req.body || {};
+    if (password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
+    const supabase = getSupabase();
+    await supabase.from('custom_products').delete().eq('handle', handle);
+    return res.status(200).json({ ok: true });
+  }
 
   if (action === 'validate') {
     if (!code || !validateEmail)
@@ -52,17 +185,34 @@ module.exports = async (req, res) => {
     return res.status(200).json({ valid: true, discount, promotion_code_id: promo.id, message });
   }
 
-  const { price_id, email, items, promotion_code_id, coupon_code, quantity } = req.body || {};
+  const { price_id, email, items, promotion_code_id, coupon_code, quantity, amount, product_name } = req.body || {};
   const normalizedCouponCode = coupon_code ? coupon_code.toUpperCase() : '';
   if (!email) return res.status(400).json({ error: 'email required' });
 
+  function dynamicLineItem(name, amt, qty) {
+    return {
+      price_data: {
+        currency: 'usd',
+        product_data: { name },
+        unit_amount: Math.round(parseFloat(amt) * 100),
+      },
+      quantity: Math.max(1, parseInt(qty) || 1),
+    };
+  }
+
   let line_items;
   if (items && Array.isArray(items) && items.length) {
-    line_items = items.map(i => ({ price: i.price_id, quantity: Math.max(1, parseInt(i.quantity) || 1) }));
+    line_items = items.map(i => {
+      if (i.price_id) return { price: i.price_id, quantity: Math.max(1, parseInt(i.quantity) || 1) };
+      if (i.price_data) return dynamicLineItem(i.price_data.name, i.price_data.amount, i.quantity);
+      return null;
+    }).filter(Boolean);
   } else if (price_id) {
     line_items = [{ price: price_id, quantity: Math.max(1, parseInt(quantity) || 1) }];
+  } else if (amount && product_name) {
+    line_items = [dynamicLineItem(product_name, amount, quantity)];
   } else {
-    return res.status(400).json({ error: 'price_id or items required' });
+    return res.status(400).json({ error: 'price_id, items, or amount+product_name required' });
   }
 
   const params = {
