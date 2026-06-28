@@ -210,18 +210,23 @@
 
   // ── Load ──────────────────────────────────────────────────────
   async function loadAll() {
-    const [prodRes, invRes, customRes] = await Promise.all([
-      fetch('/products.json'),
-      fetch('/api/checkout?action=inventory'),
-      fetch(`/api/checkout?action=products&pw=${encodeURIComponent(password)}`)
-    ]);
-    allProducts = await prodRes.json();
-    if (invRes.ok) { const d = await invRes.json(); overrides = d.inventory || {}; }
-    if (customRes.ok) { const d = await customRes.json(); customProducts = d.products || []; }
-    buildCatFilter();
-    renderList();
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('main').style.display = 'block';
+    try {
+      const [prodRes, invRes, customRes] = await Promise.all([
+        fetch('/products.json'),
+        fetch('/api/checkout?action=inventory'),
+        fetch(`/api/checkout?action=products&pw=${encodeURIComponent(password)}`)
+      ]);
+      if (prodRes.ok) allProducts = await prodRes.json();
+      if (invRes.ok) { const d = await invRes.json(); overrides = d.inventory || {}; }
+      if (customRes.ok) { const d = await customRes.json(); customProducts = d.products || []; }
+      buildCatFilter();
+      renderList();
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('main').style.display = 'block';
+    } catch(e) {
+      document.getElementById('login-err').textContent = 'Load failed: ' + e.message;
+      document.getElementById('login-err').style.display = 'block';
+    }
   }
 
   function buildCatFilter() {
@@ -589,7 +594,7 @@
   function copyProductUrl() {
     const handle = document.getElementById('ed-handle').value.trim();
     if (!handle) { alert('Enter a product name first'); return; }
-    const url = 'https://lypspace-homepage.vercel.app/product?h=' + handle;
+    const url = 'https://lypspace.digital/product?h=' + handle;
     navigator.clipboard.writeText(url).then(() => {
       const tip = document.getElementById('copy-tip');
       tip.style.display = 'block';
