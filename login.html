@@ -264,44 +264,44 @@
   <!-- LOGIN / REGISTER FORM -->
   <div class="wrap">
     <a href="/" class="back">← lypspace</a>
-    <h1>账户</h1>
+    <h1>Account</h1>
 
     <div class="tabs">
-      <button class="tab active" onclick="show('login')">登录</button>
-      <button class="tab" onclick="show('register')">注册</button>
+      <button class="tab active" onclick="show('login')">Sign in</button>
+      <button class="tab" onclick="show('register')">Register</button>
     </div>
 
     <form id="f-login" onsubmit="doLogin(event)">
       <div class="group">
-        <label>邮箱</label>
+        <label>Email</label>
         <input id="l-email" type="email" required placeholder="your@email.com">
       </div>
       <div class="group">
-        <label>密码</label>
+        <label>Password</label>
         <input id="l-pw" type="password" required placeholder="••••••••">
       </div>
-      <button type="submit" class="btn-submit">登录</button>
+      <button type="submit" class="btn-submit">Sign in</button>
       <div class="err" id="l-err"></div>
     </form>
 
     <form id="f-register" class="hidden" onsubmit="doRegister(event)">
       <div class="group">
-        <label>邮箱</label>
+        <label>Email</label>
         <input id="r-email" type="email" required placeholder="your@email.com">
       </div>
       <div class="group">
-        <label>密码（至少 8 位）</label>
+        <label>Password (min. 8 characters)</label>
         <input id="r-pw" type="password" required minlength="8" placeholder="••••••••">
       </div>
       <div class="group">
-        <label>确认密码</label>
+        <label>Confirm password</label>
         <input id="r-pw2" type="password" required placeholder="••••••••">
       </div>
-      <button type="submit" class="btn-submit">注册</button>
+      <button type="submit" class="btn-submit">Create account</button>
       <div class="err" id="r-err"></div>
     </form>
 
-    <div class="divider">或</div>
+    <div class="divider">or</div>
 
     <a href="/api/auth/google" class="btn-google">
       <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
@@ -310,7 +310,7 @@
         <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
         <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
       </svg>
-      用 Google 账号继续
+      Continue with Google
     </a>
 
     <div class="err" id="g-err"></div>
@@ -323,6 +323,7 @@
     </div>
   </footer>
 
+  <script src="/js/i18n.js"></script>
   <script>
     // Redirect to dashboard if already logged in
     fetch('/api/auth/me').then(r => { if (r.ok) location.href = '/dashboard'; });
@@ -332,7 +333,7 @@
       const params = new URLSearchParams(window.location.search);
       if (params.get('error') === 'google_failed') {
         const el = document.getElementById('g-err');
-        el.textContent = 'Google 登录失败，请重试';
+        el.textContent = 'Google sign-in failed, please try again';
         el.style.display = 'block';
       }
     })();
@@ -358,7 +359,7 @@
         }),
       });
       if (r.ok) { location.href = '/dashboard'; return; }
-      err.textContent = (await r.json()).error || '登录失败';
+      err.textContent = (await r.json()).error || 'Sign-in failed';
       err.style.display = 'block';
     }
 
@@ -368,7 +369,7 @@
       err.style.display = 'none';
       const pw = document.getElementById('r-pw').value;
       if (pw !== document.getElementById('r-pw2').value) {
-        err.textContent = '两次密码不一致';
+        err.textContent = 'Passwords do not match';
         err.style.display = 'block';
         return;
       }
@@ -381,7 +382,7 @@
         }),
       });
       if (r.ok) { location.href = '/dashboard'; return; }
-      err.textContent = (await r.json()).error || '注册失败';
+      err.textContent = (await r.json()).error || 'Registration failed';
       err.style.display = 'block';
     }
   </script>

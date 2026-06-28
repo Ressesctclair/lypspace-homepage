@@ -220,39 +220,41 @@
     <nav>
       <a href="/">Home</a>
       <a href="/catalog">Catalog</a>
-      <a href="/orders">订单</a>
-      <a href="/profile">地址</a>
-      <button onclick="logout()">退出登录</button>
+      <a href="/orders" data-i18n="nav_orders">Orders</a>
+      <a href="/profile" data-i18n="nav_addresses">Addresses</a>
+      <button onclick="logout()" data-i18n="nav_signout">Sign out</button>
     </nav>
+    <div class="header-icons"></div>
   </header>
 
   <!-- CONTENT -->
   <div class="wrap">
-    <h1 id="welcome">你好</h1>
+    <h1 id="welcome">Hello</h1>
     <p class="sub" id="useremail"></p>
 
     <div class="sec">
-      <div class="sec-title">最近订单</div>
-      <div id="orders-list"><p class="empty">加载中…</p></div>
-      <a href="/orders" class="view-all">查看全部</a>
+      <div class="sec-title" data-i18n="dash_recent_orders">Recent orders</div>
+      <div id="orders-list"><p class="empty" data-i18n="dash_loading">Loading…</p></div>
+      <a href="/orders" class="view-all" data-i18n="dash_view_all">View all</a>
     </div>
 
     <div class="sec">
-      <div class="sec-title">默认收货地址</div>
-      <div id="addr-box"><p class="empty">加载中…</p></div>
+      <div class="sec-title" data-i18n="dash_default_addr">Default shipping address</div>
+      <div id="addr-box"><p class="empty" data-i18n="dash_loading">Loading…</p></div>
     </div>
 
     <div class="sec">
-      <div class="sec-title">快捷入口</div>
+      <div class="sec-title" data-i18n="dash_quick_links">Quick links</div>
       <div class="links">
-        <a href="/orders" class="link-btn">订单历史</a>
-        <a href="/profile" class="link-btn">地址管理</a>
-        <a id="admin-link" href="/admin" class="link-btn" style="display:none;">管理后台</a>
-        <button class="link-btn" style="border: 1px solid var(--border); background: var(--white); cursor: pointer; font-family: var(--font);" onclick="logout()">退出登录</button>
+        <a href="/orders" class="link-btn" data-i18n="dash_order_history">Order history</a>
+        <a href="/profile" class="link-btn" data-i18n="dash_manage_addr">Manage addresses</a>
+        <a id="admin-link" href="/admin" class="link-btn" style="display:none;" data-i18n="dash_admin_panel">Admin panel</a>
+        <button class="link-btn" style="border: 1px solid var(--border); background: var(--white); cursor: pointer; font-family: var(--font);" onclick="logout()" data-i18n="nav_signout">Sign out</button>
       </div>
     </div>
   </div>
 
+  <script src="/js/i18n.js"></script>
   <script>
     function esc(s) {
       return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -268,8 +270,8 @@
       const { user } = await mr.json();
 
       document.getElementById('welcome').innerHTML =
-        '你好，' + esc(user.name || user.email.split('@')[0]) +
-        (user.is_member ? ' <span class="badge">会员</span>' : '');
+        (window.i18n ? window.i18n.t('dash_welcome') : 'Hello') + ', ' + esc(user.name || user.email.split('@')[0]) +
+        (user.is_member ? ' <span class="badge" data-i18n="dash_member">' + (window.i18n ? window.i18n.t('dash_member') : 'Member') + '</span>' : '');
       document.getElementById('useremail').textContent = user.email;
 
       if (user.is_admin) {
@@ -281,18 +283,18 @@
       const { orders } = await or.json();
       const ol = document.getElementById('orders-list');
       if (!orders || !orders.length) {
-        ol.innerHTML = '<p class="empty">暂无订单记录</p>';
+        ol.innerHTML = '<p class="empty">' + (window.i18n ? window.i18n.t('dash_no_orders') : 'No orders yet') + '</p>';
       } else {
         ol.innerHTML = orders.slice(0, 3).map(o => `
           <div class="card">
             <div class="row">
               <div>
-                <div class="date">${new Date(o.date).toLocaleDateString('zh-CN')}</div>
+                <div class="date">${new Date(o.date).toLocaleDateString()}</div>
                 <div class="item-name">${esc(o.items.map(i => i.name).join(', '))}</div>
               </div>
               <div style="text-align: right;">
                 <div class="amt">¥${(o.amount / 100).toFixed(2)}</div>
-                <span class="chip ${o.status === 'shipped' ? 'shipped' : 'processing'}">${o.status === 'shipped' ? '已发货' : '处理中'}</span>
+                <span class="chip ${o.status === 'shipped' ? 'shipped' : 'processing'}">${o.status === 'shipped' ? (window.i18n ? window.i18n.t('status_shipped') : 'Shipped') : (window.i18n ? window.i18n.t('status_processing') : 'Processing')}</span>
               </div>
             </div>
           </div>`).join('');
@@ -306,7 +308,7 @@
       if (def) {
         addrBox.innerHTML = `<div class="addr">${esc(def.name)}<br>${esc(def.street)}<br>${esc(def.city)} ${esc(def.postal_code)}<br>${esc(def.country)}</div>`;
       } else {
-        addrBox.innerHTML = '<p class="empty">暂无默认地址 · 前往地址管理添加</p>';
+        addrBox.innerHTML = '<p class="empty">' + (window.i18n ? window.i18n.t('dash_no_addr') : 'No default address · Add one in address manager') + '</p>';
       }
     }
 

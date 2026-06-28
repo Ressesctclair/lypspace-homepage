@@ -226,78 +226,80 @@
     <nav>
       <a href="/">Home</a>
       <a href="/catalog">Catalog</a>
-      <a href="/dashboard">账户</a>
-      <a href="/orders">订单</a>
-      <button onclick="logout()">退出登录</button>
+      <a href="/dashboard" data-i18n="nav_account">Account</a>
+      <a href="/orders" data-i18n="nav_orders">Orders</a>
+      <button onclick="logout()" data-i18n="nav_signout">Sign out</button>
     </nav>
+    <div class="header-icons"></div>
   </header>
 
   <!-- CONTENT -->
   <div class="wrap">
-    <h1>地址管理</h1>
+    <h1 data-i18n="prof_title">Address management</h1>
 
     <!-- Saved Addresses -->
     <div class="sec">
-      <div class="sec-title">已保存的地址</div>
-      <div id="addr-list"><p class="empty">加载中…</p></div>
+      <div class="sec-title" data-i18n="prof_saved">Saved addresses</div>
+      <div id="addr-list"><p class="empty" data-i18n="dash_loading">Loading…</p></div>
     </div>
 
     <!-- Add Address Form -->
     <div class="sec">
-      <div class="sec-title">新增地址</div>
+      <div class="sec-title" data-i18n="prof_add_new">Add new address</div>
       <form onsubmit="addAddr(event)">
         <div class="group">
-          <label>姓名</label>
+          <label data-i18n="prof_name">Full name</label>
           <input id="a-name" type="text" required>
         </div>
         <div class="group">
-          <label>街道地址</label>
+          <label data-i18n="prof_street">Street address</label>
           <input id="a-street" type="text" required>
         </div>
         <div class="group">
-          <label>城市</label>
+          <label data-i18n="prof_city">City</label>
           <input id="a-city" type="text" required>
         </div>
         <div class="group">
-          <label>邮政编码</label>
+          <label data-i18n="prof_postal">Postal code</label>
           <input id="a-postal" type="text" required>
         </div>
         <div class="group">
-          <label>国家</label>
+          <label data-i18n="prof_country">Country</label>
           <input id="a-country" type="text" required>
         </div>
         <div class="group">
           <label class="chk">
-            <input id="a-def" type="checkbox"> 设为默认地址
+            <input id="a-def" type="checkbox"> <span data-i18n="prof_is_default">Set as default</span>
           </label>
         </div>
-        <button type="submit" class="btn-submit">保存地址</button>
+        <button type="submit" class="btn-submit" data-i18n="prof_save">Save address</button>
         <div class="msg" id="add-msg"></div>
       </form>
     </div>
 
     <!-- Change Password (hidden for Google-only accounts) -->
     <div class="sec" id="pw-sec" style="display: none;">
-      <div class="sec-title">修改密码</div>
+      <div class="sec-title" data-i18n="prof_change_pw">Change password</div>
       <form onsubmit="changePw(event)">
         <div class="group">
-          <label>当前密码</label>
+          <label data-i18n="prof_cur_pw">Current password</label>
           <input id="pw-cur" type="password" required>
         </div>
         <div class="group">
-          <label>新密码（至少 8 位）</label>
+          <label data-i18n="prof_new_pw">New password (min. 8 characters)</label>
           <input id="pw-new" type="password" required minlength="8">
         </div>
         <div class="group">
-          <label>确认新密码</label>
+          <label data-i18n="prof_confirm_pw">Confirm new password</label>
           <input id="pw-new2" type="password" required>
         </div>
-        <button type="submit" class="btn-submit">更新密码</button>
+        <button type="submit" class="btn-submit" data-i18n="prof_update_pw">Update password</button>
         <div class="msg" id="pw-msg"></div>
       </form>
     </div>
   </div>
 
+  <script src="/js/i18n.js"></script>
   <script>
     function esc(s) {
       return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -319,7 +321,7 @@
     function render() {
       const el = document.getElementById('addr-list');
       if (!addrs.length) {
-        el.innerHTML = '<p class="empty">暂无地址</p>';
+        el.innerHTML = '<p class="empty">' + (window.i18n ? window.i18n.t('prof_no_addr') : 'No addresses saved') + '</p>';
         return;
       }
       el.innerHTML = addrs.map(a => `
@@ -329,11 +331,11 @@
             ${esc(a.street)}<br>
             ${esc(a.city)} ${esc(a.postal_code)}<br>
             ${esc(a.country)}
-            ${a.is_default ? '<br><span class="def-badge">默认</span>' : ''}
+            ${a.is_default ? '<br><span class="def-badge">' + (window.i18n ? window.i18n.t('prof_default') : 'Default') + '</span>' : ''}
           </div>
           <div class="addr-actions">
-            ${!a.is_default ? `<button class="sm" onclick="setDef('${esc(a.id)}')">设为默认</button>` : ''}
-            <button class="sm del" onclick="del('${esc(a.id)}')">删除</button>
+            ${!a.is_default ? `<button class="sm" onclick="setDef('${esc(a.id)}')">${window.i18n ? window.i18n.t('prof_set_default') : 'Set as default'}</button>` : ''}
+            <button class="sm del" onclick="del('${esc(a.id)}')">${window.i18n ? window.i18n.t('prof_delete') : 'Delete'}</button>
           </div>
         </div>`).join('');
     }
@@ -348,7 +350,7 @@
     }
 
     async function del(id) {
-      if (!confirm('确定删除？')) return;
+      if (!confirm(window.i18n ? window.i18n.t('prof_delete_confirm') : 'Delete this address?')) return;
       await fetch(`/api/user/orders?resource=addresses&id=${encodeURIComponent(id)}`, { method: 'DELETE' });
       await load();
     }
@@ -371,12 +373,12 @@
       });
       if (r.ok) {
         e.target.reset();
-        msg.textContent = '地址已保存';
+        msg.textContent = (window.i18n ? window.i18n.t('prof_saved_ok') : 'Address saved');
         msg.className = 'msg ok';
         msg.style.display = 'block';
         await load();
       } else {
-        msg.textContent = (await r.json()).error || '保存失败';
+        msg.textContent = (await r.json()).error || (window.i18n ? window.i18n.t('prof_save_err') : 'Save failed');
         msg.className = 'msg err';
         msg.style.display = 'block';
       }
@@ -388,7 +390,7 @@
       msg.style.display = 'none';
       const np = document.getElementById('pw-new').value;
       if (np !== document.getElementById('pw-new2').value) {
-        msg.textContent = '两次密码不一致';
+        msg.textContent = (window.i18n ? window.i18n.t('prof_pw_mismatch') : 'Passwords do not match');
         msg.className = 'msg err';
         msg.style.display = 'block';
         return;
@@ -403,10 +405,10 @@
       });
       if (r.ok) {
         e.target.reset();
-        msg.textContent = '密码已更新';
+        msg.textContent = (window.i18n ? window.i18n.t('prof_pw_updated') : 'Password updated');
         msg.className = 'msg ok';
       } else {
-        msg.textContent = (await r.json()).error || '修改失败';
+        msg.textContent = (await r.json()).error || (window.i18n ? window.i18n.t('prof_pw_err') : 'Update failed');
         msg.className = 'msg err';
       }
       msg.style.display = 'block';

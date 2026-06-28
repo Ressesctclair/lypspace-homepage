@@ -163,18 +163,20 @@
     <nav>
       <a href="/">Home</a>
       <a href="/catalog">Catalog</a>
-      <a href="/dashboard">账户</a>
-      <a href="/profile">地址</a>
-      <button onclick="logout()">退出登录</button>
+      <a href="/dashboard" data-i18n="nav_account">Account</a>
+      <a href="/profile" data-i18n="nav_addresses">Addresses</a>
+      <button onclick="logout()" data-i18n="nav_signout">Sign out</button>
     </nav>
+    <div class="header-icons"></div>
   </header>
 
   <!-- CONTENT -->
   <div class="wrap">
-    <h1>订单历史</h1>
-    <div id="list"><p class="empty">加载中…</p></div>
+    <h1 data-i18n="orders_title">Order history</h1>
+    <div id="list"><p class="empty" data-i18n="dash_loading">Loading…</p></div>
   </div>
 
+  <script src="/js/i18n.js"></script>
   <script>
     function esc(s) {
       return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -194,21 +196,21 @@
       const el = document.getElementById('list');
 
       if (!orders || !orders.length) {
-        el.innerHTML = '<p class="empty">暂无订单记录</p>';
+        el.innerHTML = '<p class="empty">' + (window.i18n ? window.i18n.t('orders_no_orders') : 'No orders yet') + '</p>';
         return;
       }
 
       el.innerHTML = orders.map(o => `
         <div class="card">
           <div class="top">
-            <div class="date">${new Date(o.date).toLocaleDateString('zh-CN')}</div>
+            <div class="date">${new Date(o.date).toLocaleDateString()}</div>
             <div class="right">
               <div class="amt">¥${(o.amount / 100).toFixed(2)}</div>
-              <span class="chip ${o.status === 'shipped' ? 'shipped' : 'processing'}">${o.status === 'shipped' ? '已发货' : '处理中'}</span>
+              <span class="chip ${o.status === 'shipped' ? 'shipped' : 'processing'}">${o.status === 'shipped' ? (window.i18n ? window.i18n.t('status_shipped') : 'Shipped') : (window.i18n ? window.i18n.t('status_processing') : 'Processing')}</span>
             </div>
           </div>
           <div class="items">${esc(o.items.map(i => i.name + (i.quantity > 1 ? ' × ' + i.quantity : '')).join(' · '))}</div>
-          ${o.tracking ? `<div class="tracking">快递：${esc(o.tracking.carrier)} &nbsp;·&nbsp; 单号：${esc(o.tracking.number)}</div>` : ''}
+          ${o.tracking ? `<div class="tracking">${window.i18n ? window.i18n.t('orders_tracking') : 'Tracking'}: ${esc(o.tracking.carrier)} &nbsp;·&nbsp; ${esc(o.tracking.number)}</div>` : ''}
         </div>`).join('');
     }
 
