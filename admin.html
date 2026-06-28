@@ -59,6 +59,60 @@
       a.click();
     }
     </script>
+
+    <!-- Admin account management -->
+    <div style="margin-bottom:32px;padding:20px;background:#f9f9f9;border:1px solid #eee;">
+      <h2 style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;">管理员账号</h2>
+      <p style="font-size:12px;color:#666;margin-bottom:12px;">拥有管理员权限的邮箱（登录后台台面板会显示"管理后台"按钮）</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+        <div>
+          <label style="display:block;font-size:11px;color:#888;margin-bottom:4px;">管理员密码</label>
+          <input type="password" id="admin-mgmt-pw" placeholder="••••••••" style="padding:9px 12px;border:1px solid #e0e0e0;font-size:13px;width:160px;">
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:#888;margin-bottom:4px;">新增管理员邮箱</label>
+          <input type="email" id="new-admin-email" placeholder="new@example.com" style="padding:9px 12px;border:1px solid #e0e0e0;font-size:13px;width:220px;">
+        </div>
+        <button onclick="addAdminEmail()" style="padding:9px 18px;background:#111;color:#fff;border:none;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;">添加</button>
+      </div>
+      <div id="admin-emails-list" style="margin-top:12px;font-size:12px;color:#444;"></div>
+      <div id="admin-mgmt-msg" style="margin-top:8px;font-size:12px;"></div>
+    </div>
+    <script>
+    (async function loadAdminEmails() {
+      const r = await fetch('/api/checkout?action=settings');
+      const { settings } = await r.json();
+      const emails = JSON.parse(settings.admin_emails || '[]');
+      const builtin = ['imlorennn888@gmail.com', 'support@lypspace.digital'];
+      const all = [...new Set([...builtin, ...emails])];
+      document.getElementById('admin-emails-list').innerHTML =
+        '<strong style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#888;">当前管理员：</strong> ' +
+        all.map(e => '<span style="display:inline-block;padding:2px 10px;background:#111;color:#fff;font-size:11px;margin:2px 4px 2px 0;">' + e + '</span>').join('');
+    })();
+
+    async function addAdminEmail() {
+      const pw = document.getElementById('admin-mgmt-pw').value.trim();
+      const email = document.getElementById('new-admin-email').value.trim();
+      const msg = document.getElementById('admin-mgmt-msg');
+      if (!pw || !email) { msg.textContent = '请填写密码和邮箱'; msg.style.color = '#c00'; return; }
+      const sr = await fetch('/api/checkout?action=settings');
+      const { settings } = await sr.json();
+      const current = JSON.parse(settings.admin_emails || '[]');
+      if (current.includes(email)) { msg.textContent = '该邮箱已是管理员'; msg.style.color = '#888'; return; }
+      current.push(email);
+      const r = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save-setting', password: pw, key: 'admin_emails', value: JSON.stringify(current) }),
+      });
+      if (!r.ok || !(await r.json()).ok) { msg.textContent = '密码错误或保存失败'; msg.style.color = '#c00'; return; }
+      msg.textContent = '✓ 已添加 ' + email;
+      msg.style.color = '#1a7f37';
+      document.getElementById('new-admin-email').value = '';
+      loadAdminEmails();
+    }
+    </script>
+
     <h1>发货通知</h1>
     <form id="form">
       <label>管理员密码</label>

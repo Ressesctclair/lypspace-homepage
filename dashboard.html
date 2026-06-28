@@ -272,7 +272,7 @@
         (user.is_member ? ' <span class="badge">会员</span>' : '');
       document.getElementById('useremail').textContent = user.email;
 
-      if (user.email === 'imlorennn888@gmail.com') {
+      if (user.is_admin) {
         document.getElementById('admin-link').style.display = 'inline-block';
       }
 

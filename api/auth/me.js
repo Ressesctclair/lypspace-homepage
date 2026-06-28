@@ -34,13 +34,18 @@ module.exports = async (req, res) => {
   if (req.method !== 'GET') return res.status(405).end();
 
   const supabase = getSupabase();
-  const { data: user } = await supabase
-    .from('users')
-    .select('id, email, is_member, name, password_hash')
-    .eq('id', payload.userId)
-    .single();
+  const [{ data: user }, { data: adminSetting }] = await Promise.all([
+    supabase.from('users').select('id, email, is_member, name, password_hash').eq('id', payload.userId).single(),
+    supabase.from('site_settings').select('value').eq('key', 'admin_emails').single(),
+  ]);
 
   if (!user) return res.status(401).json({ error: 'unauthenticated' });
+
+  const adminEmails = ['imlorennn888@gmail.com', 'support@lypspace.digital'];
+  if (adminSetting?.value) {
+    try { adminEmails.push(...JSON.parse(adminSetting.value)); } catch (_) {}
+  }
+  const is_admin = adminEmails.includes(user.email);
 
   res.setHeader('Cache-Control', 'no-store');
   return res.status(200).json({
@@ -48,6 +53,7 @@ module.exports = async (req, res) => {
       id: user.id,
       email: user.email,
       is_member: user.is_member,
+      is_admin,
       name: user.name,
       hasPassword: !!user.password_hash,
     },
