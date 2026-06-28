@@ -4,22 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contact — LYP SPACE</title>
-  <script src="/js/i18n.js"></script>
-  <script src="/js/cart.js"></script>
+  <script src="/js/i18n.js" defer></script>
+  <script src="/js/cart.js" defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --black: #111111; --white: #ffffff; --gray: #6b6b6b;
-      --light-gray: #f5f5f5; --border: #e0e0e0;
+      --black: #111111; --white: #ffffff; --bg: #f5f0e6; --gray: #6b6b6b;
+      --light-gray: #ede8da; --border: #ddd8cc;
       --font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
-    body { font-family: var(--font); background: var(--white); color: var(--black); font-size: 14px; line-height: 1.6; }
+    body { font-family: var(--font); background: var(--bg); color: var(--black); font-size: 14px; line-height: 1.6; }
     a { color: inherit; text-decoration: none; }
     a:hover { text-decoration: underline; }
 
     header {
       position: sticky; top: 0; z-index: 100;
-      background: var(--white); border-bottom: 1px solid var(--border);
+      background: var(--bg); border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 40px; height: 60px;
     }
@@ -27,7 +27,16 @@
     nav { display: flex; gap: 36px; }
     nav a { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--black); }
     .header-icons { display: flex; align-items: center; gap: 20px; }
-    .header-icons a { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .header-icons a { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+    .search-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; color: var(--black); }
+    .search-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    #search-overlay { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,.5); align-items: flex-start; justify-content: center; padding-top: 80px; }
+    #search-overlay.open { display: flex; }
+    #search-box { background: var(--white); width: 100%; max-width: 560px; margin: 0 20px; border-radius: 2px; display: flex; align-items: center; padding: 0 16px; height: 52px; box-shadow: 0 8px 32px rgba(0,0,0,.12); }
+    #search-box svg { width: 18px; height: 18px; stroke: var(--gray); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    #search-input { flex: 1; border: none; outline: none; font-size: 15px; font-family: var(--font); padding: 0 12px; background: transparent; color: var(--black); }
+    #search-input::placeholder { color: var(--gray); }
+    #search-close { background: none; border: none; cursor: pointer; padding: 4px; color: var(--gray); font-size: 20px; line-height: 1; }
 
     .wrap {
       max-width: 600px;
@@ -67,16 +76,32 @@
       <a href="/contact" data-i18n="nav_contact">Contact</a>
     </nav>
     <div class="header-icons">
+      <button class="search-btn" onclick="openSearch()" aria-label="Search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
       <a href="/login">Sign in</a>
     </div>
   </header>
+
+  <!-- SEARCH OVERLAY -->
+  <div id="search-overlay" onclick="closeSearch(event)">
+    <div id="search-box">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search-input" type="text" placeholder="Search products…" autocomplete="off" onkeydown="handleSearchKey(event)">
+      <button id="search-close" onclick="closeSearch()" aria-label="Close">&#x2715;</button>
+    </div>
+  </div>
 
   <div class="wrap">
     <h1 data-i18n="nav_contact">Contact</h1>
 
     <div class="contact-block">
       <h2>Email</h2>
-      <p>For orders, shipping questions, or general inquiries:<br>
+      <p>For orders, shipping questions, or general inquiries:</p>
+      <p style="margin-top:10px;">Company email:<br>
+        <a href="mailto:support@lypspace.digital">support@lypspace.digital</a>
+      </p>
+      <p style="margin-top:10px;">Live agent email:<br>
         <a href="mailto:imlorennn888@gmail.com">imlorennn888@gmail.com</a>
       </p>
     </div>
@@ -98,5 +123,25 @@
 
   <footer>&copy; 2026 LYP SPACE</footer>
 
+  <script>
+    function openSearch() {
+      document.getElementById('search-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => document.getElementById('search-input').focus(), 50);
+    }
+    function closeSearch(e) {
+      if (e && e.target !== document.getElementById('search-overlay')) return;
+      document.getElementById('search-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+      document.getElementById('search-input').value = '';
+    }
+    function handleSearchKey(e) {
+      if (e.key === 'Escape') { closeSearch(); return; }
+      if (e.key === 'Enter') {
+        const q = document.getElementById('search-input').value.trim();
+        if (q) location.href = '/catalog?q=' + encodeURIComponent(q);
+      }
+    }
+  </script>
 </body>
 </html>

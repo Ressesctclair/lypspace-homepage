@@ -10,15 +10,16 @@
     :root {
       --black: #111111;
       --white: #ffffff;
+      --bg: #f5f0e6;
       --gray: #6b6b6b;
-      --light-gray: #f5f5f5;
-      --border: #e0e0e0;
+      --light-gray: #ede8da;
+      --border: #ddd8cc;
       --font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
 
     body {
       font-family: var(--font);
-      background: var(--white);
+      background: var(--bg);
       color: var(--black);
       font-size: 14px;
       line-height: 1.6;
@@ -32,7 +33,7 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      background: var(--white);
+      background: var(--bg);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
@@ -75,6 +76,91 @@
       text-transform: uppercase;
       color: var(--black);
       font-family: var(--font);
+      white-space: nowrap;
+    }
+
+    .search-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      color: var(--black);
+    }
+
+    .search-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    #search-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      background: rgba(0,0,0,.5);
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 80px;
+    }
+
+    #search-overlay.open {
+      display: flex;
+    }
+
+    #search-box {
+      background: var(--white);
+      width: 100%;
+      max-width: 560px;
+      margin: 0 20px;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      height: 52px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.12);
+    }
+
+    #search-box svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--gray);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    #search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 15px;
+      font-family: var(--font);
+      padding: 0 12px;
+      background: transparent;
+      color: var(--black);
+    }
+
+    #search-input::placeholder {
+      color: var(--gray);
+    }
+
+    #search-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: var(--gray);
+      font-size: 20px;
+      line-height: 1;
     }
 
     .cart-count {
@@ -82,31 +168,120 @@
       color: var(--gray);
     }
 
-    /* ── HERO BANNER ─────────────────────────────────────── */
-    .hero {
-      width: 100%;
-      aspect-ratio: 16 / 7;
-      background: var(--light-gray);
+    /* ── BANNER ROW (hero + deck side by side) ───────────── */
+    .banner-row {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
+      gap: 20px;
+      padding: 32px 40px 0;
+      align-items: flex-start;
+      background: var(--bg);
     }
 
-    .hero-placeholder {
+    /* ── HERO BANNER ─────────────────────────────────────── */
+    .hero-section {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .hero {
+      width: 100%;
+      aspect-ratio: 2000 / 1041;
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+
+    /* ── CARD GALLERY (click to cycle) ──────────────────── */
+    .deck-section {
+      flex: 1;
+      min-width: 0;
+      position: relative;
+    }
+
+    .deck-stage {
+      width: 100%;
+      aspect-ratio: 2000 / 1041;
+      overflow: hidden;
+      border-radius: 16px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .deck-card {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+    }
+
+    .deck-card.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .deck-card img {
       width: 100%;
       height: 100%;
-      background: linear-gradient(135deg, #e8e8e8 0%, #d0d0d0 100%);
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+    }
+
+    .deck-dots {
       display: flex;
-      align-items: center;
       justify-content: center;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .deck-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ccc;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      transition: background 0.3s;
+    }
+
+    .deck-dot.active { background: var(--black); }
+
+    @media (max-width: 768px) {
+      .banner-row { flex-direction: column; padding: 16px 16px 0; gap: 16px; align-items: stretch; }
+      .hero-section { position: static; width: 100%; }
+      .deck-section { width: 100%; }
+      .hero { aspect-ratio: 4 / 3; border-radius: 12px; }
+      .deck-stage { aspect-ratio: 4 / 3; border-radius: 12px; }
+    }
+
+    .hero-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
     }
 
     .hero-cta {
       position: absolute;
-      bottom: 48px;
-      left: 48px;
+      bottom: 40px;
+      left: 40px;
+    }
+
+    .deck-card .hero-cta .btn,
+    .hero-section .hero-cta .btn {
+      background: transparent;
+      color: var(--white);
+      border-color: var(--white);
+    }
+
+    .deck-card .hero-cta .btn:hover,
+    .hero-section .hero-cta .btn:hover {
+      background: var(--white);
+      color: var(--black);
     }
 
     .btn {
@@ -140,7 +315,7 @@
 
     /* ── FEATURED PRODUCTS ───────────────────────────────── */
     .section {
-      padding: 72px 40px;
+      padding: 32px 40px;
     }
 
     .section-title {
@@ -153,32 +328,45 @@
 
     .product-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 24px;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
     }
 
     .product-card {
       cursor: pointer;
+    }
+    a.product-card {
+      text-decoration: none;
+      color: inherit;
+      display: block;
     }
 
     .product-image {
       width: 100%;
       aspect-ratio: 3 / 4;
       background: var(--light-gray);
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       overflow: hidden;
       position: relative;
+      cursor: grab;
+    }
+
+    .product-image img {
+      width: 100%;
+      height: auto;
+      display: block;
+      position: absolute;
+      left: 0;
+      top: 0;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
     }
 
     .product-image-inner {
       width: 100%;
       height: 100%;
       background: linear-gradient(160deg, #ececec 0%, #d8d8d8 100%);
-      transition: transform 0.4s ease;
-    }
-
-    .product-card:hover .product-image-inner {
-      transform: scale(1.03);
     }
 
     .product-name {
@@ -195,7 +383,7 @@
     /* ── BANNER WITH CTA ─────────────────────────────────── */
     .banner {
       width: 100%;
-      aspect-ratio: 16 / 6;
+      aspect-ratio: 16 / 5;
       background: var(--light-gray);
       position: relative;
       overflow: hidden;
@@ -206,19 +394,29 @@
     .banner-bg {
       position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, #e0e0e0 0%, #c8c8c8 100%);
+    }
+
+    .banner-bg img {
+      width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block;
+    }
+
+    .banner-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.45) 0%, rgba(0,0,0,.1) 55%, transparent 100%);
     }
 
     .banner-content {
       position: relative;
-      padding: 48px;
+      padding: 36px 40px;
     }
 
     .banner-content h2 {
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 400;
       letter-spacing: 0.04em;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+      color: #fff;
     }
 
     .banner-split {
@@ -228,7 +426,7 @@
     }
 
     .banner-half {
-      aspect-ratio: 8 / 6;
+      aspect-ratio: 8 / 5;
       background: var(--light-gray);
       position: relative;
       overflow: hidden;
@@ -241,24 +439,21 @@
       inset: 0;
     }
 
-    .banner-half:first-child .banner-half-bg {
-      background: linear-gradient(135deg, #e4e4e4 0%, #d0d0d0 100%);
-    }
-
-    .banner-half:last-child .banner-half-bg {
-      background: linear-gradient(135deg, #d8d8d8 0%, #c4c4c4 100%);
+    .banner-half-bg img {
+      width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block;
     }
 
     .banner-half-content {
       position: relative;
-      padding: 40px;
+      padding: 28px 32px;
     }
 
     .banner-half-content h3 {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 400;
       letter-spacing: 0.04em;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
+      color: #fff;
     }
 
     /* ── BRAND VALUES ────────────────────────────────────── */
@@ -556,25 +751,33 @@
     #mobile-drawer-panel a:hover { background: var(--light-gray); text-decoration: none; }
 
     /* ── RESPONSIVE ──────────────────────────────────────── */
+    @media (max-width: 1100px) {
+      .product-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
     @media (max-width: 768px) {
       header { padding: 0 16px; justify-content: space-between; }
       nav { display: none; }
       .mobile-menu-btn { display: flex; }
       .header-icons { gap: 12px; }
       .i18n-wrap { display: none !important; }
-      .section { padding: 48px 20px; }
-      .product-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+      .section { padding: 32px 20px; }
+      .product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
       .values-grid { grid-template-columns: 1fr; gap: 32px; }
       .brand-pillars { grid-template-columns: 1fr; }
       .pillar:nth-child(odd) { border-right: none; }
       .banner-split { grid-template-columns: 1fr; }
       .footer-top { grid-template-columns: 1fr; }
-      .banner-content { padding: 24px; }
+      .banner-content { padding: 20px 24px; }
+      .banner-half-content { padding: 20px 24px; }
+      .banner { aspect-ratio: 4/3; }
+      .banner #banner-dresses { object-fit: contain; object-position: center; }
+      .banner-half { aspect-ratio: 4/3; }
       .banner-content h2 { font-size: 20px; }
     }
   </style>
-  <script src="/js/i18n.js"></script>
-  <script src="/js/cart.js"></script>
+  <script src="/js/i18n.js" defer></script>
+  <script src="/js/cart.js" defer></script>
 </head>
 <body>
 
@@ -608,6 +811,9 @@
       <a href="/contact" data-i18n="nav_contact">Contact</a>
     </nav>
     <div class="header-icons">
+      <button class="search-btn" onclick="openSearch()" aria-label="Search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
       <button class="mobile-menu-btn" onclick="openDrawer()" aria-label="Menu">
         <span></span><span></span><span></span>
       </button>
@@ -615,72 +821,234 @@
     </div>
   </header>
 
-  <!-- HERO BANNER -->
-  <div class="hero">
-    <div class="hero-placeholder"></div>
-    <div class="hero-cta">
-      <a href="/catalog" class="btn" data-i18n="hero_cta">Shop all</a>
+  <!-- SEARCH OVERLAY -->
+  <div id="search-overlay" onclick="closeSearch(event)">
+    <div id="search-box">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search-input" type="text" placeholder="Search products…" autocomplete="off" onkeydown="handleSearchKey(event)">
+      <button id="search-close" onclick="closeSearch()" aria-label="Close">&#x2715;</button>
     </div>
   </div>
 
-  <!-- FEATURED PRODUCTS -->
+  <!-- BANNER ROW: hero left + deck right -->
+  <div class="banner-row">
+    <section class="hero-section">
+      <div class="hero">
+        <img id="img-hero" class="hero-img" src="https://res.cloudinary.com/dhsgdejtf/image/upload/v1782581150/lyp-space/site/hero-banner.png" alt="Dive into the Collection">
+        <div class="hero-cta">
+          <a href="/catalog" class="btn" data-i18n="hero_cta">Shop all</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CARD STACK GALLERY -->
+    <div class="deck-section">
+      <div class="deck-stage" onclick="deckNext()">
+        <div class="deck-card active">
+          <img id="img-deck1" src="https://res.cloudinary.com/dhsgdejtf/image/upload/v1782581140/lyp-space/site/banner-2.png" alt="Welcome to LYP">
+          <div class="hero-cta"><a href="/catalog" class="btn">Shop all</a></div>
+        </div>
+        <div class="deck-card">
+          <img id="img-deck2" src="https://res.cloudinary.com/dhsgdejtf/image/upload/v1782581143/lyp-space/site/banner-1.png" alt="LORENYALE &amp; SHOP">
+          <div class="hero-cta"><a href="/catalog" class="btn">Shop all</a></div>
+        </div>
+        <div class="deck-card">
+          <img id="img-deck3" src="https://res.cloudinary.com/dhsgdejtf/image/upload/v1782581140/lyp-space/site/banner-3.png" alt="LYP SPACE Green">
+          <div class="hero-cta"><a href="/catalog" class="btn">Shop all</a></div>
+        </div>
+        <div class="deck-card">
+          <img id="img-deck4" src="https://res.cloudinary.com/dhsgdejtf/image/upload/v1782581145/lyp-space/site/banner-4.png" alt="LYP SPACE Peonies">
+          <div class="hero-cta"><a href="/catalog" class="btn">Shop all</a></div>
+        </div>
+      </div>
+      <div class="deck-dots">
+        <button class="deck-dot active" onclick="deckGo(0)"></button>
+        <button class="deck-dot" onclick="deckGo(1)"></button>
+        <button class="deck-dot" onclick="deckGo(2)"></button>
+        <button class="deck-dot" onclick="deckGo(3)"></button>
+      </div>
+    </div><!-- /deck-section -->
+  </div><!-- /banner-row -->
+
+  <!-- PRODUCT SHOWCASE -->
   <section class="section">
-    <p class="section-title" data-i18n="featured_title">Featured</p>
+    <p class="section-title">Featured</p>
     <div class="product-grid">
-      <a href="/rip-curl-bikini" class="product-card" style="display:block;">
-        <div class="product-image">
-          <div class="product-image-inner"></div>
-        </div>
-        <p class="product-name">Rip Curl Striped Bikini</p>
-        <p class="product-price">$126.00</p>
+      <a class="product-card" href="/product?h=calypso-bloom-lingerie">
+        <div class="product-image"><img id="feat-img-1" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577747/lyp-space/WechatIMG1244.jpg" alt="Tropical Bikini"></div>
+        <p class="product-name" id="feat-name-1">Tropical Bikini</p>
       </a>
-      <a href="/test-product" class="product-card" style="display:block;">
-        <div class="product-image">
-          <div class="product-image-inner"></div>
-        </div>
-        <p class="product-name">Test Product</p>
-        <p class="product-price">$0.05</p>
+      <a class="product-card" href="/product?h=teresita-maria">
+        <div class="product-image"><img id="feat-img-2" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577585/lyp-space/23151768092536_.pic_hd.jpg" alt="Tropical One-Piece"></div>
+        <p class="product-name" id="feat-name-2">Tropical One-Piece</p>
       </a>
-      <div class="product-card">
-        <div class="product-image">
-          <div class="product-image-inner"></div>
-        </div>
-        <p class="product-name">A earring</p>
-        <p class="product-price">$68.50</p>
-      </div>
-      <div class="product-card">
-        <div class="product-image">
-          <div class="product-image-inner"></div>
-        </div>
-        <p class="product-name">A earring</p>
-        <p class="product-price">$68.00</p>
-      </div>
+      <a class="product-card" href="/product?h=h-perfume">
+        <div class="product-image"><img id="feat-img-3" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577749/lyp-space/HMAS.png" alt="Luxury Perfume"></div>
+        <p class="product-name" id="feat-name-3">Luxury Perfume</p>
+      </a>
+      <a class="product-card" href="/product?h=bikini-2">
+        <div class="product-image"><img id="feat-img-4" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577460/lyp-space/30561773127236_.pic_hd.jpg" alt="Polka Dot Bikini"></div>
+        <p class="product-name" id="feat-name-4">Polka Dot Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=polo-ralph-lauren-1">
+        <div class="product-image"><img id="feat-img-5" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577723/lyp-space/WechatIMG171.jpg" alt="Pink Bikini"></div>
+        <p class="product-name" id="feat-name-5">Pink Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=orange-red">
+        <div class="product-image"><img id="feat-img-6" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577516/lyp-space/25421768372305_.pic_hd_3707d2f4-36f4-4aae-a5da-145cbee526ce.jpg" alt="Orange Bikini"></div>
+        <p class="product-name" id="feat-name-6">Orange Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=womens-secrets">
+        <div class="product-image"><img id="feat-img-7" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577630/lyp-space/WechatIMG1254.jpg" alt="Floral Rash Guard"></div>
+        <p class="product-name" id="feat-name-7">Floral Rash Guard</p>
+      </a>
+      <a class="product-card" href="/product?h=polo-ralph-lauren-striped-bikini">
+        <div class="product-image"><img id="feat-img-8" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577744/lyp-space/WechatIMG778.jpg" alt="Stripe Bikini"></div>
+        <p class="product-name" id="feat-name-8">Stripe Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=a-earring-3">
+        <div class="product-image"><img id="feat-img-9" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577374/lyp-space/37821777306141_.pic_hd.jpg" alt="Pearl Earrings"></div>
+        <p class="product-name" id="feat-name-9">Pearl Earrings</p>
+      </a>
+      <a class="product-card" href="/product?h=a-jcrew-bracelet">
+        <div class="product-image"><img id="feat-img-10" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577423/lyp-space/36501777291613_.pic_hd_3d452c10-75fe-4102-9f67-7ecb28363ecb.jpg" alt="Gold Bracelet"></div>
+        <p class="product-name" id="feat-name-10">Gold Bracelet</p>
+      </a>
+      <a class="product-card" href="/product?h=dress-9">
+        <div class="product-image"><img id="feat-img-11" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577467/lyp-space/27711768725676_.pic_hd.jpg" alt="Floral Dress"></div>
+        <p class="product-name" id="feat-name-11">Floral Dress</p>
+      </a>
+      <a class="product-card" href="/product?h=sunglasses-1">
+        <div class="product-image"><img id="feat-img-12" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577378/lyp-space/37761777304725_.pic.jpg" alt="Cat Eye Sunglasses"></div>
+        <p class="product-name" id="feat-name-12">Cat Eye Sunglasses</p>
+      </a>
+      <a class="product-card" href="/product?h=lululemon-swimsuit-set">
+        <div class="product-image"><img id="feat-img-13" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577706/lyp-space/WechatIMG716.jpg" alt="Print Bikini"></div>
+        <p class="product-name" id="feat-name-13">Print Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=floral-design-lingerie">
+        <div class="product-image"><img id="feat-img-14" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577718/lyp-space/WechatIMG623.jpg" alt="Floral Bikini"></div>
+        <p class="product-name" id="feat-name-14">Floral Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=cupshe">
+        <div class="product-image"><img id="feat-img-15" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577565/lyp-space/23681768097989_.pic_hd.jpg" alt="Pearl Bikini"></div>
+        <p class="product-name" id="feat-name-15">Pearl Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=carmen-marc-valvo">
+        <div class="product-image"><img id="feat-img-16" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577579/lyp-space/23321768095072_.pic_hd.jpg" alt="Coral One-Piece"></div>
+        <p class="product-name" id="feat-name-16">Coral One-Piece</p>
+      </a>
+      <a class="product-card" href="/product?h=volcom-diamond-new-bikini-suit">
+        <div class="product-image"><img id="feat-img-17" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577730/lyp-space/WechatIMG786_b6f83cab-92c0-46ad-a735-b34f666c6ab4.png" alt="Print Bikini"></div>
+        <p class="product-name" id="feat-name-17">Print Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=bikini-3">
+        <div class="product-image"><img id="feat-img-18" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577458/lyp-space/30981773392812_.pic.jpg" alt="High-Waist Bikini"></div>
+        <p class="product-name" id="feat-name-18">High-Waist Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=bikini-5">
+        <div class="product-image"><img id="feat-img-19" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577452/lyp-space/31851774317871_.pic_hd_a37473a9-a071-4ca2-b48b-3d94f67d36a5.png" alt="Tropical Bikini"></div>
+        <p class="product-name" id="feat-name-19">Tropical Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=la-perla">
+        <div class="product-image"><img id="feat-img-20" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577582/lyp-space/23261768093930_.pic.jpg" alt="Halter Dress"></div>
+        <p class="product-name" id="feat-name-20">Halter Dress</p>
+      </a>
+      <a class="product-card" href="/product?h=salty-crew-bikini-suit">
+        <div class="product-image"><img id="feat-img-21" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577740/lyp-space/WechatIMG784.png" alt="Floral Bikini"></div>
+        <p class="product-name" id="feat-name-21">Floral Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=rip-curl">
+        <div class="product-image"><img id="feat-img-22" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577712/lyp-space/WechatIMG660.jpg" alt="Print Bikini"></div>
+        <p class="product-name" id="feat-name-22">Print Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=hurley-1">
+        <div class="product-image"><img id="feat-img-23" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577509/lyp-space/25931768543352_.pic_hd.jpg" alt="Print Bikini"></div>
+        <p class="product-name" id="feat-name-23">Print Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=polo-ralph-lauren-4">
+        <div class="product-image"><img id="feat-img-24" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577679/lyp-space/WechatIMG858.jpg" alt="Floral Bikini"></div>
+        <p class="product-name" id="feat-name-24">Floral Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=volcom-3">
+        <div class="product-image"><img id="feat-img-25" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577682/lyp-space/WechatIMG841.jpg" alt="Print Bikini"></div>
+        <p class="product-name" id="feat-name-25">Print Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=volcom-5">
+        <div class="product-image"><img id="feat-img-26" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577680/lyp-space/WechatIMG847.jpg" alt="Floral Bikini"></div>
+        <p class="product-name" id="feat-name-26">Floral Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=xix">
+        <div class="product-image"><img id="feat-img-27" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577562/lyp-space/23821768098776_.pic_hd.jpg" alt="Teal Bikini"></div>
+        <p class="product-name" id="feat-name-27">Teal Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=hurley">
+        <div class="product-image"><img id="feat-img-28" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577670/lyp-space/WechatIMG920.jpg" alt="Tropical One-Piece"></div>
+        <p class="product-name" id="feat-name-28">Tropical One-Piece</p>
+      </a>
+      <a class="product-card" href="/product?h=bikini-1">
+        <div class="product-image"><img id="feat-img-29" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577461/lyp-space/29651770159391_.pic_hd.jpg" alt="String Bikini"></div>
+        <p class="product-name" id="feat-name-29">String Bikini</p>
+      </a>
+      <a class="product-card" href="/product?h=australian-wool-hat">
+        <div class="product-image"><img id="feat-img-30" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577520/lyp-space/25311768282062_.pic_hd.jpg" alt="Wool Hat"></div>
+        <p class="product-name" id="feat-name-30">Wool Hat</p>
+      </a>
+      <a class="product-card" href="/product?h=soft-western-prairie-riding-hat-with-wide-brim-sun-protection">
+        <div class="product-image"><img id="feat-img-31" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577733/lyp-space/WechatIMG114.jpg" alt="Wide Brim Hat"></div>
+        <p class="product-name" id="feat-name-31">Wide Brim Hat</p>
+      </a>
+      <a class="product-card" href="/product?h=outfit-9">
+        <div class="product-image"><img id="feat-img-32" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577463/lyp-space/27771768815137_.pic_hd.jpg" alt="Cotton Jacket"></div>
+        <p class="product-name" id="feat-name-32">Cotton Jacket</p>
+      </a>
+      <a class="product-card" href="/product?h=shirt-1">
+        <div class="product-image"><img id="feat-img-33" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577468/lyp-space/27591768725120_.pic_hd.jpg" alt="Floral Shirt"></div>
+        <p class="product-name" id="feat-name-33">Floral Shirt</p>
+      </a>
+      <a class="product-card" href="/product?h=shirt">
+        <div class="product-image"><img id="feat-img-34" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577582/lyp-space/23201768093164_.pic_hd_1dde167e-88bc-4220-9829-60fa4ff64783.jpg" alt="Floral Shirt"></div>
+        <p class="product-name" id="feat-name-34">Floral Shirt</p>
+      </a>
+      <a class="product-card" href="/product?h=swim-trunk">
+        <div class="product-image"><img id="feat-img-35" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/v1782577372/lyp-space/37941777310216_.pic_f8d6227a-dcf9-4130-855d-82bfc2a2c70f.jpg" alt="Floral Shorts"></div>
+        <p class="product-name" id="feat-name-35">Floral Shorts</p>
+      </a>
     </div>
   </section>
 
   <!-- BANNER 1 - FULL WIDTH -->
   <div class="banner">
-    <div class="banner-bg"></div>
+    <div class="banner-bg">
+      <img id="banner-dresses" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_16:5,w_1400,q_auto,f_auto/lyp-space/37611777303965_.pic_hd.jpg" alt="Dresses">
+    </div>
+    <div class="banner-overlay"></div>
     <div class="banner-content">
-      <h2 data-i18n="new_arrivals">New arrivals</h2>
-      <a href="/catalog" class="btn btn-outline" data-i18n="shop_now">Shop now</a>
+      <h2>Dresses</h2>
+      <a href="/catalog?cat=Dresses" class="btn">Shop now</a>
     </div>
   </div>
 
   <!-- BANNER 2 - SPLIT -->
   <div class="banner-split">
     <div class="banner-half">
-      <div class="banner-half-bg"></div>
+      <div class="banner-half-bg">
+        <img id="img-earrings" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_center,ar_8:5,w_800,q_auto,f_auto/v1782577434/lyp-space/35501776548412_.pic_hd.jpg" alt="Earrings">
+      </div>
+      <div class="banner-overlay"></div>
       <div class="banner-half-content">
-        <h3 data-i18n="cat_earrings">Earrings</h3>
-        <a href="/catalog" class="btn btn-outline" data-i18n="shop_now">Shop now</a>
+        <h3>Earrings</h3>
+        <a href="/catalog?cat=Earrings" class="btn">Shop now</a>
       </div>
     </div>
     <div class="banner-half">
-      <div class="banner-half-bg"></div>
+      <div class="banner-half-bg">
+        <img id="img-bikinis" src="https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_8:5,w_800,q_auto,f_auto/v1782577452/lyp-space/31851774317871_.pic_hd_a37473a9-a071-4ca2-b48b-3d94f67d36a5.png" alt="Classic Bikinis">
+      </div>
+      <div class="banner-overlay"></div>
       <div class="banner-half-content">
-        <h3 data-i18n="cat_accessories">Accessories</h3>
-        <a href="/catalog" class="btn btn-outline" data-i18n="shop_now">Shop now</a>
+        <h3>Classic Bikinis</h3>
+        <a href="/catalog?cat=Classic+Bikinis" class="btn">Shop now</a>
       </div>
     </div>
   </div>
@@ -835,6 +1203,38 @@
   </script>
 
   <script>
+    /* ── CARD GALLERY CLICK CYCLE ── */
+    let deckIndex = 0;
+    const deckCards = [...document.querySelectorAll('.deck-card')];
+    const deckDots  = [...document.querySelectorAll('.deck-dot')];
+
+    function deckShow(i) {
+      deckCards.forEach((c, j) => c.classList.toggle('active', j === i));
+      deckDots.forEach((d, j)  => d.classList.toggle('active', j === i));
+      deckIndex = i;
+    }
+    function deckNext() { deckShow((deckIndex + 1) % deckCards.length); }
+    function deckGo(i) { event.stopPropagation(); deckShow(i); }
+
+    function openSearch() {
+      document.getElementById('search-overlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => document.getElementById('search-input').focus(), 50);
+    }
+    function closeSearch(e) {
+      if (e && e.target !== document.getElementById('search-overlay')) return;
+      document.getElementById('search-overlay').classList.remove('open');
+      document.body.style.overflow = '';
+      document.getElementById('search-input').value = '';
+    }
+    function handleSearchKey(e) {
+      if (e.key === 'Escape') { closeSearch(); return; }
+      if (e.key === 'Enter') {
+        const q = document.getElementById('search-input').value.trim();
+        if (q) location.href = '/catalog?q=' + encodeURIComponent(q);
+      }
+    }
+
     function openDrawer() {
       document.getElementById('mobile-drawer').classList.add('open');
       document.body.style.overflow = 'hidden';
@@ -852,6 +1252,116 @@
         if (btn) { btn.textContent = 'My Account'; btn.onclick = () => location.href = '/dashboard'; }
         if (drawerLink) { drawerLink.textContent = 'My Account'; drawerLink.href = '/dashboard'; }
       }
+    })();
+  </script>
+
+  <script>
+    (async () => {
+      try {
+        const r = await fetch('/api/checkout?action=settings');
+        if (!r.ok) return;
+        const { settings } = await r.json();
+        if (!settings) return;
+        const map = { hero: 'img-hero', dresses: 'banner-dresses', earrings: 'img-earrings', bikinis: 'img-bikinis', deck1: 'img-deck1', deck2: 'img-deck2', deck3: 'img-deck3', deck4: 'img-deck4' };
+        for (const [key, id] of Object.entries(map)) {
+          if (settings[key]) {
+            const el = document.getElementById(id);
+            if (el) el.src = settings[key];
+          }
+        }
+        for (let i = 1; i <= 35; i++) {
+          const k = 'feat' + i;
+          if (settings[k]) {
+            const el = document.getElementById('feat-img-' + i);
+            if (el) el.src = settings[k];
+          }
+          const nk = 'feat' + i + '_name';
+          if (settings[nk]) {
+            const nel = document.getElementById('feat-name-' + i);
+            if (nel) nel.textContent = settings[nk];
+          }
+        }
+      } catch(e) {}
+    })();
+  </script>
+
+  <script>
+    (async () => {
+      try {
+        // Only use products.json — statically served, guaranteed to load on product page
+        const allProducts = await (await fetch('/products.json')).json();
+
+        // Build exact image URL → product handle map
+        const imgToHandle = new Map();
+        for (const p of allProducts) {
+          if (!p.handle || !p.images) continue;
+          for (const url of p.images) {
+            if (url) imgToHandle.set(url, p.handle);
+          }
+        }
+
+        // Set safe default and update href at click time (admin may have swapped
+        // the img src via settings after page load, so check current src on interaction)
+        document.querySelectorAll('.product-card').forEach(card => {
+          card.href = '/catalog?cat=Bikini';
+          ['mousedown', 'touchstart'].forEach(evt => {
+            card.addEventListener(evt, function() {
+              const img = card.querySelector('img');
+              const handle = img ? imgToHandle.get(img.src) : null;
+              card.href = handle ? '/product?h=' + handle : '/catalog?cat=Bikini';
+            }, { passive: true });
+          });
+        });
+      } catch(e) {}
+    })();
+
+    // Drag-to-pan for all product card images
+    (function() {
+      function initCardPan() {
+        document.querySelectorAll('.product-image').forEach(function(wrap) {
+          var img = wrap.querySelector('img');
+          if (!img || wrap._panInited) return;
+          wrap._panInited = true;
+          var panY = 0, startY = 0, startPan = 0, moved = false;
+          function maxPan() { return Math.max(0, img.offsetHeight - wrap.offsetHeight); }
+          function clamp(v) { var m = maxPan(); return Math.max(-m, Math.min(0, v)); }
+          function center() { panY = clamp(-maxPan() / 2); img.style.top = panY + 'px'; }
+          if (img.complete && img.naturalHeight > 0) center(); else img.addEventListener('load', center);
+          function onStart(e) {
+            if (e.button && e.button !== 0) return;
+            startY = e.touches ? e.touches[0].clientY : e.clientY;
+            startPan = panY; moved = false; wrap.style.cursor = 'grabbing';
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('mouseup', onEnd);
+            document.addEventListener('touchend', onEnd);
+          }
+          function onMove(e) {
+            var y = e.touches ? e.touches[0].clientY : e.clientY;
+            var dy = y - startY;
+            if (Math.abs(dy) > 4) moved = true;
+            if (!moved) return;
+            panY = clamp(startPan + dy);
+            img.style.top = panY + 'px';
+            e.preventDefault();
+          }
+          function onEnd() {
+            wrap.style.cursor = 'grab';
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchend', onEnd);
+            if (moved) {
+              var card = wrap.closest('a');
+              if (card) card.addEventListener('click', function(ev) { ev.preventDefault(); ev.stopPropagation(); }, { once: true, capture: true });
+            }
+          }
+          wrap.addEventListener('mousedown', onStart);
+          wrap.addEventListener('touchstart', onStart, { passive: true });
+        });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCardPan);
+      else initCardPan();
     })();
   </script>
 

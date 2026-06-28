@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checkout — LYP SPACE</title>
-  <script src="/js/i18n.js"></script>
+  <script src="/js/i18n.js" defer></script>
   <script src="https://www.paypal.com/sdk/js?client-id=AUmkFmI5PLrqaiashs6HaXJIj8aKsWWIcA18GvKpBXTmngf7-zs-qI8pbbb9IxuZgMwAqXuVhATx8O7-&currency=USD" data-namespace="paypal_sdk"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -71,7 +71,9 @@
     const isCart = params.get('cart') === '1';
     const priceId = params.get('price_id');
     const productName = params.get('name') || 'Product';
+    const amount = parseFloat(params.get('amount') || '0');
     const qty = parseInt(params.get('qty') || '1', 10);
+    const isDynamic = !priceId && amount > 0;
     const nameEl = document.getElementById('product-name');
     const btn = document.getElementById('checkout-btn');
 
@@ -91,14 +93,15 @@
           '</div>'
         ).join('') +
         '<div style="display:flex;justify-content:space-between;border-top:1px solid #e5e5e5;margin-top:10px;padding-top:10px;font-weight:600;">' +
-          '<span>总计</span><span>$' + Cart.total().toFixed(2) + ' USD</span></div>';
+          '<span>Total</span><span>$' + Cart.total().toFixed(2) + ' USD</span></div>';
       }
-    } else if (!priceId) {
+    } else if (!priceId && !isDynamic) {
       nameEl.textContent = tr('co_no_product');
       nameEl.style.color = '#c00';
       btn.disabled = true;
     } else {
-      nameEl.textContent = productName + (qty > 1 ? ' × ' + qty : '');
+      const priceLabel = amount > 0 ? ' — $' + (amount * qty).toFixed(2) : '';
+      nameEl.textContent = decodeURIComponent(productName) + (qty > 1 ? ' × ' + qty : '') + priceLabel;
     }
 
     let promoCodeId = null;
@@ -144,13 +147,21 @@
     async function startCheckout() {
       const email = document.getElementById('email').value.trim();
       if (!email) { alert(tr('co_email_req')); return; }
-      if (!isCart && !priceId) return;
+      if (!isCart && !priceId && !isDynamic) return;
       btn.disabled = true;
       btn.textContent = tr('co_redirecting');
       try {
         const body = { email };
         if (isCart) {
-          body.items = Cart.getItems().map(i => ({ price_id: i.price_id, quantity: i.qty }));
+          body.items = Cart.getItems().map(i =>
+            i.price_id
+              ? { price_id: i.price_id, quantity: i.qty }
+              : { price_data: { name: i.name, amount: i.price }, quantity: i.qty }
+          );
+        } else if (isDynamic) {
+          body.product_name = decodeURIComponent(productName);
+          body.amount = amount;
+          body.quantity = qty;
         } else {
           body.price_id = priceId;
           body.quantity = qty;
