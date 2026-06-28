@@ -13,6 +13,9 @@
     { "source": "/catalog", "destination": "/catalog.html" },
     { "source": "/contact", "destination": "/contact.html" },
     { "source": "/rip-curl-bikini", "destination": "/rip-curl-bikini.html" },
-    { "source": "/test-product", "destination": "/test-product.html" }
+    { "source": "/test-product", "destination": "/test-product.html" },
+    { "source": "/product", "destination": "/product.html" },
+    { "source": "/admin-products", "destination": "/admin-products.html" },
+    { "source": "/admin-settings", "destination": "/admin-settings.html" }
   ]
 }
