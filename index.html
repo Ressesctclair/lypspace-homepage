@@ -1208,6 +1208,7 @@
     let deckIndex = 0;
     const deckCards = [...document.querySelectorAll('.deck-card')];
     const deckDots  = [...document.querySelectorAll('.deck-dot')];
+    let deckTimer = null;
 
     function deckShow(i) {
       deckCards.forEach((c, j) => c.classList.toggle('active', j === i));
@@ -1216,7 +1217,16 @@
     }
     function deckNext() { deckShow((deckIndex + 1) % deckCards.length); }
     function deckGo(i) { event.stopPropagation(); deckShow(i); }
-    setInterval(deckNext, 800);
+    function deckStart() { if (!deckTimer) deckTimer = setInterval(deckNext, 2500); }
+    function deckStop()  { clearInterval(deckTimer); deckTimer = null; }
+
+    const deckStage = document.querySelector('.deck-stage');
+    deckStage.addEventListener('mouseenter', deckStop);
+    deckStage.addEventListener('mouseleave', deckStart);
+    deckStage.addEventListener('touchstart', deckStop, { passive: true });
+    deckStage.addEventListener('touchend',   deckStart, { passive: true });
+
+    deckStart();
 
     function openSearch() {
       document.getElementById('search-overlay').classList.add('open');
