@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Site Settings — LYP SPACE Admin</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--black:#111;--white:#fff;--bg:#f5f0e6;--gray:#6b6b6b;--border:#ddd8cc;--light:#ede8da;--red:#c0392b;--green:#27ae60;--font:'Helvetica Neue',Helvetica,Arial,sans-serif}
+    body{font-family:var(--font);background:var(--bg);color:var(--black);font-size:14px;line-height:1.6;min-height:100vh}
+    header{background:var(--black);color:var(--white);padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between}
+    header h1{font-size:14px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+    header a{color:var(--white);font-size:12px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;opacity:.7}
+    header a:hover{opacity:1}
+    .page{max-width:860px;margin:0 auto;padding:40px 24px 80px}
+    h2{font-size:18px;font-weight:600;letter-spacing:.04em;margin-bottom:24px}
+    .banner-section{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:24px}
+    .banner-section h3{font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);margin-bottom:16px}
+    .preview-wrap{position:relative;width:100%;overflow:hidden;border-radius:6px;background:#eee;margin-bottom:16px}
+    .preview-wrap img{width:100%;height:auto;display:block;object-fit:cover}
+    .drop-zone{border:2px dashed var(--border);border-radius:6px;padding:28px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;font-size:13px;color:var(--gray)}
+    .drop-zone.over{border-color:#111;background:var(--light)}
+    .status{margin-top:10px;font-size:12px;color:var(--gray);min-height:18px}
+    .status.ok{color:var(--green)}
+    .status.err{color:var(--red)}
+    #auth-screen{display:flex;align-items:center;justify-content:center;min-height:80vh}
+    .auth-box{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:40px;width:320px;text-align:center}
+    .auth-box h2{margin-bottom:20px;font-size:16px}
+    .auth-box input{width:100%;border:1px solid var(--border);padding:10px 12px;font-size:14px;border-radius:4px;font-family:var(--font);margin-bottom:12px}
+    .auth-box button{width:100%;background:var(--black);color:var(--white);border:none;padding:11px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border-radius:4px}
+    .auth-box .err{color:var(--red);font-size:12px;margin-top:8px}
+    #main-screen{display:none}
+    .uploading{opacity:.5;pointer-events:none}
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>LYP SPACE — Site Settings</h1>
+  <a href="/admin">← Back to Admin</a>
+</header>
+
+<div id="auth-screen">
+  <div class="auth-box">
+    <h2>Admin Login</h2>
+    <input type="password" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button onclick="doLogin()">Enter</button>
+    <div class="err" id="pw-err"></div>
+  </div>
+</div>
+
+<div id="main-screen">
+  <div class="page">
+    <h2>Homepage Banners</h2>
+
+    <!-- HERO BANNER -->
+    <div class="banner-section">
+      <h3>Hero Banner (main left image)</h3>
+      <div class="preview-wrap" style="aspect-ratio:4/3">
+        <img id="prev-hero" src="" alt="Hero"/>
+      </div>
+      <div class="drop-zone" id="dz-hero"
+        ondragover="dzOver(event,'dz-hero')"
+        ondragleave="dzOut('dz-hero')"
+        ondrop="dzDrop(event,'dz-hero','hero','prev-hero','st-hero')">
+        Drop image here
+      </div>
+      <div class="status" id="st-hero"></div>
+    </div>
+
+    <!-- DRESSES BANNER -->
+    <div class="banner-section">
+      <h3>Dresses Banner (full-width)</h3>
+      <div class="preview-wrap" style="aspect-ratio:16/5">
+        <img id="prev-dresses" src="" alt="Dresses"/>
+      </div>
+      <div class="drop-zone" id="dz-dresses"
+        ondragover="dzOver(event,'dz-dresses')"
+        ondragleave="dzOut('dz-dresses')"
+        ondrop="dzDrop(event,'dz-dresses','dresses','prev-dresses','st-dresses')">
+        Drop image here
+      </div>
+      <div class="status" id="st-dresses"></div>
+    </div>
+
+    <!-- EARRINGS BANNER -->
+    <div class="banner-section">
+      <h3>Earrings Banner (left half)</h3>
+      <div class="preview-wrap" style="aspect-ratio:8/5">
+        <img id="prev-earrings" src="" alt="Earrings"/>
+      </div>
+      <div class="drop-zone" id="dz-earrings"
+        ondragover="dzOver(event,'dz-earrings')"
+        ondragleave="dzOut('dz-earrings')"
+        ondrop="dzDrop(event,'dz-earrings','earrings','prev-earrings','st-earrings')">
+        Drop image here
+      </div>
+      <div class="status" id="st-earrings"></div>
+    </div>
+
+    <!-- BIKINIS BANNER -->
+    <div class="banner-section">
+      <h3>Classic Bikinis Banner (right half)</h3>
+      <div class="preview-wrap" style="aspect-ratio:8/5">
+        <img id="prev-bikinis" src="" alt="Classic Bikinis"/>
+      </div>
+      <div class="drop-zone" id="dz-bikinis"
+        ondragover="dzOver(event,'dz-bikinis')"
+        ondragleave="dzOut('dz-bikinis')"
+        ondrop="dzDrop(event,'dz-bikinis','bikinis','prev-bikinis','st-bikinis')">
+        Drop image here
+      </div>
+      <div class="status" id="st-bikinis"></div>
+    </div>
+
+    <h2 style="margin-top:40px">Right Card Deck (4 Slides)</h2>
+
+    <!-- DECK 1 -->
+    <div class="banner-section">
+      <h3>Slide 1 (first shown)</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-deck1" src="" alt="Slide 1"/>
+      </div>
+      <div class="drop-zone" id="dz-deck1"
+        ondragover="dzOver(event,'dz-deck1')"
+        ondragleave="dzOut('dz-deck1')"
+        ondrop="dzDrop(event,'dz-deck1','deck1','prev-deck1','st-deck1')">
+        Drop image here
+      </div>
+      <div class="status" id="st-deck1"></div>
+    </div>
+
+    <!-- DECK 2 -->
+    <div class="banner-section">
+      <h3>Slide 2</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-deck2" src="" alt="Slide 2"/>
+      </div>
+      <div class="drop-zone" id="dz-deck2"
+        ondragover="dzOver(event,'dz-deck2')"
+        ondragleave="dzOut('dz-deck2')"
+        ondrop="dzDrop(event,'dz-deck2','deck2','prev-deck2','st-deck2')">
+        Drop image here
+      </div>
+      <div class="status" id="st-deck2"></div>
+    </div>
+
+    <!-- DECK 3 -->
+    <div class="banner-section">
+      <h3>Slide 3</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-deck3" src="" alt="Slide 3"/>
+      </div>
+      <div class="drop-zone" id="dz-deck3"
+        ondragover="dzOver(event,'dz-deck3')"
+        ondragleave="dzOut('dz-deck3')"
+        ondrop="dzDrop(event,'dz-deck3','deck3','prev-deck3','st-deck3')">
+        Drop image here
+      </div>
+      <div class="status" id="st-deck3"></div>
+    </div>
+
+    <!-- DECK 4 -->
+    <div class="banner-section">
+      <h3>Slide 4</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-deck4" src="" alt="Slide 4"/>
+      </div>
+      <div class="drop-zone" id="dz-deck4"
+        ondragover="dzOver(event,'dz-deck4')"
+        ondragleave="dzOut('dz-deck4')"
+        ondrop="dzDrop(event,'dz-deck4','deck4','prev-deck4','st-deck4')">
+        Drop image here
+      </div>
+      <div class="status" id="st-deck4"></div>
+    </div>
+
+      <h2 style="margin-top:40px">Featured Products (35 slots)</h2>
+    <div style="line-height:0">
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#1</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat1" src="" alt="Featured 1"/>
+      </div>
+      <div class="drop-zone" id="dz-feat1" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat1')"
+        ondragleave="dzOut('dz-feat1')"
+        ondrop="dzDrop(event,'dz-feat1','feat1','prev-feat1','st-feat1')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat1"></div>
+      <input type="text" id="name-feat1" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat1_name',document.getElementById('name-feat1').value,'st-name-feat1')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat1"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#2</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat2" src="" alt="Featured 2"/>
+      </div>
+      <div class="drop-zone" id="dz-feat2" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat2')"
+        ondragleave="dzOut('dz-feat2')"
+        ondrop="dzDrop(event,'dz-feat2','feat2','prev-feat2','st-feat2')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat2"></div>
+      <input type="text" id="name-feat2" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat2_name',document.getElementById('name-feat2').value,'st-name-feat2')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat2"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#3</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat3" src="" alt="Featured 3"/>
+      </div>
+      <div class="drop-zone" id="dz-feat3" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat3')"
+        ondragleave="dzOut('dz-feat3')"
+        ondrop="dzDrop(event,'dz-feat3','feat3','prev-feat3','st-feat3')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat3"></div>
+      <input type="text" id="name-feat3" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat3_name',document.getElementById('name-feat3').value,'st-name-feat3')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat3"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#4</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat4" src="" alt="Featured 4"/>
+      </div>
+      <div class="drop-zone" id="dz-feat4" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat4')"
+        ondragleave="dzOut('dz-feat4')"
+        ondrop="dzDrop(event,'dz-feat4','feat4','prev-feat4','st-feat4')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat4"></div>
+      <input type="text" id="name-feat4" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat4_name',document.getElementById('name-feat4').value,'st-name-feat4')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat4"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#5</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat5" src="" alt="Featured 5"/>
+      </div>
+      <div class="drop-zone" id="dz-feat5" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat5')"
+        ondragleave="dzOut('dz-feat5')"
+        ondrop="dzDrop(event,'dz-feat5','feat5','prev-feat5','st-feat5')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat5"></div>
+      <input type="text" id="name-feat5" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat5_name',document.getElementById('name-feat5').value,'st-name-feat5')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat5"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#6</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat6" src="" alt="Featured 6"/>
+      </div>
+      <div class="drop-zone" id="dz-feat6" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat6')"
+        ondragleave="dzOut('dz-feat6')"
+        ondrop="dzDrop(event,'dz-feat6','feat6','prev-feat6','st-feat6')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat6"></div>
+      <input type="text" id="name-feat6" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat6_name',document.getElementById('name-feat6').value,'st-name-feat6')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat6"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#7</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat7" src="" alt="Featured 7"/>
+      </div>
+      <div class="drop-zone" id="dz-feat7" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat7')"
+        ondragleave="dzOut('dz-feat7')"
+        ondrop="dzDrop(event,'dz-feat7','feat7','prev-feat7','st-feat7')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat7"></div>
+      <input type="text" id="name-feat7" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat7_name',document.getElementById('name-feat7').value,'st-name-feat7')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat7"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#8</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat8" src="" alt="Featured 8"/>
+      </div>
+      <div class="drop-zone" id="dz-feat8" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat8')"
+        ondragleave="dzOut('dz-feat8')"
+        ondrop="dzDrop(event,'dz-feat8','feat8','prev-feat8','st-feat8')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat8"></div>
+      <input type="text" id="name-feat8" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat8_name',document.getElementById('name-feat8').value,'st-name-feat8')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat8"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#9</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat9" src="" alt="Featured 9"/>
+      </div>
+      <div class="drop-zone" id="dz-feat9" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat9')"
+        ondragleave="dzOut('dz-feat9')"
+        ondrop="dzDrop(event,'dz-feat9','feat9','prev-feat9','st-feat9')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat9"></div>
+      <input type="text" id="name-feat9" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat9_name',document.getElementById('name-feat9').value,'st-name-feat9')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat9"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#10</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat10" src="" alt="Featured 10"/>
+      </div>
+      <div class="drop-zone" id="dz-feat10" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat10')"
+        ondragleave="dzOut('dz-feat10')"
+        ondrop="dzDrop(event,'dz-feat10','feat10','prev-feat10','st-feat10')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat10"></div>
+      <input type="text" id="name-feat10" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat10_name',document.getElementById('name-feat10').value,'st-name-feat10')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat10"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#11</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat11" src="" alt="Featured 11"/>
+      </div>
+      <div class="drop-zone" id="dz-feat11" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat11')"
+        ondragleave="dzOut('dz-feat11')"
+        ondrop="dzDrop(event,'dz-feat11','feat11','prev-feat11','st-feat11')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat11"></div>
+      <input type="text" id="name-feat11" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat11_name',document.getElementById('name-feat11').value,'st-name-feat11')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat11"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#12</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat12" src="" alt="Featured 12"/>
+      </div>
+      <div class="drop-zone" id="dz-feat12" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat12')"
+        ondragleave="dzOut('dz-feat12')"
+        ondrop="dzDrop(event,'dz-feat12','feat12','prev-feat12','st-feat12')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat12"></div>
+      <input type="text" id="name-feat12" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat12_name',document.getElementById('name-feat12').value,'st-name-feat12')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat12"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#13</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat13" src="" alt="Featured 13"/>
+      </div>
+      <div class="drop-zone" id="dz-feat13" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat13')"
+        ondragleave="dzOut('dz-feat13')"
+        ondrop="dzDrop(event,'dz-feat13','feat13','prev-feat13','st-feat13')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat13"></div>
+      <input type="text" id="name-feat13" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat13_name',document.getElementById('name-feat13').value,'st-name-feat13')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat13"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#14</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat14" src="" alt="Featured 14"/>
+      </div>
+      <div class="drop-zone" id="dz-feat14" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat14')"
+        ondragleave="dzOut('dz-feat14')"
+        ondrop="dzDrop(event,'dz-feat14','feat14','prev-feat14','st-feat14')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat14"></div>
+      <input type="text" id="name-feat14" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat14_name',document.getElementById('name-feat14').value,'st-name-feat14')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat14"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#15</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat15" src="" alt="Featured 15"/>
+      </div>
+      <div class="drop-zone" id="dz-feat15" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat15')"
+        ondragleave="dzOut('dz-feat15')"
+        ondrop="dzDrop(event,'dz-feat15','feat15','prev-feat15','st-feat15')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat15"></div>
+      <input type="text" id="name-feat15" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat15_name',document.getElementById('name-feat15').value,'st-name-feat15')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat15"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#16</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat16" src="" alt="Featured 16"/>
+      </div>
+      <div class="drop-zone" id="dz-feat16" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat16')"
+        ondragleave="dzOut('dz-feat16')"
+        ondrop="dzDrop(event,'dz-feat16','feat16','prev-feat16','st-feat16')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat16"></div>
+      <input type="text" id="name-feat16" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat16_name',document.getElementById('name-feat16').value,'st-name-feat16')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat16"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#17</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat17" src="" alt="Featured 17"/>
+      </div>
+      <div class="drop-zone" id="dz-feat17" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat17')"
+        ondragleave="dzOut('dz-feat17')"
+        ondrop="dzDrop(event,'dz-feat17','feat17','prev-feat17','st-feat17')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat17"></div>
+      <input type="text" id="name-feat17" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat17_name',document.getElementById('name-feat17').value,'st-name-feat17')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat17"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#18</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat18" src="" alt="Featured 18"/>
+      </div>
+      <div class="drop-zone" id="dz-feat18" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat18')"
+        ondragleave="dzOut('dz-feat18')"
+        ondrop="dzDrop(event,'dz-feat18','feat18','prev-feat18','st-feat18')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat18"></div>
+      <input type="text" id="name-feat18" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat18_name',document.getElementById('name-feat18').value,'st-name-feat18')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat18"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#19</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat19" src="" alt="Featured 19"/>
+      </div>
+      <div class="drop-zone" id="dz-feat19" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat19')"
+        ondragleave="dzOut('dz-feat19')"
+        ondrop="dzDrop(event,'dz-feat19','feat19','prev-feat19','st-feat19')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat19"></div>
+      <input type="text" id="name-feat19" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat19_name',document.getElementById('name-feat19').value,'st-name-feat19')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat19"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#20</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat20" src="" alt="Featured 20"/>
+      </div>
+      <div class="drop-zone" id="dz-feat20" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat20')"
+        ondragleave="dzOut('dz-feat20')"
+        ondrop="dzDrop(event,'dz-feat20','feat20','prev-feat20','st-feat20')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat20"></div>
+      <input type="text" id="name-feat20" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat20_name',document.getElementById('name-feat20').value,'st-name-feat20')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat20"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#21</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat21" src="" alt="Featured 21"/>
+      </div>
+      <div class="drop-zone" id="dz-feat21" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat21')"
+        ondragleave="dzOut('dz-feat21')"
+        ondrop="dzDrop(event,'dz-feat21','feat21','prev-feat21','st-feat21')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat21"></div>
+      <input type="text" id="name-feat21" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat21_name',document.getElementById('name-feat21').value,'st-name-feat21')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat21"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#22</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat22" src="" alt="Featured 22"/>
+      </div>
+      <div class="drop-zone" id="dz-feat22" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat22')"
+        ondragleave="dzOut('dz-feat22')"
+        ondrop="dzDrop(event,'dz-feat22','feat22','prev-feat22','st-feat22')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat22"></div>
+      <input type="text" id="name-feat22" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat22_name',document.getElementById('name-feat22').value,'st-name-feat22')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat22"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#23</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat23" src="" alt="Featured 23"/>
+      </div>
+      <div class="drop-zone" id="dz-feat23" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat23')"
+        ondragleave="dzOut('dz-feat23')"
+        ondrop="dzDrop(event,'dz-feat23','feat23','prev-feat23','st-feat23')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat23"></div>
+      <input type="text" id="name-feat23" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat23_name',document.getElementById('name-feat23').value,'st-name-feat23')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat23"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#24</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat24" src="" alt="Featured 24"/>
+      </div>
+      <div class="drop-zone" id="dz-feat24" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat24')"
+        ondragleave="dzOut('dz-feat24')"
+        ondrop="dzDrop(event,'dz-feat24','feat24','prev-feat24','st-feat24')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat24"></div>
+      <input type="text" id="name-feat24" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat24_name',document.getElementById('name-feat24').value,'st-name-feat24')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat24"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#25</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat25" src="" alt="Featured 25"/>
+      </div>
+      <div class="drop-zone" id="dz-feat25" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat25')"
+        ondragleave="dzOut('dz-feat25')"
+        ondrop="dzDrop(event,'dz-feat25','feat25','prev-feat25','st-feat25')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat25"></div>
+      <input type="text" id="name-feat25" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat25_name',document.getElementById('name-feat25').value,'st-name-feat25')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat25"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#26</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat26" src="" alt="Featured 26"/>
+      </div>
+      <div class="drop-zone" id="dz-feat26" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat26')"
+        ondragleave="dzOut('dz-feat26')"
+        ondrop="dzDrop(event,'dz-feat26','feat26','prev-feat26','st-feat26')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat26"></div>
+      <input type="text" id="name-feat26" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat26_name',document.getElementById('name-feat26').value,'st-name-feat26')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat26"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#27</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat27" src="" alt="Featured 27"/>
+      </div>
+      <div class="drop-zone" id="dz-feat27" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat27')"
+        ondragleave="dzOut('dz-feat27')"
+        ondrop="dzDrop(event,'dz-feat27','feat27','prev-feat27','st-feat27')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat27"></div>
+      <input type="text" id="name-feat27" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat27_name',document.getElementById('name-feat27').value,'st-name-feat27')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat27"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#28</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat28" src="" alt="Featured 28"/>
+      </div>
+      <div class="drop-zone" id="dz-feat28" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat28')"
+        ondragleave="dzOut('dz-feat28')"
+        ondrop="dzDrop(event,'dz-feat28','feat28','prev-feat28','st-feat28')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat28"></div>
+      <input type="text" id="name-feat28" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat28_name',document.getElementById('name-feat28').value,'st-name-feat28')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat28"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#29</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat29" src="" alt="Featured 29"/>
+      </div>
+      <div class="drop-zone" id="dz-feat29" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat29')"
+        ondragleave="dzOut('dz-feat29')"
+        ondrop="dzDrop(event,'dz-feat29','feat29','prev-feat29','st-feat29')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat29"></div>
+      <input type="text" id="name-feat29" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat29_name',document.getElementById('name-feat29').value,'st-name-feat29')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat29"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#30</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat30" src="" alt="Featured 30"/>
+      </div>
+      <div class="drop-zone" id="dz-feat30" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat30')"
+        ondragleave="dzOut('dz-feat30')"
+        ondrop="dzDrop(event,'dz-feat30','feat30','prev-feat30','st-feat30')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat30"></div>
+      <input type="text" id="name-feat30" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat30_name',document.getElementById('name-feat30').value,'st-name-feat30')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat30"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#31</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat31" src="" alt="Featured 31"/>
+      </div>
+      <div class="drop-zone" id="dz-feat31" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat31')"
+        ondragleave="dzOut('dz-feat31')"
+        ondrop="dzDrop(event,'dz-feat31','feat31','prev-feat31','st-feat31')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat31"></div>
+      <input type="text" id="name-feat31" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat31_name',document.getElementById('name-feat31').value,'st-name-feat31')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat31"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#32</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat32" src="" alt="Featured 32"/>
+      </div>
+      <div class="drop-zone" id="dz-feat32" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat32')"
+        ondragleave="dzOut('dz-feat32')"
+        ondrop="dzDrop(event,'dz-feat32','feat32','prev-feat32','st-feat32')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat32"></div>
+      <input type="text" id="name-feat32" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat32_name',document.getElementById('name-feat32').value,'st-name-feat32')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat32"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#33</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat33" src="" alt="Featured 33"/>
+      </div>
+      <div class="drop-zone" id="dz-feat33" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat33')"
+        ondragleave="dzOut('dz-feat33')"
+        ondrop="dzDrop(event,'dz-feat33','feat33','prev-feat33','st-feat33')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat33"></div>
+      <input type="text" id="name-feat33" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat33_name',document.getElementById('name-feat33').value,'st-name-feat33')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat33"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#34</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat34" src="" alt="Featured 34"/>
+      </div>
+      <div class="drop-zone" id="dz-feat34" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat34')"
+        ondragleave="dzOut('dz-feat34')"
+        ondrop="dzDrop(event,'dz-feat34','feat34','prev-feat34','st-feat34')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat34"></div>
+      <input type="text" id="name-feat34" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat34_name',document.getElementById('name-feat34').value,'st-name-feat34')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat34"></div>
+    </div>
+
+    <div class="banner-section" style="display:inline-block;width:calc(20% - 10px);margin:0 4px 12px;vertical-align:top">
+      <h3>#35</h3>
+      <div class="preview-wrap" style="aspect-ratio:3/4">
+        <img id="prev-feat35" src="" alt="Featured 35"/>
+      </div>
+      <div class="drop-zone" id="dz-feat35" style="padding:12px;font-size:11px"
+        ondragover="dzOver(event,'dz-feat35')"
+        ondragleave="dzOut('dz-feat35')"
+        ondrop="dzDrop(event,'dz-feat35','feat35','prev-feat35','st-feat35')">
+        Drop image
+      </div>
+      <div class="status" id="st-feat35"></div>
+      <input type="text" id="name-feat35" placeholder="Card label" style="width:100%;margin-top:6px;padding:5px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;font-family:inherit">
+      <button onclick="saveName('feat35_name',document.getElementById('name-feat35').value,'st-name-feat35')" style="width:100%;margin-top:4px;padding:4px;font-size:11px;background:#111;color:#fff;border:none;border-radius:3px;cursor:pointer">Save name</button>
+      <div class="status" id="st-name-feat35"></div>
+    </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let adminPw = '';
+
+  const CLOUD = 'dhsgdejtf';
+  const FOLDER = 'lyp-space';
+
+  const TRANSFORMS = {
+    hero:     'c_fill,g_auto,ar_4:3,w_1200,q_auto,f_auto',
+    dresses:  'c_fill,g_auto,ar_16:5,w_1400,q_auto,f_auto',
+    earrings: 'c_fill,g_auto,ar_8:5,w_800,q_auto,f_auto',
+    bikinis:  'c_fill,g_auto,ar_8:5,w_800,q_auto,f_auto',
+    deck1:    'c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto',
+    deck2:    'c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto',
+    deck3:    'c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto',
+    deck4:    'c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto',
+  };
+  for (let _i = 1; _i <= 35; _i++) {
+    TRANSFORMS['feat' + _i] = 'c_fill,g_auto,ar_3:4,w_600,q_auto,f_auto';
+  }
+
+  async function doLogin() {
+    const pw = document.getElementById('pw-input').value.trim();
+    if (!pw) return;
+    document.getElementById('pw-err').textContent = '';
+    const r = await fetch('/api/checkout?action=settings');
+    if (!r.ok) { document.getElementById('pw-err').textContent = 'Connection error'; return; }
+    adminPw = pw;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('main-screen').style.display = 'block';
+    await loadCurrentSettings();
+  }
+
+  async function saveName(key, value, stId) {
+    const st = document.getElementById(stId);
+    if (!st) return;
+    st.textContent = 'Saving…'; st.className = 'status';
+    try {
+      const r = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save-setting', password: adminPw, key, value }) });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || 'Save failed');
+      st.textContent = 'Saved ✓'; st.className = 'status ok';
+    } catch(e) { st.textContent = 'Error: ' + e.message; st.className = 'status err'; }
+  }
+
+  async function loadCurrentSettings() {
+    const r = await fetch('/api/checkout?action=settings');
+    const { settings } = await r.json();
+    const defaults = {
+      hero:     'https://res.cloudinary.com/dhsgdejtf/image/upload/v1782581150/lyp-space/site/hero-banner.png',
+      dresses:  'https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_16:5,w_1400,q_auto,f_auto/lyp-space/37611777303965_.pic_hd.jpg',
+      earrings: 'https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_center,ar_8:5,w_800,q_auto,f_auto/v1782577434/lyp-space/35501776548412_.pic_hd.jpg',
+      bikinis:  'https://res.cloudinary.com/dhsgdejtf/image/upload/c_fill,g_auto,ar_8:5,w_800,q_auto,f_auto/v1782577452/lyp-space/31851774317871_.pic_hd_a37473a9-a071-4ca2-b48b-3d94f67d36a5.png',
+      deck1:    'https://res.cloudinary.com/dhsgdejtf/image/upload/v1782581140/lyp-space/site/banner-2.png',
+      deck2:    'https://res.cloudinary.com/dhsgdejtf/image/upload/v1782581143/lyp-space/site/banner-1.png',
+      deck3:    'https://res.cloudinary.com/dhsgdejtf/image/upload/v1782581140/lyp-space/site/banner-3.png',
+      deck4:    'https://res.cloudinary.com/dhsgdejtf/image/upload/v1782581145/lyp-space/site/banner-4.png',
+    };
+    for (const key of ['hero','dresses','earrings','bikinis','deck1','deck2','deck3','deck4']) {
+      const el = document.getElementById('prev-' + key);
+      if (el) el.src = (settings && settings[key]) ? settings[key] : defaults[key];
+    }
+    for (let i = 1; i <= 35; i++) {
+      const k = 'feat' + i;
+      if (settings && settings[k]) {
+        const el = document.getElementById('prev-feat' + i);
+        if (el) el.src = settings[k];
+      }
+      const nk = 'feat' + i + '_name';
+      if (settings && settings[nk]) {
+        const nel = document.getElementById('name-feat' + i);
+        if (nel) nel.value = settings[nk];
+      }
+    }
+  }
+
+  function dzOver(e, id) {
+    e.preventDefault();
+    document.getElementById(id).classList.add('over');
+  }
+  function dzOut(id) {
+    document.getElementById(id).classList.remove('over');
+  }
+  function dzDrop(e, dzId, key, prevId, stId) {
+    e.preventDefault();
+    dzOut(dzId);
+    const file = e.dataTransfer.files[0];
+    if (file) uploadFile(file, key, prevId, stId, dzId);
+  }
+
+  async function uploadFile(file, key, prevId, stId, dzId) {
+    if (!file) return;
+    const st = document.getElementById(stId);
+    const dz = document.getElementById(dzId);
+    st.textContent = 'Uploading…';
+    st.className = 'status';
+    dz.classList.add('uploading');
+
+    try {
+      const sigRes = await fetch('/api/checkout?action=sign-upload');
+      const { timestamp, signature, api_key, cloud_name, folder } = await sigRes.json();
+
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('api_key', api_key);
+      fd.append('timestamp', timestamp);
+      fd.append('signature', signature);
+      fd.append('folder', folder);
+
+      const up = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, { method: 'POST', body: fd });
+      const upData = await up.json();
+      if (!upData.public_id) throw new Error(upData.error?.message || 'Upload failed');
+
+      const transform = TRANSFORMS[key] || 'c_fill,g_auto,w_1400,q_auto,f_auto';
+      const url = `https://res.cloudinary.com/${CLOUD}/image/upload/${transform}/${upData.public_id}`;
+
+      const saveRes = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save-setting', password: adminPw, key, value: url })
+      });
+      const saveData = await saveRes.json();
+      if (!saveData.ok) throw new Error(saveData.error || 'Save failed');
+
+      document.getElementById(prevId).src = url;
+      st.textContent = 'Saved ✓ — visible on homepage immediately';
+      st.className = 'status ok';
+    } catch(err) {
+      st.textContent = 'Error: ' + err.message;
+      st.className = 'status err';
+    } finally {
+      dz.classList.remove('uploading');
+    }
+  }
+
+  // Click-to-browse for all drop zones (label trick — no .click() needed, works in all browsers)
+  (function() {
+    document.querySelectorAll('.drop-zone').forEach(function(dz) {
+      const od = dz.getAttribute('ondrop') || '';
+      const m = od.match(/dzDrop\(event,'([^']+)','([^']+)','([^']+)','([^']+)'\)/);
+      if (!m) return;
+      const dzId = m[1], key = m[2], prevId = m[3], stId = m[4];
+
+      const fi = document.createElement('input');
+      fi.type = 'file'; fi.accept = 'image/*';
+      fi.id = '_fi_' + key; fi.style.display = 'none';
+      document.body.appendChild(fi);
+      fi.addEventListener('change', function() {
+        if (fi.files[0]) uploadFile(fi.files[0], key, prevId, stId, dzId);
+        fi.value = '';
+      });
+
+      const lbl = document.createElement('label');
+      lbl.htmlFor = fi.id;
+      lbl.style.cssText = 'position:absolute;inset:0;cursor:pointer;';
+      lbl.addEventListener('dragover', function(e) { e.preventDefault(); dz.classList.add('over'); });
+      lbl.addEventListener('dragleave', function() { dz.classList.remove('over'); });
+      lbl.addEventListener('drop', function(e) {
+        e.preventDefault(); dz.classList.remove('over');
+        const file = e.dataTransfer.files[0];
+        if (file) uploadFile(file, key, prevId, stId, dzId);
+      });
+
+      dz.style.position = 'relative'; dz.style.overflow = 'hidden';
+      dz.appendChild(lbl);
+    });
+  })();
+</script>
+
+</body>
+</html>

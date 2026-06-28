@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Product Manager — LYP SPACE Admin</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--black:#111;--white:#fff;--bg:#f5f0e6;--gray:#6b6b6b;--border:#ddd8cc;--light:#ede8da;--font:'Helvetica Neue',Helvetica,Arial,sans-serif}
+    body{font-family:var(--font);background:var(--bg);color:var(--black);font-size:14px}
+    header{background:var(--black);color:var(--white);padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between}
+    header a{color:var(--white);text-decoration:none;font-size:13px;opacity:.7}
+    header a:hover{opacity:1}
+    .logo{font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+    .login-screen{max-width:360px;margin:80px auto;padding:40px;background:var(--white);border:1px solid var(--border)}
+    .login-screen h2{font-size:14px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:24px}
+    input[type=password],input[type=text],input[type=number],input[type=url],textarea,select{
+      width:100%;padding:10px 12px;border:1px solid var(--border);font-size:13px;
+      font-family:var(--font);background:var(--white);outline:none;
+    }
+    input:focus,textarea:focus,select:focus{border-color:var(--black)}
+    .btn{display:inline-block;padding:10px 20px;background:var(--black);color:var(--white);border:none;font-size:12px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:var(--font)}
+    .btn:hover{background:#333}
+    .btn.outline{background:none;color:var(--black);border:1px solid var(--border)}
+    .btn.outline:hover{border-color:var(--black)}
+    .btn.danger{background:#c00}
+    .btn.danger:hover{background:#900}
+
+    .toolbar{padding:20px 32px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);background:var(--white)}
+    .toolbar input{max-width:260px;flex:1}
+    .toolbar select{width:auto;padding:10px 12px}
+    .count{font-size:12px;color:var(--gray);margin-left:auto}
+
+    .product-list{padding:0 32px 60px}
+    .product-row{
+      display:grid;grid-template-columns:64px 1fr auto;gap:16px;
+      align-items:center;padding:16px 0;border-bottom:1px solid var(--border);
+    }
+    .product-thumb{width:64px;height:64px;background:var(--light);overflow:hidden;flex-shrink:0}
+    .product-thumb img{width:100%;height:100%;object-fit:contain;display:block}
+    .product-info h3{font-size:13px;font-weight:500;margin-bottom:2px}
+    .product-info p{font-size:12px;color:var(--gray)}
+    .product-info .badges{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+    .badge{font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border:1px solid var(--border)}
+    .badge.sold-out{background:#111;color:#fff;border-color:#111}
+    .badge.in-stock{background:#d4edda;color:#1a7f37;border-color:#a8d5b5}
+    .badge.custom{background:#e8f0fe;color:#1a56db;border-color:#bdd0fb}
+    .product-actions{display:flex;gap:8px}
+
+    /* Editor panel */
+    .editor-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:flex-start;justify-content:center;padding:32px 20px;overflow-y:auto}
+    .editor-overlay.open{display:flex}
+    .editor{background:var(--white);width:100%;max-width:640px;padding:32px;position:relative;margin:auto}
+    .editor h2{font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:24px;padding-right:32px}
+    .editor-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray)}
+    .field{margin-bottom:18px}
+    .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);margin-bottom:7px}
+    .field textarea{height:90px;resize:vertical}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+    /* Stock toggle */
+    .stock-toggle{display:flex;gap:8px}
+    .toggle-btn{padding:8px 20px;border:1px solid var(--border);background:none;cursor:pointer;font-family:var(--font);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+    .toggle-btn.active-in{background:#1a7f37;border-color:#1a7f37;color:#fff}
+    .toggle-btn.active-out{background:#111;border-color:#111;color:#fff}
+
+    /* Variants */
+    .variant-row{display:grid;grid-template-columns:110px 1fr 80px 32px;gap:8px;margin-bottom:8px;align-items:center}
+    .variant-row input,.variant-row select{margin:0}
+    .var-del{background:none;border:1px solid var(--border);cursor:pointer;font-size:14px;padding:0;height:38px;width:32px;display:flex;align-items:center;justify-content:center;color:var(--gray)}
+    .var-del:hover{border-color:#c00;color:#c00}
+
+    /* Image preview */
+    .img-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .img-preview img{width:60px;height:60px;object-fit:contain;background:var(--light);border:1px solid var(--border)}
+
+    .save-row{display:flex;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);flex-wrap:wrap}
+    .msg{font-size:12px;padding:8px 12px;display:none;margin-top:8px}
+    .msg.ok{background:#d4edda;color:#1a7f37}
+    .msg.err{background:#ffe0e0;color:#c00}
+    .loading{text-align:center;padding:60px;color:var(--gray);font-size:13px}
+    .section-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);padding:20px 32px 8px;border-bottom:1px solid var(--border);background:var(--bg)}
+  </style>
+</head>
+<body>
+
+<div id="login-screen" class="login-screen" style="display:none">
+  <h2>Admin Login</h2>
+  <div class="field"><label>Password</label><input type="password" id="pw-input" onkeydown="if(event.key==='Enter')doLogin()"></div>
+  <button class="btn" onclick="doLogin()">Log in</button>
+  <p id="login-err" style="color:#c00;font-size:12px;margin-top:10px;display:none">Wrong password</p>
+</div>
+
+<div id="main" style="display:none">
+  <header>
+    <span class="logo">LYP SPACE — Products</span>
+    <a href="/admin">← Admin</a>
+  </header>
+
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Search products…" oninput="renderList()">
+    <select id="cat-filter" onchange="renderList()"><option value="">All categories</option></select>
+    <span class="count" id="count"></span>
+    <button class="btn" onclick="openCreate()">+ Add Product</button>
+  </div>
+
+  <div class="product-list" id="product-list">
+    <div class="loading">Loading products…</div>
+  </div>
+</div>
+
+<!-- Editor overlay -->
+<div class="editor-overlay" id="editor-overlay">
+  <div class="editor">
+    <button class="editor-close" onclick="closeEditor()">✕</button>
+    <h2 id="ed-title">Edit Product</h2>
+
+    <!-- Fields shown only for custom / new products -->
+    <div id="custom-fields">
+      <div class="field-row">
+        <div class="field">
+          <label>Product Name *</label>
+          <input type="text" id="ed-name" oninput="autoHandle()" placeholder="e.g. Floral Bikini Set">
+        </div>
+        <div class="field">
+          <label>Category / Type</label>
+          <input type="text" id="ed-type" placeholder="e.g. Classic Bikinis">
+        </div>
+      </div>
+      <div class="field">
+        <label>Handle (URL slug)</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="ed-handle" placeholder="auto-generated from name" style="flex:1">
+          <button type="button" onclick="copyProductUrl()" style="flex-shrink:0;padding:10px 14px;border:1px solid var(--border);background:none;cursor:pointer;font-family:var(--font);font-size:12px;white-space:nowrap" id="copy-btn">Copy URL</button>
+        </div>
+        <div id="copy-tip" style="font-size:11px;color:#1a7f37;margin-top:4px;display:none">Copied!</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Stock Status</label>
+      <div class="stock-toggle">
+        <button class="toggle-btn" id="btn-in" onclick="setStock(true)">In Stock</button>
+        <button class="toggle-btn" id="btn-out" onclick="setStock(false)">Sold Out</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Price (USD)</label>
+      <input type="number" id="ed-price" step="0.01" min="0" placeholder="e.g. 89.00">
+    </div>
+
+    <div class="field">
+      <label>Description</label>
+      <textarea id="ed-desc" placeholder="Product description…"></textarea>
+    </div>
+
+    <!-- Variants -->
+    <div class="field">
+      <label>Variants &amp; Stock Qty</label>
+      <div id="variant-rows"></div>
+      <button type="button" class="btn outline" style="margin-top:8px;font-size:11px;padding:6px 14px" onclick="addVariantRow()">+ Add Variant</button>
+    </div>
+
+    <!-- Image URLs — shown for custom/new only -->
+    <div class="field" id="images-field">
+      <label>Images</label>
+      <div id="drop-zone" style="border:2px dashed var(--border);padding:28px 20px;text-align:center;cursor:default;margin-bottom:10px;transition:border-color .2s,background .2s"
+        ondragover="event.preventDefault();this.style.borderColor='#111';this.style.background='var(--light)'"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
+        ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';uploadImages(event.dataTransfer.files)">
+        <div style="font-size:13px;color:var(--gray)">Drop images here</div>
+        <div id="upload-status" style="font-size:12px;color:var(--gray);margin-top:6px"></div>
+      </div>
+      <textarea id="ed-images" style="height:60px" placeholder="Or paste image URLs here (one per line)&#10;https://res.cloudinary.com/..."></textarea>
+      <div class="img-preview" id="img-preview"></div>
+    </div>
+
+    <div class="field" style="display:flex;align-items:center;gap:10px;margin-top:8px">
+      <input type="checkbox" id="ed-hidden" style="width:18px;height:18px;cursor:pointer">
+      <label for="ed-hidden" style="cursor:pointer;font-size:13px">Hidden (Draft — only you can see this product)</label>
+    </div>
+
+    <div class="msg" id="ed-msg"></div>
+    <div class="save-row" id="ed-save-row">
+      <button class="btn" onclick="saveProduct()">Save</button>
+      <button class="btn outline" onclick="closeEditor()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let password = '';
+  let allProducts = [];   // from products.json
+  let customProducts = []; // from supabase custom_products
+  let overrides = {};
+  let editingHandle = null;
+  let editingMode = 'edit-override'; // 'edit-override' | 'edit-custom' | 'create'
+  let editingInStock = true;
+
+  // ── Auth ──────────────────────────────────────────────────────
+  function doLogin() {
+    const pw = document.getElementById('pw-input').value;
+    if (!pw) return;
+    password = pw;
+    localStorage.setItem('lypspace_admin_pw', pw);
+    document.getElementById('login-err').style.display = 'none';
+    loadAll();
+  }
+
+  // ── Load ──────────────────────────────────────────────────────
+  async function loadAll() {
+    const [prodRes, invRes, customRes] = await Promise.all([
+      fetch('/products.json'),
+      fetch('/api/checkout?action=inventory'),
+      fetch(`/api/checkout?action=products&pw=${encodeURIComponent(password)}`)
+    ]);
+    allProducts = await prodRes.json();
+    if (invRes.ok) { const d = await invRes.json(); overrides = d.inventory || {}; }
+    if (customRes.ok) { const d = await customRes.json(); customProducts = d.products || []; }
+    buildCatFilter();
+    renderList();
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main').style.display = 'block';
+  }
+
+  function buildCatFilter() {
+    const cats = new Set();
+    customProducts.forEach(p => { if (p.type) cats.add(p.type); });
+    allProducts.forEach(p => { if (p.type) cats.add(p.type); });
+    const sel = document.getElementById('cat-filter');
+    [...cats].sort().forEach(c => {
+      const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o);
+    });
+  }
+
+  // ── Render list ───────────────────────────────────────────────
+  function renderList() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const cat = document.getElementById('cat-filter').value;
+
+    const combined = [
+      ...customProducts.map(p => ({ ...p, _custom: true })),
+      ...allProducts
+    ];
+    const list = combined.filter(p =>
+      (!q || p.title.toLowerCase().includes(q) || p.handle.includes(q)) &&
+      (!cat || (p.type || '') === cat)
+    );
+    document.getElementById('count').textContent = list.length + ' products';
+    const el = document.getElementById('product-list');
+    if (!list.length) { el.innerHTML = '<div class="loading">No products found</div>'; return; }
+
+    // Group: custom first, then existing
+    const customs = list.filter(p => p._custom);
+    const existing = list.filter(p => !p._custom);
+
+    let html = '';
+    if (customs.length) {
+      html += `<div class="section-label">Custom products (${customs.length})</div>`;
+      html += customs.map(p => productRow(p)).join('');
+    }
+    if (existing.length) {
+      html += `<div class="section-label">Shopify products (${existing.length})</div>`;
+      html += existing.map(p => productRow(p)).join('');
+    }
+    el.innerHTML = html;
+  }
+
+  function productRow(p) {
+    const ov = overrides[p.handle] || {};
+    const inStock = p._custom
+      ? p.total_qty > 0
+      : ('in_stock' in ov ? ov.in_stock : p.total_qty > 0);
+    const price = p._custom ? p.price : (ov.price != null ? ov.price : p.price);
+    const img = (p.images || [])[0] || '';
+    const editFn = p._custom
+      ? `openEditCustom('${esc(p.handle)}')`
+      : `openEditOverride('${esc(p.handle)}')`;
+    const deleteFn = p._custom ? `deleteCustom('${esc(p.handle)}')` : '';
+    return `<div class="product-row">
+      <div class="product-thumb">${img ? `<img src="${img}" alt="">` : ''}</div>
+      <div class="product-info">
+        <h3>${esc(p.title)}</h3>
+        <p>${esc(p.type || '')} · $${Number(price).toFixed(2)}</p>
+        <div class="badges">
+          ${p._custom ? '<span class="badge custom">Custom</span>' : ''}
+          <span class="badge ${inStock ? 'in-stock' : 'sold-out'}">${inStock ? 'In Stock' : 'Sold Out'}</span>
+          ${(p.variants||[]).length ? `<span class="badge">${p.variants.length} sizes</span>` : ''}
+        </div>
+      </div>
+      <div class="product-actions">
+        <button class="btn outline" onclick="${editFn}">Edit</button>
+        ${p._custom ? `<button class="btn danger" onclick="${deleteFn}">Del</button>` : ''}
+      </div>
+    </div>`;
+  }
+
+  // ── Open create ───────────────────────────────────────────────
+  function openCreate() {
+    editingMode = 'create';
+    editingHandle = null;
+    editingInStock = true;
+    document.getElementById('ed-title').textContent = 'New Product';
+    document.getElementById('custom-fields').style.display = 'block';
+    document.getElementById('images-field').style.display = 'block';
+    document.getElementById('ed-name').value = '';
+    document.getElementById('ed-type').value = '';
+    document.getElementById('ed-handle').value = '';
+    document.getElementById('ed-price').value = '';
+    document.getElementById('ed-desc').value = '';
+    document.getElementById('ed-images').value = '';
+    document.getElementById('ed-hidden').checked = false;
+    document.getElementById('img-preview').innerHTML = '';
+    document.getElementById('ed-msg').style.display = 'none';
+    document.getElementById('variant-rows').innerHTML = '';
+    updateStockButtons();
+
+    // Add delete button only for custom
+    renderSaveRow(false);
+    document.getElementById('editor-overlay').classList.add('open');
+  }
+
+  // ── Open edit (override for products.json) ────────────────────
+  function openEditOverride(handle) {
+    editingMode = 'edit-override';
+    editingHandle = handle;
+    const p = allProducts.find(x => x.handle === handle);
+    const ov = overrides[handle] || {};
+    editingInStock = 'in_stock' in ov ? ov.in_stock : p.total_qty > 0;
+
+    document.getElementById('ed-title').textContent = p.title;
+    document.getElementById('custom-fields').style.display = 'none';
+    document.getElementById('images-field').style.display = 'none';
+    document.getElementById('ed-price').value = ov.price != null ? ov.price : p.price;
+    document.getElementById('ed-desc').value = ov.description != null ? ov.description : (p.description || '');
+    document.getElementById('ed-msg').style.display = 'none';
+    updateStockButtons();
+
+    // Variant qtys
+    const varQtys = ov.variant_qtys || {};
+    const rows = document.getElementById('variant-rows');
+    rows.innerHTML = '';
+    if (p.variants && p.variants.length) {
+      p.variants.forEach(v => {
+        const row = document.createElement('div');
+        row.className = 'variant-row';
+        row.innerHTML = `
+          <input type="text" value="${esc(v.option1_value)}" readonly style="background:var(--light);color:var(--gray)">
+          <input type="number" min="0" data-var="${esc(v.option1_value)}" value="${varQtys[v.option1_value] ?? v.qty}">
+          <span></span>`;
+        rows.appendChild(row);
+      });
+    }
+    renderSaveRow(false);
+    document.getElementById('editor-overlay').classList.add('open');
+  }
+
+  // ── Open edit (full edit for custom product) ──────────────────
+  function openEditCustom(handle) {
+    editingMode = 'edit-custom';
+    editingHandle = handle;
+    const p = customProducts.find(x => x.handle === handle);
+    editingInStock = p.total_qty > 0;
+
+    document.getElementById('ed-title').textContent = 'Edit: ' + p.title;
+    document.getElementById('custom-fields').style.display = 'block';
+    document.getElementById('images-field').style.display = 'block';
+    document.getElementById('ed-name').value = p.title;
+    document.getElementById('ed-type').value = p.type || '';
+    document.getElementById('ed-handle').value = p.handle;
+    document.getElementById('ed-price').value = p.price;
+    document.getElementById('ed-desc').value = p.description || '';
+    document.getElementById('ed-images').value = (p.images || []).join('\n');
+    document.getElementById('ed-msg').style.display = 'none';
+    document.getElementById('ed-hidden').checked = false;
+    fetch('/api/checkout?action=settings').then(r=>r.json()).then(({settings})=>{
+      const hidden = JSON.parse((settings && settings.hidden_products) || '[]');
+      document.getElementById('ed-hidden').checked = hidden.includes(handle);
+    }).catch(()=>{});
+    updateImgPreview();
+    updateStockButtons();
+
+    // Variants
+    const rows = document.getElementById('variant-rows');
+    rows.innerHTML = '';
+    (p.variants || []).forEach(v => addVariantRow(v.option1_value, v.qty, v.option1_name || 'Size'));
+
+    renderSaveRow(true);
+    document.getElementById('editor-overlay').classList.add('open');
+  }
+
+  function renderSaveRow(showDelete) {
+    const row = document.getElementById('ed-save-row');
+    row.innerHTML = `<button class="btn" onclick="saveProduct()">Save</button>
+      <button class="btn outline" onclick="closeEditor()">Cancel</button>
+      ${showDelete ? `<button class="btn danger" onclick="deleteCustom('${editingHandle}');closeEditor()">Delete Product</button>` : ''}`;
+  }
+
+  function closeEditor() {
+    document.getElementById('editor-overlay').classList.remove('open');
+    editingHandle = null;
+  }
+
+  // ── Variants ──────────────────────────────────────────────────
+  function addVariantRow(size = '', qty = 0, type = 'Size') {
+    const rows = document.getElementById('variant-rows');
+    const div = document.createElement('div');
+    div.className = 'variant-row';
+    const typeOpts = ['Size','Color','Style'].map(t =>
+      `<option value="${t}"${t===type?' selected':''}>${t}</option>`).join('');
+    div.innerHTML = `
+      <select style="border:1px solid var(--border);padding:8px 6px;font-family:var(--font);font-size:12px;background:var(--white);cursor:pointer">${typeOpts}</select>
+      <input type="text" placeholder="Value (e.g. S, Red, Floral)" value="${esc(String(size))}">
+      <input type="number" min="0" placeholder="Qty" value="${qty}">
+      <button class="var-del" onclick="this.parentElement.remove()">✕</button>`;
+    rows.appendChild(div);
+  }
+
+  function getVariants() {
+    const price = parseFloat(document.getElementById('ed-price').value) || 0;
+    const rows = document.querySelectorAll('#variant-rows .variant-row');
+    const vars = [];
+    rows.forEach(row => {
+      const sel = row.querySelector('select');
+      const inputs = row.querySelectorAll('input');
+      const optName = sel ? sel.value : 'Size';
+      const optVal = inputs[0].value.trim();
+      const qty = parseInt(inputs[1].value) || 0;
+      if (optVal) vars.push({ option1_name: optName, option1_value: optVal, price, qty });
+    });
+    return vars;
+  }
+
+  // ── Image preview ─────────────────────────────────────────────
+  document.addEventListener('input', e => {
+    if (e.target.id === 'ed-images') updateImgPreview();
+  });
+  function updateImgPreview() {
+    const urls = document.getElementById('ed-images').value.split('\n').map(s => s.trim()).filter(Boolean);
+    document.getElementById('img-preview').innerHTML = urls.slice(0, 8).map(u =>
+      `<img src="${esc(u)}" alt="" onerror="this.style.opacity=.3">`
+    ).join('');
+  }
+
+  // ── Handle auto-generate ──────────────────────────────────────
+  function autoHandle() {
+    const name = document.getElementById('ed-name').value;
+    const h = document.getElementById('ed-handle');
+    if (!h.dataset.manual) {
+      h.value = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    }
+  }
+  document.addEventListener('input', e => {
+    if (e.target.id === 'ed-handle') e.target.dataset.manual = '1';
+  });
+
+  // ── Stock toggle ──────────────────────────────────────────────
+  function setStock(val) { editingInStock = val; updateStockButtons(); }
+  function updateStockButtons() {
+    document.getElementById('btn-in').className = 'toggle-btn' + (editingInStock ? ' active-in' : '');
+    document.getElementById('btn-out').className = 'toggle-btn' + (!editingInStock ? ' active-out' : '');
+  }
+
+  // ── Save ──────────────────────────────────────────────────────
+  async function saveProduct() {
+    const msgEl = document.getElementById('ed-msg');
+    msgEl.style.display = 'none';
+
+    try {
+      let body, url = '/api/checkout', method = 'POST';
+
+      if (editingMode === 'edit-override') {
+        // Save to product_overrides
+        const varInputs = document.querySelectorAll('#variant-rows input[data-var]');
+        const variant_qtys = {};
+        varInputs.forEach(inp => { variant_qtys[inp.dataset.var] = parseInt(inp.value) || 0; });
+        body = {
+          action: 'product-update', password,
+          handle: editingHandle,
+          in_stock: editingInStock,
+          price: document.getElementById('ed-price').value,
+          description: document.getElementById('ed-desc').value,
+        };
+        if (varInputs.length) body.variant_qtys = variant_qtys;
+
+      } else {
+        // Create or update custom product
+        const title = document.getElementById('ed-name').value.trim();
+        const handle = document.getElementById('ed-handle').value.trim();
+        if (!title || !handle) { throw new Error('Name and handle are required'); }
+        const images = document.getElementById('ed-images').value
+          .split('\n').map(s => s.trim()).filter(Boolean);
+        const variants = getVariants();
+        body = {
+          action: 'create-product', password,
+          handle, title,
+          type: document.getElementById('ed-type').value.trim(),
+          price: document.getElementById('ed-price').value,
+          description: document.getElementById('ed-desc').value,
+          images, variants,
+        };
+      }
+
+      const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const d = await r.json();
+      if (d.error === 'Unauthorized') { password = ''; document.getElementById('main').style.display='none'; document.getElementById('login-screen').style.display='block'; document.getElementById('login-err').style.display='block'; return; }
+      if (!d.ok) throw new Error(d.error || 'Failed');
+
+      // Save hidden state for custom products
+      if (editingMode !== 'edit-override') {
+        const isHidden = document.getElementById('ed-hidden').checked;
+        const handleForHidden = editingMode === 'create' ? document.getElementById('ed-handle').value.trim() : editingHandle;
+        await fetch('/api/checkout', { method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ action: 'toggle-hidden', password, handle: handleForHidden, hidden: isHidden }) });
+      }
+
+      // Refresh custom products list
+      if (editingMode !== 'edit-override') {
+        const cr = await fetch(`/api/checkout?action=products&pw=${encodeURIComponent(password)}`);
+        if (cr.ok) { const cd = await cr.json(); customProducts = cd.products || []; }
+      } else {
+        if (!overrides[editingHandle]) overrides[editingHandle] = {};
+        Object.assign(overrides[editingHandle], body);
+      }
+
+      msgEl.textContent = 'Saved!';
+      msgEl.className = 'msg ok';
+      msgEl.style.display = 'block';
+      renderList();
+      setTimeout(closeEditor, 700);
+    } catch(e) {
+      msgEl.textContent = e.message;
+      msgEl.className = 'msg err';
+      msgEl.style.display = 'block';
+    }
+  }
+
+  // ── Delete custom ─────────────────────────────────────────────
+  async function deleteCustom(handle) {
+    if (!confirm('Delete this product? This cannot be undone.')) return;
+    await fetch('/api/checkout', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete-product', password, handle })
+    });
+    customProducts = customProducts.filter(p => p.handle !== handle);
+    renderList();
+  }
+
+  async function uploadImages(files) {
+    if (!files || !files.length) return;
+    const status = document.getElementById('upload-status');
+    status.textContent = `Uploading ${files.length} image(s)…`;
+
+    try {
+      const sigRes = await fetch('/api/checkout?action=sign-upload');
+      const sig = await sigRes.json();
+
+      const uploaded = [];
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('timestamp', sig.timestamp);
+        fd.append('signature', sig.signature);
+        fd.append('api_key', sig.api_key);
+        fd.append('folder', sig.folder);
+        const r = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloud_name}/image/upload`, { method: 'POST', body: fd });
+        const d = await r.json();
+        if (d.public_id) {
+          // Apply same transformation as existing products
+          const url = `https://res.cloudinary.com/${sig.cloud_name}/image/upload/c_fill,g_auto,ar_3:4,w_800,q_auto,f_auto/${d.public_id}`;
+          uploaded.push(url);
+        }
+      }
+
+      const ta = document.getElementById('ed-images');
+      const existing = ta.value.trim();
+      ta.value = (existing ? existing + '\n' : '') + uploaded.join('\n');
+      updateImgPreview();
+      status.textContent = `✓ ${uploaded.length} uploaded`;
+      setTimeout(() => status.textContent = '', 3000);
+    } catch(e) {
+      status.textContent = 'Upload failed: ' + e.message;
+    }
+    // Reset file input so same file can be re-uploaded
+    document.getElementById('img-upload').value = '';
+  }
+
+  function copyProductUrl() {
+    const handle = document.getElementById('ed-handle').value.trim();
+    if (!handle) { alert('Enter a product name first'); return; }
+    const url = 'https://lypspace-homepage.vercel.app/product?h=' + handle;
+    navigator.clipboard.writeText(url).then(() => {
+      const tip = document.getElementById('copy-tip');
+      tip.style.display = 'block';
+      setTimeout(() => tip.style.display = 'none', 2000);
+    });
+  }
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // ── Init ──────────────────────────────────────────────────────
+  document.getElementById('login-screen').style.display = 'block';
+</script>
+</body>
+</html>
