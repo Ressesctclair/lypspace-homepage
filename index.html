@@ -353,14 +353,12 @@
 
     .product-image img {
       width: 100%;
-      height: auto;
+      height: 100%;
       display: block;
-      position: absolute;
-      left: 0;
-      top: 0;
+      object-fit: cover;
+      object-position: 50% 50%;
       user-select: none;
       -webkit-user-drag: none;
-      pointer-events: none;
     }
 
     .product-image-inner {
@@ -778,6 +776,7 @@
   </style>
   <script src="/js/i18n.js" defer></script>
   <script src="/js/cart.js" defer></script>
+  <script src="/js/pannable.js" defer></script>
 </head>
 <body>
 
@@ -1263,22 +1262,11 @@
         const { settings } = await r.json();
         if (!settings) return;
         const map = { hero: 'img-hero', dresses: 'banner-dresses', earrings: 'img-earrings', bikinis: 'img-bikinis', deck1: 'img-deck1', deck2: 'img-deck2', deck3: 'img-deck3', deck4: 'img-deck4' };
-        const isMobile = window.innerWidth < 768;
         for (const [key, id] of Object.entries(map)) {
           if (settings[key]) {
             const el = document.getElementById(id);
-            if (el) {
-              let url = settings[key];
-              if (key === 'dresses' && isMobile && url.includes('cloudinary.com'))
-                url = url.replace(/ar_\d+:\d+/, 'ar_4:3').replace(/w_\d+/, 'w_800');
-              el.src = url;
-            }
+            if (el) el.src = settings[key];
           }
-        }
-        if (isMobile) {
-          const dresImg = document.getElementById('banner-dresses');
-          if (dresImg && dresImg.src.includes('cloudinary.com') && dresImg.src.includes('ar_16:5'))
-            dresImg.src = dresImg.src.replace(/ar_\d+:\d+/, 'ar_4:3').replace(/w_\d+/, 'w_800');
         }
         for (let i = 1; i <= 35; i++) {
           const k = 'feat' + i;
@@ -1292,6 +1280,7 @@
             if (nel) nel.textContent = settings[nk];
           }
         }
+        if (window.pannableSetup) window.pannableSetup();
       } catch(e) {}
     })();
   </script>
@@ -1326,54 +1315,6 @@
       } catch(e) {}
     })();
 
-    // Drag-to-pan for all product card images
-    (function() {
-      function initCardPan() {
-        document.querySelectorAll('.product-image').forEach(function(wrap) {
-          var img = wrap.querySelector('img');
-          if (!img || wrap._panInited) return;
-          wrap._panInited = true;
-          var panY = 0, startY = 0, startPan = 0, moved = false;
-          function maxPan() { return Math.max(0, img.offsetHeight - wrap.offsetHeight); }
-          function clamp(v) { var m = maxPan(); return Math.max(-m, Math.min(0, v)); }
-          function center() { panY = clamp(-maxPan() / 2); img.style.top = panY + 'px'; }
-          if (img.complete && img.naturalHeight > 0) center(); else img.addEventListener('load', center);
-          function onStart(e) {
-            if (e.button && e.button !== 0) return;
-            startY = e.touches ? e.touches[0].clientY : e.clientY;
-            startPan = panY; moved = false; wrap.style.cursor = 'grabbing';
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('touchmove', onMove, { passive: false });
-            document.addEventListener('mouseup', onEnd);
-            document.addEventListener('touchend', onEnd);
-          }
-          function onMove(e) {
-            var y = e.touches ? e.touches[0].clientY : e.clientY;
-            var dy = y - startY;
-            if (Math.abs(dy) > 4) moved = true;
-            if (!moved) return;
-            panY = clamp(startPan + dy);
-            img.style.top = panY + 'px';
-            e.preventDefault();
-          }
-          function onEnd() {
-            wrap.style.cursor = 'grab';
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('touchmove', onMove);
-            document.removeEventListener('mouseup', onEnd);
-            document.removeEventListener('touchend', onEnd);
-            if (moved) {
-              var card = wrap.closest('a');
-              if (card) card.addEventListener('click', function(ev) { ev.preventDefault(); ev.stopPropagation(); }, { once: true, capture: true });
-            }
-          }
-          wrap.addEventListener('mousedown', onStart);
-          wrap.addEventListener('touchstart', onStart, { passive: true });
-        });
-      }
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCardPan);
-      else initCardPan();
-    })();
   </script>
 
 </body>

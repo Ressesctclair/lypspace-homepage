@@ -6,6 +6,7 @@
   <title>Catalog — LYP SPACE</title>
   <script src="/js/i18n.js" defer></script>
   <script src="/js/cart.js" defer></script>
+  <script src="/js/pannable.js" defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -70,7 +71,7 @@
     .product-card { cursor: pointer; display: block; }
     .product-card:hover { text-decoration: none; }
     .product-image { width: 100%; aspect-ratio: 3/4; background: var(--light-gray); margin-bottom: 12px; overflow: hidden; position: relative; cursor: grab; }
-    .product-image img { width: 100%; height: auto; display: block; position: absolute; left: 0; top: 0; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+    .product-image img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: 50% 50%; user-select: none; -webkit-user-drag: none; }
     .sold-out-badge {
       position: absolute; inset: 0; background: rgba(245,240,230,0.72);
       display: flex; align-items: center; justify-content: center;
@@ -256,7 +257,7 @@
         </a>`;
       }).join('');
       renderPagination(totalPages, currentPage);
-      initCardPan();
+      if (window.pannableSetup) window.pannableSetup();
     }
 
     function renderPagination(totalPages, page) {
@@ -332,50 +333,6 @@
       a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
       a.download = 'lyp-space-products.csv';
       a.click();
-    }
-
-    function initCardPan() {
-      document.querySelectorAll('.product-image').forEach(function(wrap) {
-        var img = wrap.querySelector('img');
-        if (!img || wrap._panInited) return;
-        wrap._panInited = true;
-        var panY = 0, startY = 0, startPan = 0, moved = false;
-        function maxPan() { return Math.max(0, img.offsetHeight - wrap.offsetHeight); }
-        function clamp(v) { var m = maxPan(); return Math.max(-m, Math.min(0, v)); }
-        function center() { panY = clamp(-maxPan() / 2); img.style.top = panY + 'px'; }
-        if (img.complete && img.naturalHeight > 0) center(); else img.addEventListener('load', center);
-        function onStart(e) {
-          if (e.button && e.button !== 0) return;
-          startY = e.touches ? e.touches[0].clientY : e.clientY;
-          startPan = panY; moved = false; wrap.style.cursor = 'grabbing';
-          document.addEventListener('mousemove', onMove);
-          document.addEventListener('touchmove', onMove, { passive: false });
-          document.addEventListener('mouseup', onEnd);
-          document.addEventListener('touchend', onEnd);
-        }
-        function onMove(e) {
-          var y = e.touches ? e.touches[0].clientY : e.clientY;
-          var dy = y - startY;
-          if (Math.abs(dy) > 4) moved = true;
-          if (!moved) return;
-          panY = clamp(startPan + dy);
-          img.style.top = panY + 'px';
-          e.preventDefault();
-        }
-        function onEnd() {
-          wrap.style.cursor = 'grab';
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('touchmove', onMove);
-          document.removeEventListener('mouseup', onEnd);
-          document.removeEventListener('touchend', onEnd);
-          if (moved) {
-            var card = wrap.closest('a');
-            if (card) card.addEventListener('click', function(ev) { ev.preventDefault(); ev.stopPropagation(); }, { once: true, capture: true });
-          }
-        }
-        wrap.addEventListener('mousedown', onStart);
-        wrap.addEventListener('touchstart', onStart, { passive: true });
-      });
     }
 
     loadProducts();
