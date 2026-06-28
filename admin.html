@@ -40,14 +40,17 @@
     <div style="margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #eee;">
       <a href="/admin-products" style="display:inline-block;padding:10px 20px;background:#111;color:#fff;font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;margin-right:12px;">产品管理（库存/价格/简介）→</a>
       <a href="/admin-settings" style="display:inline-block;padding:10px 20px;background:#444;color:#fff;font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;margin-right:12px;">Homepage Settings →</a>
-      <button onclick="exportData()" style="padding:10px 20px;background:#1a6e3c;color:#fff;border:none;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">导出全部数据 ↓</button>
+      <div style="margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="password" id="export-pw" placeholder="管理员密码" style="padding:10px 12px;border:1px solid #e0e0e0;font-size:13px;width:180px;">
+        <button onclick="exportData()" style="padding:10px 20px;background:#1a6e3c;color:#fff;border:none;font-size:11px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">导出全部数据 ↓</button>
+      </div>
     </div>
     <script>
     async function exportData() {
-      const pw = document.getElementById('password').value;
-      if (!pw) { alert('请先输入管理员密码'); return; }
+      const pw = document.getElementById('export-pw').value.trim();
+      if (!pw) { alert('请输入管理员密码'); return; }
       const r = await fetch('/api/checkout?action=export&password=' + encodeURIComponent(pw));
-      if (!r.ok) { alert('密码错误或导出失败'); return; }
+      if (!r.ok) { alert('密码错误，请重试'); return; }
       const data = await r.json();
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
