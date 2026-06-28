@@ -1216,7 +1216,7 @@
     }
     function deckNext() { deckShow((deckIndex + 1) % deckCards.length); }
     function deckGo(i) { event.stopPropagation(); deckShow(i); }
-    setInterval(deckNext, 1200);
+    setInterval(deckNext, 800);
 
     function openSearch() {
       document.getElementById('search-overlay').classList.add('open');
