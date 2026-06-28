@@ -6,6 +6,7 @@
   <title>Product — LYP SPACE</title>
   <script src="/js/i18n.js" defer></script>
   <script src="/js/cart.js" defer></script>
+  <script src="/js/pannable.js" defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -70,7 +71,7 @@
     .img-arrow.prev { left: 10px; }
     .img-arrow.next { right: 10px; }
     .img-arrow:hover { background: #fff; }
-    .main-image img { width: 100%; height: auto; display: block; transition: opacity 0.22s ease; transform-origin: center center; cursor: grab; user-select: none; -webkit-user-drag: none; }
+    .main-image img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block; transition: opacity 0.22s ease; transform-origin: center center; cursor: grab; user-select: none; -webkit-user-drag: none; }
     .main-image img.zoomed { cursor: grab; }
     .thumb-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .thumb {

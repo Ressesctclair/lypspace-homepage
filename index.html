@@ -353,12 +353,14 @@
 
     .product-image img {
       width: 100%;
-      height: 100%;
+      height: auto;
       display: block;
-      object-fit: cover;
-      object-position: 50% 50%;
+      position: absolute;
+      left: 0;
+      top: 0;
       user-select: none;
       -webkit-user-drag: none;
+      pointer-events: none;
     }
 
     .product-image-inner {
@@ -776,7 +778,6 @@
   </style>
   <script src="/js/i18n.js" defer></script>
   <script src="/js/cart.js" defer></script>
-  <script src="/js/pannable.js" defer></script>
 </head>
 <body>
 
@@ -1262,11 +1263,22 @@
         const { settings } = await r.json();
         if (!settings) return;
         const map = { hero: 'img-hero', dresses: 'banner-dresses', earrings: 'img-earrings', bikinis: 'img-bikinis', deck1: 'img-deck1', deck2: 'img-deck2', deck3: 'img-deck3', deck4: 'img-deck4' };
+        const isMobile = window.innerWidth < 768;
         for (const [key, id] of Object.entries(map)) {
           if (settings[key]) {
             const el = document.getElementById(id);
-            if (el) el.src = settings[key];
+            if (el) {
+              let url = settings[key];
+              if (key === 'dresses' && isMobile && url.includes('cloudinary.com'))
+                url = url.replace(/ar_\d+:\d+/, 'ar_4:3').replace(/w_\d+/, 'w_800');
+              el.src = url;
+            }
           }
+        }
+        if (isMobile) {
+          const dresImg = document.getElementById('banner-dresses');
+          if (dresImg && dresImg.src.includes('cloudinary.com') && dresImg.src.includes('ar_16:5'))
+            dresImg.src = dresImg.src.replace(/ar_\d+:\d+/, 'ar_4:3').replace(/w_\d+/, 'w_800');
         }
         for (let i = 1; i <= 35; i++) {
           const k = 'feat' + i;
@@ -1280,7 +1292,6 @@
             if (nel) nel.textContent = settings[nk];
           }
         }
-        if (window.pannableSetup) window.pannableSetup();
       } catch(e) {}
     })();
   </script>
