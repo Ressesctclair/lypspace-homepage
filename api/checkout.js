@@ -12,6 +12,50 @@ module.exports = async (req, res) => {
     return res.status(200).json({ inventory: map });
   }
 
+  // ── Admin orders list (GET, admin) ───────────────────────────
+  if (req.method === 'GET' && req.query.action === 'admin-orders') {
+    if (req.query.password !== process.env.ADMIN_PASSWORD)
+      return res.status(401).json({ error: 'Unauthorized' });
+
+    const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+    const supabase = getSupabase();
+
+    const [{ data: orderLinks }, { data: shipmentRows }] = await Promise.all([
+      supabase.from('order_links').select('stripe_session_id, customer_email'),
+      supabase.from('shipments').select('stripe_session_id, carrier, tracking_number'),
+    ]);
+
+    const shipmentMap = {};
+    (shipmentRows || []).forEach(s => { shipmentMap[s.stripe_session_id] = s; });
+
+    const orders = await Promise.all(
+      (orderLinks || []).map(async ({ stripe_session_id, customer_email }) => {
+        const session = await stripe.checkout.sessions.retrieve(stripe_session_id, {
+          expand: ['line_items'],
+        });
+        const shipment = shipmentMap[stripe_session_id] || null;
+        return {
+          session_id: stripe_session_id,
+          date: new Date(session.created * 1000).toISOString(),
+          customer_email,
+          amount: session.amount_total,
+          currency: session.currency,
+          items: (session.line_items?.data || []).map(i => ({
+            name: i.description,
+            quantity: i.quantity,
+          })),
+          status: shipment ? 'shipped' : 'processing',
+          tracking: shipment
+            ? { carrier: shipment.carrier, number: shipment.tracking_number }
+            : null,
+        };
+      })
+    );
+
+    orders.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return res.status(200).json({ orders });
+  }
+
   // ── Full data export (GET, admin) ────────────────────────────
   if (req.method === 'GET' && req.query.action === 'export') {
     if (req.query.password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
