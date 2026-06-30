@@ -81,6 +81,10 @@
   </div>
 
   <script>
+    function esc(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
     let allOrders = [];
     let activeFilter = 'all';
 
@@ -130,17 +134,17 @@
       emptyEl.style.display = 'none';
 
       tbody.innerHTML = visible.map(o => {
-        const date = new Date(o.date).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const date = new Date(o.date).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
         const amount = ((o.amount || 0) / 100).toFixed(2);
         const currency = (o.currency || 'USD').toUpperCase();
-        const itemsHtml = o.items.map(i => `${i.name} ×${i.quantity}`).join('<br>');
+        const itemsHtml = (o.items || []).map(i => `${esc(i.name)} ×${i.quantity}`).join('<br>');
         const badge = `<span class="badge ${o.status}">${o.status === 'shipped' ? '已发货' : '未发货'}</span>`;
         const action = o.status === 'shipped'
-          ? `<span class="tracking">${o.tracking.carrier}<br>${o.tracking.number}</span>`
+          ? `<span class="tracking">${esc((o.tracking || {}).carrier)}<br>${esc((o.tracking || {}).number)}</span>`
           : `<a class="btn-ship" href="/admin?session_id=${encodeURIComponent(o.session_id)}&email=${encodeURIComponent(o.customer_email)}">发货</a>`;
         return `<tr>
           <td style="white-space:nowrap;color:#666;">${date}</td>
-          <td>${o.customer_email}</td>
+          <td>${esc(o.customer_email)}</td>
           <td>${itemsHtml}</td>
           <td style="white-space:nowrap;">${currency} ${amount}</td>
           <td>${badge}</td>
