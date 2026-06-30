@@ -60,13 +60,13 @@
       a.download = 'lypspace-export-' + new Date().toISOString().slice(0,10) + '.json';
       a.click();
     }
-    (function prefillFromUrl() {
+    window.addEventListener('DOMContentLoaded', function prefillFromUrl() {
       const params = new URLSearchParams(location.search);
       const sid = params.get('session_id');
       const email = params.get('email');
       if (sid) document.getElementById('stripeSessionId').value = sid;
       if (email) document.getElementById('customerEmail').value = email;
-    })();
+    });
     </script>
 
     <!-- Admin account management -->
