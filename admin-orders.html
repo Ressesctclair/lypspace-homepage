@@ -134,7 +134,7 @@
       emptyEl.style.display = 'none';
 
       tbody.innerHTML = visible.map(o => {
-        const date = new Date(o.date).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const date = o.date ? new Date(o.date).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
         const amount = ((o.amount || 0) / 100).toFixed(2);
         const currency = esc((o.currency || 'USD').toUpperCase());
         const itemsHtml = (o.items || []).map(i => `${esc(i.name)} ×${esc(i.quantity)}`).join('<br>');
@@ -142,7 +142,7 @@
         const badge = `<span class="badge ${safeStatus}">${safeStatus === 'shipped' ? '已发货' : '未发货'}</span>`;
         const action = o.status === 'shipped'
           ? `<span class="tracking">${esc((o.tracking || {}).carrier)}<br>${esc((o.tracking || {}).number)}</span>`
-          : `<a class="btn-ship" href="/admin?session_id=${encodeURIComponent(o.session_id)}&email=${encodeURIComponent(o.customer_email)}">发货</a>`;
+          : `<a class="btn-ship" href="/admin?session_id=${encodeURIComponent(o.session_id || '')}&email=${encodeURIComponent(o.customer_email || '')}">发货</a>`;
         return `<tr>
           <td style="white-space:nowrap;color:#666;">${date}</td>
           <td>${esc(o.customer_email)}</td>
