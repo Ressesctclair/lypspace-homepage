@@ -99,7 +99,7 @@
         if (r.status === 401) { errEl.textContent = '密码错误'; return; }
         if (!r.ok) { errEl.textContent = '加载失败，请重试'; return; }
         const { orders } = await r.json();
-        allOrders = orders;
+        allOrders = orders || [];
         document.getElementById('controls').style.display = 'flex';
         document.getElementById('table-wrap').style.display = 'block';
         renderTable();
@@ -122,7 +122,7 @@
 
       const visible = allOrders.filter(o => {
         if (activeFilter !== 'all' && o.status !== activeFilter) return false;
-        if (q && !o.customer_email.toLowerCase().includes(q) && !o.session_id.toLowerCase().includes(q)) return false;
+        if (q && !(o.customer_email || '').toLowerCase().includes(q) && !(o.session_id || '').toLowerCase().includes(q)) return false;
         return true;
       });
 
@@ -136,9 +136,10 @@
       tbody.innerHTML = visible.map(o => {
         const date = new Date(o.date).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
         const amount = ((o.amount || 0) / 100).toFixed(2);
-        const currency = (o.currency || 'USD').toUpperCase();
-        const itemsHtml = (o.items || []).map(i => `${esc(i.name)} ×${i.quantity}`).join('<br>');
-        const badge = `<span class="badge ${o.status}">${o.status === 'shipped' ? '已发货' : '未发货'}</span>`;
+        const currency = esc((o.currency || 'USD').toUpperCase());
+        const itemsHtml = (o.items || []).map(i => `${esc(i.name)} ×${esc(i.quantity)}`).join('<br>');
+        const safeStatus = o.status === 'shipped' ? 'shipped' : 'processing';
+        const badge = `<span class="badge ${safeStatus}">${safeStatus === 'shipped' ? '已发货' : '未发货'}</span>`;
         const action = o.status === 'shipped'
           ? `<span class="tracking">${esc((o.tracking || {}).carrier)}<br>${esc((o.tracking || {}).number)}</span>`
           : `<a class="btn-ship" href="/admin?session_id=${encodeURIComponent(o.session_id)}&email=${encodeURIComponent(o.customer_email)}">发货</a>`;
