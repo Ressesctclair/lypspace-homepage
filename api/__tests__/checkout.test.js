@@ -29,7 +29,7 @@ test('returns 400 when price_id missing', async () => {
   const res = makeRes();
   await handler({ method: 'POST', body: { email: 'a@b.com' } }, res);
   expect(res.status).toHaveBeenCalledWith(400);
-  expect(res.json).toHaveBeenCalledWith({ error: 'price_id required' });
+  expect(res.json).toHaveBeenCalledWith({ error: 'price_id, items, or amount+product_name required' });
 });
 
 test('returns 400 when email missing', async () => {

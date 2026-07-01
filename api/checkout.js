@@ -1,6 +1,7 @@
 const Stripe = require('stripe');
 
 module.exports = async (req, res) => {
+  req.query = req.query || {};
   const { getSupabase } = require('./_lib/supabase');
 
   // ── Product overrides (GET, public) ────────────────────────────

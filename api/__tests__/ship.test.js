@@ -81,7 +81,7 @@ test('sends shipping notification with correct data', async () => {
   expect(mockEmailSend).toHaveBeenCalledWith(
     expect.objectContaining({
       to: 'buyer@test.com',
-      subject: '您的订单已发货 - LYP SPACE',
+      subject: 'Your order has shipped — LYP SPACE',
       html: expect.stringContaining('SF1234567890'),
     })
   );
@@ -95,7 +95,7 @@ test('includes carrier tracking link in email', async () => {
   await handler(req, res);
   const html = mockEmailSend.mock.calls[0][0].html;
   expect(html).toContain('SF1234567890');
-  expect(html).toContain('sf-express.com');
+  expect(html).toContain('parcelsapp.com');
 });
 
 test('writes shipment record to supabase', async () => {
