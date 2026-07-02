@@ -170,6 +170,7 @@
 
     let promoCodeId = null;
     let appliedCouponCode = null;
+    let appliedCouponDiscount = null; // { type: 'percent'|'amount', value, currency? }
     let activeDiscount = null; // null | 'coupon' | 'member'
 
     async function checkMembership() {
@@ -222,12 +223,14 @@
         if (d.valid) {
           promoCodeId = d.promotion_code_id;
           appliedCouponCode = code.toUpperCase();
+          appliedCouponDiscount = d.discount;
           activeDiscount = 'coupon';
           msgEl.textContent = '✓ ' + d.message;
           msgEl.className = 'discount-msg ok';
         } else {
           promoCodeId = null;
           appliedCouponCode = null;
+          appliedCouponDiscount = null;
           if (activeDiscount === 'coupon') activeDiscount = null;
           msgEl.textContent = d.error || 'Invalid discount code';
           msgEl.className = 'discount-msg err';
@@ -305,8 +308,15 @@
 
       function getPayPalAmount() {
         const base = isCart ? Cart.total() : parseFloat(params.get('amount') || '0') * qty;
-        const discounted = activeDiscount === 'member' ? base * 0.95 : base;
-        return discounted.toFixed(2);
+        let discounted = base;
+        if (activeDiscount === 'coupon' && appliedCouponDiscount) {
+          discounted = appliedCouponDiscount.type === 'percent'
+            ? base * (1 - appliedCouponDiscount.value / 100)
+            : base - appliedCouponDiscount.value;
+        } else if (activeDiscount === 'member') {
+          discounted = base * 0.95;
+        }
+        return Math.max(0, discounted).toFixed(2);
       }
 
       paypal_sdk.Buttons({
