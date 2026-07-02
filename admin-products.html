@@ -165,13 +165,15 @@
     <!-- Image URLs — shown for custom/new only -->
     <div class="field" id="images-field">
       <label>Images</label>
-      <div id="drop-zone" style="border:2px dashed var(--border);padding:28px 20px;text-align:center;cursor:default;margin-bottom:10px;transition:border-color .2s,background .2s"
+      <div id="drop-zone" style="border:2px dashed var(--border);padding:28px 20px;text-align:center;cursor:pointer;margin-bottom:10px;transition:border-color .2s,background .2s"
+        onclick="document.getElementById('img-upload').click()"
         ondragover="event.preventDefault();this.style.borderColor='#111';this.style.background='var(--light)'"
         ondragleave="this.style.borderColor='var(--border)';this.style.background=''"
         ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';uploadImages(event.dataTransfer.files)">
-        <div style="font-size:13px;color:var(--gray)">Drop images here</div>
+        <div style="font-size:13px;color:var(--gray)">Drop images here or click to browse</div>
         <div id="upload-status" style="font-size:12px;color:var(--gray);margin-top:6px"></div>
       </div>
+      <input type="file" id="img-upload" accept="image/*" multiple style="display:none" onchange="uploadImages(this.files)">
       <textarea id="ed-images" style="height:60px" placeholder="Or paste image URLs here (one per line)&#10;https://res.cloudinary.com/..."></textarea>
       <div class="img-preview" id="img-preview"></div>
     </div>
