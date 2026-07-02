@@ -11,7 +11,7 @@ beforeEach(() => {
   handler = require('../../auth/me');
 });
 
-const makeRes = () => ({ status: jest.fn().mockReturnThis(), json: jest.fn() });
+const makeRes = () => ({ status: jest.fn().mockReturnThis(), json: jest.fn(), setHeader: jest.fn() });
 
 it('returns 401 if not authenticated', async () => {
   requireAuth.mockReturnValue(null);

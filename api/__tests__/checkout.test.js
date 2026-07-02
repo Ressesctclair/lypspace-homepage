@@ -1,5 +1,6 @@
 jest.mock('stripe');
-let Stripe, handler;
+jest.mock('../_lib/supabase', () => ({ getSupabase: jest.fn() }));
+let Stripe, handler, getSupabase;
 
 beforeEach(() => {
   jest.resetModules();
@@ -7,6 +8,16 @@ beforeEach(() => {
   process.env.STRIPE_SECRET_KEY = 'sk_test_xxx';
   process.env.SITE_URL = 'https://example.com';
   Stripe = require('stripe');
+  getSupabase = require('../_lib/supabase').getSupabase;
+  getSupabase.mockReturnValue({
+    from: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          maybeSingle: jest.fn().mockResolvedValue({ data: { is_member: false } }),
+        }),
+      }),
+    }),
+  });
   handler = require('../checkout');
 });
 
@@ -29,7 +40,7 @@ test('returns 400 when price_id missing', async () => {
   const res = makeRes();
   await handler({ method: 'POST', body: { email: 'a@b.com' } }, res);
   expect(res.status).toHaveBeenCalledWith(400);
-  expect(res.json).toHaveBeenCalledWith({ error: 'price_id required' });
+  expect(res.json).toHaveBeenCalledWith({ error: 'price_id, items, or amount+product_name required' });
 });
 
 test('returns 400 when email missing', async () => {
@@ -50,7 +61,11 @@ test('creates session without coupon', async () => {
   expect(call.customer_email).toBe('a@b.com');
   expect(call.mode).toBe('payment');
   expect(call.discounts).toBeUndefined();
-  expect(call.metadata).toEqual({ coupon_code: '' });
+  expect(call.metadata).toEqual({
+    coupon_code: '',
+    shipping_name: '', shipping_street: '', shipping_city: '',
+    shipping_state: '', shipping_postal_code: '', shipping_country: '', shipping_phone: '',
+  });
   expect(res.status).toHaveBeenCalledWith(200);
   expect(res.json).toHaveBeenCalledWith({ url: 'https://checkout.stripe.com/abc' });
 });
@@ -65,7 +80,11 @@ test('creates session with promotion code and uppercases coupon_code in metadata
   }, res);
   const call = mockCreate.mock.calls[0][0];
   expect(call.discounts).toEqual([{ promotion_code: 'promo_yyy' }]);
-  expect(call.metadata).toEqual({ coupon_code: 'SAVE10' });
+  expect(call.metadata).toEqual({
+    coupon_code: 'SAVE10',
+    shipping_name: '', shipping_street: '', shipping_city: '',
+    shipping_state: '', shipping_postal_code: '', shipping_country: '', shipping_phone: '',
+  });
   expect(res.json).toHaveBeenCalledWith({ url: 'https://checkout.stripe.com/xyz' });
 });
 
@@ -77,4 +96,195 @@ test('success_url and cancel_url use SITE_URL', async () => {
   const call = mockCreate.mock.calls[0][0];
   expect(call.success_url).toBe('https://example.com/dashboard?checkout=success');
   expect(call.cancel_url).toBe('https://example.com/checkout');
+});
+
+describe('action=check-member', () => {
+  test('returns 400 when email missing', async () => {
+    Stripe.mockReturnValue({});
+    const res = makeRes();
+    await handler({ method: 'POST', body: { action: 'check-member' } }, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'email required' });
+  });
+
+  test('returns is_member true for a member', async () => {
+    Stripe.mockReturnValue({});
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({ data: { is_member: true } }),
+          }),
+        }),
+      }),
+    });
+    const res = makeRes();
+    await handler({ method: 'POST', body: { action: 'check-member', email: 'member@test.com' } }, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ is_member: true });
+  });
+
+  test('returns is_member false for a non-member', async () => {
+    Stripe.mockReturnValue({});
+    const res = makeRes();
+    await handler({ method: 'POST', body: { action: 'check-member', email: 'nonmember@test.com' } }, res);
+    expect(res.json).toHaveBeenCalledWith({ is_member: false });
+  });
+
+  test('returns is_member false when email not found', async () => {
+    Stripe.mockReturnValue({});
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({ data: null }),
+          }),
+        }),
+      }),
+    });
+    const res = makeRes();
+    await handler({ method: 'POST', body: { action: 'check-member', email: 'nobody@test.com' } }, res);
+    expect(res.json).toHaveBeenCalledWith({ is_member: false });
+  });
+});
+
+describe('member discount', () => {
+  test('applies member coupon when email belongs to a member and no promo code given', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/member' });
+    const mockRetrieve = jest.fn().mockResolvedValue({ id: 'member-5pct-off' });
+    Stripe.mockReturnValue({
+      checkout: { sessions: { create: mockCreate } },
+      coupons: { retrieve: mockRetrieve, create: jest.fn() },
+    });
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({ data: { is_member: true } }),
+          }),
+        }),
+      }),
+    });
+    const res = makeRes();
+    await handler({ method: 'POST', body: { price_id: 'price_xxx', email: 'member@test.com' } }, res);
+    expect(mockRetrieve).toHaveBeenCalledWith('member-5pct-off');
+    const call = mockCreate.mock.calls[0][0];
+    expect(call.discounts).toEqual([{ coupon: 'member-5pct-off' }]);
+  });
+
+  test('creates the member coupon when it does not exist yet', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/member2' });
+    const mockCouponRetrieve = jest.fn().mockRejectedValue(new Error('No such coupon'));
+    const mockCouponCreate = jest.fn().mockResolvedValue({ id: 'member-5pct-off' });
+    Stripe.mockReturnValue({
+      checkout: { sessions: { create: mockCreate } },
+      coupons: { retrieve: mockCouponRetrieve, create: mockCouponCreate },
+    });
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({ data: { is_member: true } }),
+          }),
+        }),
+      }),
+    });
+    const res = makeRes();
+    await handler({ method: 'POST', body: { price_id: 'price_xxx', email: 'member@test.com' } }, res);
+    expect(mockCouponCreate).toHaveBeenCalledWith({ id: 'member-5pct-off', percent_off: 5, duration: 'once' });
+    const call = mockCreate.mock.calls[0][0];
+    expect(call.discounts).toEqual([{ coupon: 'member-5pct-off' }]);
+  });
+
+  test('does not apply member coupon for a non-member', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/nonmember' });
+    Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });
+    const res = makeRes();
+    await handler({ method: 'POST', body: { price_id: 'price_xxx', email: 'nonmember@test.com' } }, res);
+    const call = mockCreate.mock.calls[0][0];
+    expect(call.discounts).toBeUndefined();
+  });
+
+  test('promotion code takes priority over member discount and skips the membership lookup', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/promo' });
+    Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { price_id: 'price_xxx', email: 'member@test.com', promotion_code_id: 'promo_yyy' },
+    }, res);
+    expect(getSupabase).not.toHaveBeenCalled();
+    const call = mockCreate.mock.calls[0][0];
+    expect(call.discounts).toEqual([{ promotion_code: 'promo_yyy' }]);
+  });
+});
+
+test('includes shipping address fields in session metadata', async () => {
+  const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/addr' });
+  Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });
+  const res = makeRes();
+  await handler({
+    method: 'POST',
+    body: {
+      price_id: 'price_xxx', email: 'a@b.com',
+      shipping_name: 'Jane Doe', shipping_street: '123 Main St', shipping_city: 'Springfield',
+      shipping_state: 'IL', shipping_postal_code: '62701', shipping_country: 'US', shipping_phone: '555-1234',
+    },
+  }, res);
+  const call = mockCreate.mock.calls[0][0];
+  expect(call.metadata).toEqual({
+    coupon_code: '',
+    shipping_name: 'Jane Doe', shipping_street: '123 Main St', shipping_city: 'Springfield',
+    shipping_state: 'IL', shipping_postal_code: '62701', shipping_country: 'US', shipping_phone: '555-1234',
+  });
+});
+
+describe('action=record-paypal-order', () => {
+  test('returns 400 when required fields are missing', async () => {
+    Stripe.mockReturnValue({});
+    const res = makeRes();
+    await handler({ method: 'POST', body: { action: 'record-paypal-order', email: 'a@b.com' } }, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'email, paypal_order_id, and amount required' });
+  });
+
+  test('inserts a paypal order_links row with address fields', async () => {
+    Stripe.mockReturnValue({});
+    const mockInsert = jest.fn().mockResolvedValue({});
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ insert: mockInsert }) });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: {
+        action: 'record-paypal-order',
+        email: 'buyer@test.com',
+        paypal_order_id: 'PAYPAL123',
+        amount: '47.50',
+        shipping_name: 'Jane Doe', shipping_street: '123 Main St', shipping_city: 'Springfield',
+        shipping_state: 'IL', shipping_postal_code: '62701', shipping_country: 'US', shipping_phone: '555-1234',
+      },
+    }, res);
+    expect(mockInsert).toHaveBeenCalledWith({
+      paypal_order_id: 'PAYPAL123',
+      payment_provider: 'paypal',
+      customer_email: 'buyer@test.com',
+      shipping_name: 'Jane Doe', shipping_street: '123 Main St', shipping_city: 'Springfield',
+      shipping_state: 'IL', shipping_postal_code: '62701', shipping_country: 'US', shipping_phone: '555-1234',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ recorded: true });
+  });
+
+  test('still returns success when the Supabase insert fails', async () => {
+    Stripe.mockReturnValue({});
+    const mockInsert = jest.fn().mockRejectedValue(new Error('insert failed'));
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ insert: mockInsert }) });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { action: 'record-paypal-order', email: 'buyer@test.com', paypal_order_id: 'PAYPAL456', amount: '10.00' },
+    }, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ recorded: true });
+  });
 });
