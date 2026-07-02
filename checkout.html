@@ -170,6 +170,34 @@
 
     let promoCodeId = null;
     let appliedCouponCode = null;
+    let activeDiscount = null; // null | 'coupon' | 'member'
+
+    async function checkMembership() {
+      if (activeDiscount === 'coupon') return;
+      const email = document.getElementById('email').value.trim();
+      const msgEl = document.getElementById('discount-msg');
+      if (!email) return;
+      try {
+        const r = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'check-member', email }),
+        });
+        const d = await r.json();
+        if (d.is_member) {
+          activeDiscount = 'member';
+          msgEl.textContent = '✓ Member discount applied — 5% off';
+          msgEl.className = 'discount-msg ok';
+        } else if (activeDiscount === 'member') {
+          activeDiscount = null;
+          msgEl.textContent = '';
+          msgEl.className = 'discount-msg';
+        }
+      } catch {
+        // membership hint is a nice-to-have — a failed check should not block checkout
+      }
+    }
+    document.getElementById('email').addEventListener('blur', checkMembership);
 
     async function applyCode() {
       const msgEl = document.getElementById('discount-msg');
@@ -194,11 +222,13 @@
         if (d.valid) {
           promoCodeId = d.promotion_code_id;
           appliedCouponCode = code.toUpperCase();
+          activeDiscount = 'coupon';
           msgEl.textContent = '✓ ' + d.message;
           msgEl.className = 'discount-msg ok';
         } else {
           promoCodeId = null;
           appliedCouponCode = null;
+          if (activeDiscount === 'coupon') activeDiscount = null;
           msgEl.textContent = d.error || 'Invalid discount code';
           msgEl.className = 'discount-msg err';
         }
