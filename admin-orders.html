@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>订单管理 - LYP SPACE</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Helvetica Neue, Arial, sans-serif; background: #f5f5f5; min-height: 100vh; padding: 24px; }
+    .container { background: #fff; padding: 40px 48px; width: 100%; max-width: 1100px; margin: 0 auto; }
+    h1 { font-size: 14px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 28px; }
+    .nav { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #eee; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .nav a.back { font-size: 13px; color: #111; text-decoration: none; margin-right: 8px; }
+    .nav a.btn { display: inline-block; padding: 9px 18px; color: #fff; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; }
+    .auth-row { display: flex; gap: 10px; align-items: center; margin-bottom: 28px; }
+    .auth-row input { padding: 10px 12px; border: 1px solid #e0e0e0; font-size: 14px; font-family: inherit; outline: none; width: 220px; }
+    .auth-row input:focus { border-color: #111; }
+    .auth-row button { padding: 10px 22px; background: #111; color: #fff; border: none; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-family: inherit; cursor: pointer; }
+    .auth-row button:hover { background: #333; }
+    .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 20px; }
+    .controls input[type=text] { padding: 9px 12px; border: 1px solid #e0e0e0; font-size: 13px; font-family: inherit; outline: none; width: 280px; }
+    .controls input[type=text]:focus { border-color: #111; }
+    .tabs { display: flex; gap: 0; }
+    .tabs button { padding: 8px 18px; border: 1px solid #e0e0e0; background: #fff; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-family: inherit; cursor: pointer; margin-left: -1px; }
+    .tabs button.active { background: #111; color: #fff; border-color: #111; z-index: 1; position: relative; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #888; padding: 10px 12px; border-bottom: 2px solid #e0e0e0; }
+    td { padding: 12px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    .badge { display: inline-block; padding: 3px 9px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+    .badge.processing { background: #fff7e6; color: #b36200; }
+    .badge.shipped { background: #e6f4ea; color: #1a6e3c; }
+    .btn-ship { padding: 6px 14px; background: #111; color: #fff; border: none; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-family: inherit; cursor: pointer; text-decoration: none; display: inline-block; }
+    .btn-ship:hover { background: #333; }
+    .tracking { font-size: 12px; color: #444; }
+    .msg { margin-bottom: 16px; font-size: 13px; color: #c0392b; }
+    #empty { text-align: center; padding: 48px 0; font-size: 13px; color: #888; display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <a href="/" class="back">← 返回主页</a>
+      <a href="/admin" class="btn" style="background:#111;">发货管理 →</a>
+      <a href="/admin-products" class="btn" style="background:#444;">产品管理 →</a>
+      <a href="/admin-settings" class="btn" style="background:#666;">设置 →</a>
+    </div>
+    <h1>订单管理</h1>
+
+    <div class="auth-row">
+      <input type="password" id="pw" placeholder="管理员密码" />
+      <button onclick="loadOrders()">加载订单</button>
+    </div>
+    <div id="err" class="msg"></div>
+
+    <div class="controls" id="controls" style="display:none;">
+      <input type="text" id="search" placeholder="搜索邮箱或订单号…" oninput="renderTable()" />
+      <div class="tabs">
+        <button class="active" onclick="setFilter('all', this)">全部</button>
+        <button onclick="setFilter('processing', this)">未发货</button>
+        <button onclick="setFilter('shipped', this)">已发货</button>
+      </div>
+    </div>
+
+    <div id="table-wrap" style="display:none;">
+      <table>
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>买家邮箱</th>
+            <th>商品</th>
+            <th>金额</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div id="empty">暂无符合条件的订单</div>
+    </div>
+  </div>
+
+  <script>
+    function esc(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    let allOrders = [];
+    let activeFilter = 'all';
+
+    async function loadOrders() {
+      const pw = document.getElementById('pw').value.trim();
+      const errEl = document.getElementById('err');
+      errEl.textContent = '';
+      if (!pw) { errEl.textContent = '请输入管理员密码'; return; }
+
+      try {
+        const r = await fetch('/api/checkout?action=admin-orders&password=' + encodeURIComponent(pw));
+        if (r.status === 401) { errEl.textContent = '密码错误'; return; }
+        if (!r.ok) { errEl.textContent = '加载失败，请重试'; return; }
+        const { orders } = await r.json();
+        allOrders = orders || [];
+        document.getElementById('controls').style.display = 'flex';
+        document.getElementById('table-wrap').style.display = 'block';
+        renderTable();
+      } catch {
+        errEl.textContent = '网络错误，请重试';
+      }
+    }
+
+    function setFilter(f, btn) {
+      activeFilter = f;
+      document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTable();
+    }
+
+    function renderTable() {
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      const tbody = document.getElementById('tbody');
+      const emptyEl = document.getElementById('empty');
+
+      const visible = allOrders.filter(o => {
+        if (activeFilter !== 'all' && o.status !== activeFilter) return false;
+        if (q && !(o.customer_email || '').toLowerCase().includes(q) && !(o.session_id || '').toLowerCase().includes(q)) return false;
+        return true;
+      });
+
+      if (visible.length === 0) {
+        tbody.innerHTML = '';
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+
+      tbody.innerHTML = visible.map(o => {
+        const date = o.date ? new Date(o.date).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+        const amount = ((o.amount || 0) / 100).toFixed(2);
+        const currency = esc((o.currency || 'USD').toUpperCase());
+        const itemsHtml = (o.items || []).map(i => `${esc(i.name)} ×${esc(i.quantity)}`).join('<br>');
+        const safeStatus = o.status === 'shipped' ? 'shipped' : 'processing';
+        const badge = `<span class="badge ${safeStatus}">${safeStatus === 'shipped' ? '已发货' : '未发货'}</span>`;
+        const action = o.status === 'shipped'
+          ? `<span class="tracking">${esc((o.tracking || {}).carrier)}<br>${esc((o.tracking || {}).number)}</span>`
+          : `<a class="btn-ship" href="/admin?session_id=${encodeURIComponent(o.session_id || '')}&email=${encodeURIComponent(o.customer_email || '')}">发货</a>`;
+        return `<tr>
+          <td style="white-space:nowrap;color:#666;">${date}</td>
+          <td>${esc(o.customer_email)}</td>
+          <td>${itemsHtml}</td>
+          <td style="white-space:nowrap;">${currency} ${amount}</td>
+          <td>${badge}</td>
+          <td>${action}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    document.getElementById('pw').addEventListener('keydown', e => {
+      if (e.key === 'Enter') loadOrders();
+    });
+  </script>
+</body>
+</html>

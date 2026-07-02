@@ -1,4 +1,5 @@
-if (!global.__stripeMock) {
-  global.__stripeMock = jest.fn();
-}
-module.exports = global.__stripeMock;
+module.exports = jest.fn((...args) => {
+  if (typeof global.__stripeMock === 'function') {
+    return global.__stripeMock(...args);
+  }
+});

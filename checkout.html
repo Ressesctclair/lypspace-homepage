@@ -47,6 +47,41 @@
     </div>
 
     <div class="group">
+      <label for="ship-name">Full name</label>
+      <input id="ship-name" type="text" placeholder="Jane Doe">
+    </div>
+
+    <div class="group">
+      <label for="ship-street">Street address</label>
+      <input id="ship-street" type="text" placeholder="123 Main St">
+    </div>
+
+    <div class="group">
+      <label for="ship-city">City</label>
+      <input id="ship-city" type="text" placeholder="Springfield">
+    </div>
+
+    <div class="group">
+      <label for="ship-state">State / Province</label>
+      <input id="ship-state" type="text" placeholder="IL">
+    </div>
+
+    <div class="group">
+      <label for="ship-postal">Postal code</label>
+      <input id="ship-postal" type="text" placeholder="62701">
+    </div>
+
+    <div class="group">
+      <label for="ship-country">Country</label>
+      <select id="ship-country"></select>
+    </div>
+
+    <div class="group">
+      <label for="ship-phone">Phone</label>
+      <input id="ship-phone" type="text" placeholder="+1 555 123 4567">
+    </div>
+
+    <div class="group">
       <label data-i18n="co_coupon">Discount code (optional)</label>
       <div class="coupon-row">
         <input id="coupon" type="text" data-i18n-ph="co_coupon_ph" placeholder="Enter code">
@@ -77,6 +112,35 @@
     const nameEl = document.getElementById('product-name');
     const btn = document.getElementById('checkout-btn');
 
+    const COUNTRIES = [
+      'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia',
+      'Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium',
+      'Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria',
+      'Burkina Faso','Burundi','Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad',
+      'Chile','China','Colombia','Comoros','Congo (Congo-Brazzaville)','Costa Rica','Croatia','Cuba','Cyprus',
+      'Czechia','Democratic Republic of the Congo','Denmark','Djibouti','Dominica','Dominican Republic',
+      'Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji',
+      'Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea',
+      'Guinea-Bissau','Guyana','Haiti','Honduras','Hong Kong','Hungary','Iceland','India','Indonesia','Iran',
+      'Iraq','Ireland','Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kuwait',
+      'Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania',
+      'Luxembourg','Macau','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands',
+      'Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco',
+      'Mozambique','Myanmar','Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger',
+      'Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama',
+      'Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia',
+      'Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino',
+      'Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore',
+      'Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain',
+      'Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania',
+      'Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan',
+      'Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay',
+      'Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe',
+    ];
+    const countrySelect = document.getElementById('ship-country');
+    countrySelect.innerHTML = '<option value="">Select country</option>' +
+      COUNTRIES.map(c => '<option value="' + c + '">' + c + '</option>').join('');
+
     function tr(k) { return window.i18n ? window.i18n.t(k) : k; }
     function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -106,6 +170,35 @@
 
     let promoCodeId = null;
     let appliedCouponCode = null;
+    let appliedCouponDiscount = null; // { type: 'percent'|'amount', value, currency? }
+    let activeDiscount = null; // null | 'coupon' | 'member'
+
+    async function checkMembership() {
+      if (activeDiscount === 'coupon') return;
+      const email = document.getElementById('email').value.trim();
+      const msgEl = document.getElementById('discount-msg');
+      if (!email) return;
+      try {
+        const r = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'check-member', email }),
+        });
+        const d = await r.json();
+        if (d.is_member) {
+          activeDiscount = 'member';
+          msgEl.textContent = '✓ Member discount applied — 5% off';
+          msgEl.className = 'discount-msg ok';
+        } else if (activeDiscount === 'member') {
+          activeDiscount = null;
+          msgEl.textContent = '';
+          msgEl.className = 'discount-msg';
+        }
+      } catch {
+        // membership hint is a nice-to-have — a failed check should not block checkout
+      }
+    }
+    document.getElementById('email').addEventListener('blur', checkMembership);
 
     async function applyCode() {
       const msgEl = document.getElementById('discount-msg');
@@ -130,11 +223,15 @@
         if (d.valid) {
           promoCodeId = d.promotion_code_id;
           appliedCouponCode = code.toUpperCase();
+          appliedCouponDiscount = d.discount;
+          activeDiscount = 'coupon';
           msgEl.textContent = '✓ ' + d.message;
           msgEl.className = 'discount-msg ok';
         } else {
           promoCodeId = null;
           appliedCouponCode = null;
+          appliedCouponDiscount = null;
+          if (activeDiscount === 'coupon') activeDiscount = null;
           msgEl.textContent = d.error || 'Invalid discount code';
           msgEl.className = 'discount-msg err';
         }
@@ -146,12 +243,27 @@
 
     async function startCheckout() {
       const email = document.getElementById('email').value.trim();
+      const shipName = document.getElementById('ship-name').value.trim();
+      const shipStreet = document.getElementById('ship-street').value.trim();
+      const shipCity = document.getElementById('ship-city').value.trim();
+      const shipState = document.getElementById('ship-state').value.trim();
+      const shipPostal = document.getElementById('ship-postal').value.trim();
+      const shipCountry = document.getElementById('ship-country').value;
+      const shipPhone = document.getElementById('ship-phone').value.trim();
       if (!email) { alert(tr('co_email_req')); return; }
+      if (!shipName || !shipStreet || !shipCity || !shipState || !shipPostal || !shipCountry || !shipPhone) {
+        alert('Please fill in your shipping address.');
+        return;
+      }
       if (!isCart && !priceId && !isDynamic) return;
       btn.disabled = true;
       btn.textContent = tr('co_redirecting');
       try {
-        const body = { email };
+        const body = {
+          email,
+          shipping_name: shipName, shipping_street: shipStreet, shipping_city: shipCity,
+          shipping_state: shipState, shipping_postal_code: shipPostal, shipping_country: shipCountry, shipping_phone: shipPhone,
+        };
         if (isCart) {
           body.items = Cart.getItems().map(i =>
             i.price_id
@@ -195,11 +307,16 @@
       if (typeof paypal_sdk === 'undefined') return;
 
       function getPayPalAmount() {
-        if (isCart) {
-          return Cart.total().toFixed(2);
+        const base = isCart ? Cart.total() : parseFloat(params.get('amount') || '0') * qty;
+        let discounted = base;
+        if (activeDiscount === 'coupon' && appliedCouponDiscount) {
+          discounted = appliedCouponDiscount.type === 'percent'
+            ? base * (1 - appliedCouponDiscount.value / 100)
+            : base - appliedCouponDiscount.value;
+        } else if (activeDiscount === 'member') {
+          discounted = base * 0.95;
         }
-        const a = parseFloat(params.get('amount') || '0');
-        return (a * qty).toFixed(2);
+        return Math.max(0, discounted).toFixed(2);
       }
 
       paypal_sdk.Buttons({
@@ -207,6 +324,17 @@
         createOrder: function(data, actions) {
           const email = document.getElementById('email').value.trim();
           if (!email) { alert(tr('co_email_req')); return Promise.reject(); }
+          const shipName = document.getElementById('ship-name').value.trim();
+          const shipStreet = document.getElementById('ship-street').value.trim();
+          const shipCity = document.getElementById('ship-city').value.trim();
+          const shipState = document.getElementById('ship-state').value.trim();
+          const shipPostal = document.getElementById('ship-postal').value.trim();
+          const shipCountry = document.getElementById('ship-country').value;
+          const shipPhone = document.getElementById('ship-phone').value.trim();
+          if (!shipName || !shipStreet || !shipCity || !shipState || !shipPostal || !shipCountry || !shipPhone) {
+            alert('Please fill in your shipping address.');
+            return Promise.reject();
+          }
           const amount = getPayPalAmount();
           if (parseFloat(amount) <= 0) return Promise.reject();
           return actions.order.create({
@@ -217,6 +345,27 @@
         onApprove: function(data, actions) {
           return actions.order.capture().then(function(details) {
             if (isCart) Cart.clear();
+            const email = document.getElementById('email').value.trim();
+            const capture = details.purchase_units?.[0]?.payments?.captures?.[0];
+            const capturedAmount = capture ? capture.amount.value : getPayPalAmount();
+            fetch('/api/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              keepalive: true,
+              body: JSON.stringify({
+                action: 'record-paypal-order',
+                email,
+                paypal_order_id: details.id,
+                amount: capturedAmount,
+                shipping_name: document.getElementById('ship-name').value.trim(),
+                shipping_street: document.getElementById('ship-street').value.trim(),
+                shipping_city: document.getElementById('ship-city').value.trim(),
+                shipping_state: document.getElementById('ship-state').value.trim(),
+                shipping_postal_code: document.getElementById('ship-postal').value.trim(),
+                shipping_country: document.getElementById('ship-country').value,
+                shipping_phone: document.getElementById('ship-phone').value.trim(),
+              }),
+            }).catch(function(err) { console.error('Failed to record PayPal order', err); });
             const name = details.payer.name.given_name || '';
             alert('Payment successful! Thank you' + (name ? ', ' + name : '') + '.');
             location.href = '/?paypal=success';

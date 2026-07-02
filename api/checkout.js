@@ -1,6 +1,7 @@
 const Stripe = require('stripe');
 
 module.exports = async (req, res) => {
+  req.query = req.query || {};
   const { getSupabase } = require('./_lib/supabase');
 
   // ── Product overrides (GET, public) ────────────────────────────
@@ -10,6 +11,55 @@ module.exports = async (req, res) => {
     const map = {};
     (data || []).forEach(r => { map[r.handle] = r; });
     return res.status(200).json({ inventory: map });
+  }
+
+  // ── Admin orders list (GET, admin) ───────────────────────────
+  if (req.method === 'GET' && req.query.action === 'admin-orders') {
+    if (req.query.password !== process.env.ADMIN_PASSWORD)
+      return res.status(401).json({ error: 'Unauthorized' });
+
+    const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+    const supabase = getSupabase();
+
+    const [{ data: orderLinks }, { data: shipmentRows }] = await Promise.all([
+      supabase.from('order_links').select('stripe_session_id, customer_email'),
+      supabase.from('shipments').select('stripe_session_id, carrier, tracking_number'),
+    ]);
+
+    const shipmentMap = {};
+    (shipmentRows || []).forEach(s => { shipmentMap[s.stripe_session_id] = s; });
+
+    const orders = await Promise.all(
+      (orderLinks || []).map(async ({ stripe_session_id, customer_email }) => {
+        const shipment = shipmentMap[stripe_session_id] || null;
+        try {
+          const session = await stripe.checkout.sessions.retrieve(stripe_session_id, {
+            expand: ['line_items'],
+          });
+          return {
+            session_id: stripe_session_id,
+            date: new Date(session.created * 1000).toISOString(),
+            customer_email,
+            amount: session.amount_total,
+            currency: session.currency,
+            items: (session.line_items?.data || []).map(i => ({
+              name: i.description,
+              quantity: i.quantity,
+            })),
+            status: shipment ? 'shipped' : 'processing',
+            tracking: shipment
+              ? { carrier: shipment.carrier, number: shipment.tracking_number }
+              : null,
+          };
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    const validOrders = orders.filter(Boolean);
+    validOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return res.status(200).json({ orders: validOrders });
   }
 
   // ── Full data export (GET, admin) ────────────────────────────
@@ -185,7 +235,52 @@ module.exports = async (req, res) => {
     return res.status(200).json({ valid: true, discount, promotion_code_id: promo.id, message });
   }
 
-  const { price_id, email, items, promotion_code_id, coupon_code, quantity, amount, product_name } = req.body || {};
+  if (action === 'check-member') {
+    const { email: checkEmail } = req.body || {};
+    if (!checkEmail) return res.status(400).json({ error: 'email required' });
+    const supabase = getSupabase();
+    const { data: user } = await supabase
+      .from('users')
+      .select('is_member')
+      .eq('email', checkEmail)
+      .maybeSingle();
+    return res.status(200).json({ is_member: !!(user && user.is_member) });
+  }
+
+  if (action === 'record-paypal-order') {
+    const {
+      email: paypalEmail, paypal_order_id, amount: paypalAmount,
+      shipping_name, shipping_street, shipping_city, shipping_state, shipping_postal_code, shipping_country, shipping_phone,
+    } = req.body || {};
+    if (!paypalEmail || !paypal_order_id || paypalAmount == null)
+      return res.status(400).json({ error: 'email, paypal_order_id, and amount required' });
+
+    const supabase = getSupabase();
+    try {
+      await supabase.from('order_links').insert({
+        paypal_order_id,
+        payment_provider: 'paypal',
+        customer_email: paypalEmail,
+        shipping_name: shipping_name || null,
+        shipping_street: shipping_street || null,
+        shipping_city: shipping_city || null,
+        shipping_state: shipping_state || null,
+        shipping_postal_code: shipping_postal_code || null,
+        shipping_country: shipping_country || null,
+        shipping_phone: shipping_phone || null,
+      });
+    } catch (err) {
+      console.error('[checkout] record-paypal-order insert failed — MANUAL RECOVERY NEEDED', {
+        paypal_order_id, customer_email: paypalEmail, error: err.message,
+      });
+    }
+    return res.status(200).json({ recorded: true });
+  }
+
+  const {
+    price_id, email, items, promotion_code_id, coupon_code, quantity, amount, product_name,
+    shipping_name, shipping_street, shipping_city, shipping_state, shipping_postal_code, shipping_country, shipping_phone,
+  } = req.body || {};
   const normalizedCouponCode = coupon_code ? coupon_code.toUpperCase() : '';
   if (!email) return res.status(400).json({ error: 'email required' });
 
@@ -221,11 +316,35 @@ module.exports = async (req, res) => {
     customer_email: email,
     success_url: `${process.env.SITE_URL}/dashboard?checkout=success`,
     cancel_url: `${process.env.SITE_URL}/checkout`,
-    metadata: { coupon_code: normalizedCouponCode },
+    metadata: {
+      coupon_code: normalizedCouponCode,
+      shipping_name: shipping_name || '',
+      shipping_street: shipping_street || '',
+      shipping_city: shipping_city || '',
+      shipping_state: shipping_state || '',
+      shipping_postal_code: shipping_postal_code || '',
+      shipping_country: shipping_country || '',
+      shipping_phone: shipping_phone || '',
+    },
   };
 
   if (promotion_code_id) {
     params.discounts = [{ promotion_code: promotion_code_id }];
+  } else {
+    const supabase = getSupabase();
+    const { data: user } = await supabase.from('users').select('is_member').eq('email', email).maybeSingle();
+    if (user && user.is_member) {
+      const MEMBER_COUPON_ID = 'member-5pct-off';
+      let memberCouponId;
+      try {
+        await stripe.coupons.retrieve(MEMBER_COUPON_ID);
+        memberCouponId = MEMBER_COUPON_ID;
+      } catch {
+        const created = await stripe.coupons.create({ id: MEMBER_COUPON_ID, percent_off: 5, duration: 'once' });
+        memberCouponId = created.id;
+      }
+      params.discounts = [{ coupon: memberCouponId }];
+    }
   }
 
   const session = await stripe.checkout.sessions.create(params);

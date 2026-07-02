@@ -20,7 +20,7 @@
   "jest": {
     "testEnvironment": "node",
     "testMatch": [
-      "**/api/__tests__/**/*.test.js"
+      "**/__tests__/**/*.test.js"
     ]
   }
 }
