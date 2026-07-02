@@ -198,6 +198,36 @@ module.exports = async (req, res) => {
     return res.status(200).json({ is_member: !!(user && user.is_member) });
   }
 
+  if (action === 'record-paypal-order') {
+    const {
+      email: paypalEmail, paypal_order_id, amount: paypalAmount,
+      shipping_name, shipping_street, shipping_city, shipping_state, shipping_postal_code, shipping_country, shipping_phone,
+    } = req.body || {};
+    if (!paypalEmail || !paypal_order_id || paypalAmount == null)
+      return res.status(400).json({ error: 'email, paypal_order_id, and amount required' });
+
+    const supabase = getSupabase();
+    try {
+      await supabase.from('order_links').insert({
+        paypal_order_id,
+        payment_provider: 'paypal',
+        customer_email: paypalEmail,
+        shipping_name: shipping_name || null,
+        shipping_street: shipping_street || null,
+        shipping_city: shipping_city || null,
+        shipping_state: shipping_state || null,
+        shipping_postal_code: shipping_postal_code || null,
+        shipping_country: shipping_country || null,
+        shipping_phone: shipping_phone || null,
+      });
+    } catch (err) {
+      console.error('[checkout] record-paypal-order insert failed — MANUAL RECOVERY NEEDED', {
+        paypal_order_id, customer_email: paypalEmail, error: err.message,
+      });
+    }
+    return res.status(200).json({ recorded: true });
+  }
+
   const {
     price_id, email, items, promotion_code_id, coupon_code, quantity, amount, product_name,
     shipping_name, shipping_street, shipping_city, shipping_state, shipping_postal_code, shipping_country, shipping_phone,

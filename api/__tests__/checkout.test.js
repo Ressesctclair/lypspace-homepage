@@ -238,3 +238,53 @@ test('includes shipping address fields in session metadata', async () => {
     shipping_state: 'IL', shipping_postal_code: '62701', shipping_country: 'US', shipping_phone: '555-1234',
   });
 });
+
+describe('action=record-paypal-order', () => {
+  test('returns 400 when required fields are missing', async () => {
+    Stripe.mockReturnValue({});
+    const res = makeRes();
+    await handler({ method: 'POST', body: { action: 'record-paypal-order', email: 'a@b.com' } }, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'email, paypal_order_id, and amount required' });
+  });
+
+  test('inserts a paypal order_links row with address fields', async () => {
+    Stripe.mockReturnValue({});
+    const mockInsert = jest.fn().mockResolvedValue({});
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ insert: mockInsert }) });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: {
+        action: 'record-paypal-order',
+        email: 'buyer@test.com',
+        paypal_order_id: 'PAYPAL123',
+        amount: '47.50',
+        shipping_name: 'Jane Doe', shipping_street: '123 Main St', shipping_city: 'Springfield',
+        shipping_state: 'IL', shipping_postal_code: '62701', shipping_country: 'US', shipping_phone: '555-1234',
+      },
+    }, res);
+    expect(mockInsert).toHaveBeenCalledWith({
+      paypal_order_id: 'PAYPAL123',
+      payment_provider: 'paypal',
+      customer_email: 'buyer@test.com',
+      shipping_name: 'Jane Doe', shipping_street: '123 Main St', shipping_city: 'Springfield',
+      shipping_state: 'IL', shipping_postal_code: '62701', shipping_country: 'US', shipping_phone: '555-1234',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ recorded: true });
+  });
+
+  test('still returns success when the Supabase insert fails', async () => {
+    Stripe.mockReturnValue({});
+    const mockInsert = jest.fn().mockRejectedValue(new Error('insert failed'));
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ insert: mockInsert }) });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { action: 'record-paypal-order', email: 'buyer@test.com', paypal_order_id: 'PAYPAL456', amount: '10.00' },
+    }, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ recorded: true });
+  });
+});
