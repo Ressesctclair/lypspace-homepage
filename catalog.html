@@ -91,6 +91,11 @@
     .pg-btn.active { background: var(--black); border-color: var(--black); color: var(--white); }
     .pg-btn:disabled { opacity: 0.3; cursor: default; }
     .pg-ellipsis { padding: 8px 6px; font-size: 13px; color: var(--gray); }
+    .pg-jump { display: flex; align-items: center; gap: 4px; margin-left: 6px; }
+    .pg-jump input { width: 48px; padding: 8px 6px; font-size: 13px; font-family: var(--font); border: 1px solid var(--border); text-align: center; color: var(--black); background: none; outline: none; }
+    .pg-jump input:focus { border-color: var(--black); }
+    .pg-jump button { background: none; border: 1px solid var(--border); padding: 8px 12px; font-size: 13px; font-family: var(--font); cursor: pointer; color: var(--black); transition: all 0.15s; }
+    .pg-jump button:hover { border-color: var(--black); }
 
     footer {
       margin-top: 0; border-top: 1px solid var(--border);
@@ -272,6 +277,7 @@
         if (r === '…') html += `<span class="pg-ellipsis">…</span>`;
         else html += `<button class="pg-btn${r===page?' active':''}" onclick="goPage(${r})">${r}</button>`;
       });
+      html += `<span class="pg-jump"><input id="pg-jump-input" type="number" min="1" max="${totalPages}" placeholder="#"><button onclick="var v=parseInt(document.getElementById('pg-jump-input').value);if(v>=1&&v<=${totalPages})goPage(v)">GO</button></span>`;
       html += `<button class="pg-btn" onclick="goPage(${page+1})" ${page===totalPages?'disabled':''}>→</button>`;
       el.innerHTML = html;
     }
