@@ -61,7 +61,11 @@ test('creates session without coupon', async () => {
   expect(call.customer_email).toBe('a@b.com');
   expect(call.mode).toBe('payment');
   expect(call.discounts).toBeUndefined();
-  expect(call.metadata).toEqual({ coupon_code: '' });
+  expect(call.metadata).toEqual({
+    coupon_code: '',
+    shipping_name: '', shipping_street: '', shipping_city: '',
+    shipping_state: '', shipping_postal_code: '', shipping_country: '', shipping_phone: '',
+  });
   expect(res.status).toHaveBeenCalledWith(200);
   expect(res.json).toHaveBeenCalledWith({ url: 'https://checkout.stripe.com/abc' });
 });
@@ -76,7 +80,11 @@ test('creates session with promotion code and uppercases coupon_code in metadata
   }, res);
   const call = mockCreate.mock.calls[0][0];
   expect(call.discounts).toEqual([{ promotion_code: 'promo_yyy' }]);
-  expect(call.metadata).toEqual({ coupon_code: 'SAVE10' });
+  expect(call.metadata).toEqual({
+    coupon_code: 'SAVE10',
+    shipping_name: '', shipping_street: '', shipping_city: '',
+    shipping_state: '', shipping_postal_code: '', shipping_country: '', shipping_phone: '',
+  });
   expect(res.json).toHaveBeenCalledWith({ url: 'https://checkout.stripe.com/xyz' });
 });
 
@@ -208,5 +216,25 @@ describe('member discount', () => {
     expect(getSupabase).not.toHaveBeenCalled();
     const call = mockCreate.mock.calls[0][0];
     expect(call.discounts).toEqual([{ promotion_code: 'promo_yyy' }]);
+  });
+});
+
+test('includes shipping address fields in session metadata', async () => {
+  const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/addr' });
+  Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });
+  const res = makeRes();
+  await handler({
+    method: 'POST',
+    body: {
+      price_id: 'price_xxx', email: 'a@b.com',
+      shipping_name: 'Jane Doe', shipping_street: '123 Main St', shipping_city: 'Springfield',
+      shipping_state: 'IL', shipping_postal_code: '62701', shipping_country: 'US', shipping_phone: '555-1234',
+    },
+  }, res);
+  const call = mockCreate.mock.calls[0][0];
+  expect(call.metadata).toEqual({
+    coupon_code: '',
+    shipping_name: 'Jane Doe', shipping_street: '123 Main St', shipping_city: 'Springfield',
+    shipping_state: 'IL', shipping_postal_code: '62701', shipping_country: 'US', shipping_phone: '555-1234',
   });
 });

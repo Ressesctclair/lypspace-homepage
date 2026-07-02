@@ -80,9 +80,22 @@ module.exports = async (req, res) => {
 
     const supabase = getSupabase();
     const userId = session.metadata?.userId || null;
+    const meta = session.metadata || {};
     try {
       await supabase.from('order_links').upsert(
-        { stripe_session_id: session.id, user_id: userId, customer_email: customerEmail },
+        {
+          stripe_session_id: session.id,
+          user_id: userId,
+          customer_email: customerEmail,
+          payment_provider: 'stripe',
+          shipping_name: meta.shipping_name || null,
+          shipping_street: meta.shipping_street || null,
+          shipping_city: meta.shipping_city || null,
+          shipping_state: meta.shipping_state || null,
+          shipping_postal_code: meta.shipping_postal_code || null,
+          shipping_country: meta.shipping_country || null,
+          shipping_phone: meta.shipping_phone || null,
+        },
         { onConflict: 'stripe_session_id' }
       );
     } catch (err) {

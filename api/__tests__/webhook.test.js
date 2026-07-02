@@ -196,3 +196,46 @@ test('does not write coupon_uses when metadata.coupon_code is empty', async () =
   const couponFromCalls = mockFrom.mock.calls.filter(c => c[0] === 'coupon_uses');
   expect(couponFromCalls).toHaveLength(0);
 });
+
+test('writes shipping address fields from session metadata into order_links', async () => {
+  const session = {
+    id: 'cs_addr_test',
+    metadata: {
+      shipping_name: 'Jane Doe',
+      shipping_street: '123 Main St',
+      shipping_city: 'Springfield',
+      shipping_state: 'IL',
+      shipping_postal_code: '62701',
+      shipping_country: 'US',
+      shipping_phone: '555-1234',
+    },
+    customer_details: { email: 'buyer@test.com', name: 'Jane Doe' },
+    amount_total: 5000,
+    currency: 'usd',
+  };
+  mockConstructEvent.mockReturnValue({
+    type: 'checkout.session.completed',
+    data: { object: session },
+  });
+  const { getSupabase } = require('../_lib/supabase');
+  const mockUpsert = jest.fn().mockResolvedValue({});
+  const mockFrom = jest.fn().mockReturnValue({ upsert: mockUpsert });
+  getSupabase.mockReturnValue({ from: mockFrom });
+
+  await handler(makeReq(JSON.stringify(session)), makeRes());
+
+  expect(mockUpsert).toHaveBeenCalledWith(
+    expect.objectContaining({
+      stripe_session_id: 'cs_addr_test',
+      payment_provider: 'stripe',
+      shipping_name: 'Jane Doe',
+      shipping_street: '123 Main St',
+      shipping_city: 'Springfield',
+      shipping_state: 'IL',
+      shipping_postal_code: '62701',
+      shipping_country: 'US',
+      shipping_phone: '555-1234',
+    }),
+    { onConflict: 'stripe_session_id' }
+  );
+});

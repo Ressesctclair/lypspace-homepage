@@ -198,7 +198,10 @@ module.exports = async (req, res) => {
     return res.status(200).json({ is_member: !!(user && user.is_member) });
   }
 
-  const { price_id, email, items, promotion_code_id, coupon_code, quantity, amount, product_name } = req.body || {};
+  const {
+    price_id, email, items, promotion_code_id, coupon_code, quantity, amount, product_name,
+    shipping_name, shipping_street, shipping_city, shipping_state, shipping_postal_code, shipping_country, shipping_phone,
+  } = req.body || {};
   const normalizedCouponCode = coupon_code ? coupon_code.toUpperCase() : '';
   if (!email) return res.status(400).json({ error: 'email required' });
 
@@ -234,7 +237,16 @@ module.exports = async (req, res) => {
     customer_email: email,
     success_url: `${process.env.SITE_URL}/dashboard?checkout=success`,
     cancel_url: `${process.env.SITE_URL}/checkout`,
-    metadata: { coupon_code: normalizedCouponCode },
+    metadata: {
+      coupon_code: normalizedCouponCode,
+      shipping_name: shipping_name || '',
+      shipping_street: shipping_street || '',
+      shipping_city: shipping_city || '',
+      shipping_state: shipping_state || '',
+      shipping_postal_code: shipping_postal_code || '',
+      shipping_country: shipping_country || '',
+      shipping_phone: shipping_phone || '',
+    },
   };
 
   if (promotion_code_id) {
