@@ -1,5 +1,6 @@
 jest.mock('stripe');
-let Stripe, handler;
+jest.mock('../_lib/supabase', () => ({ getSupabase: jest.fn() }));
+let Stripe, handler, getSupabase;
 
 beforeEach(() => {
   jest.resetModules();
@@ -7,6 +8,16 @@ beforeEach(() => {
   process.env.STRIPE_SECRET_KEY = 'sk_test_xxx';
   process.env.SITE_URL = 'https://example.com';
   Stripe = require('stripe');
+  getSupabase = require('../_lib/supabase').getSupabase;
+  getSupabase.mockReturnValue({
+    from: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          maybeSingle: jest.fn().mockResolvedValue({ data: { is_member: false } }),
+        }),
+      }),
+    }),
+  });
   handler = require('../checkout');
 });
 
@@ -77,4 +88,54 @@ test('success_url and cancel_url use SITE_URL', async () => {
   const call = mockCreate.mock.calls[0][0];
   expect(call.success_url).toBe('https://example.com/dashboard?checkout=success');
   expect(call.cancel_url).toBe('https://example.com/checkout');
+});
+
+describe('action=check-member', () => {
+  test('returns 400 when email missing', async () => {
+    Stripe.mockReturnValue({});
+    const res = makeRes();
+    await handler({ method: 'POST', body: { action: 'check-member' } }, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'email required' });
+  });
+
+  test('returns is_member true for a member', async () => {
+    Stripe.mockReturnValue({});
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({ data: { is_member: true } }),
+          }),
+        }),
+      }),
+    });
+    const res = makeRes();
+    await handler({ method: 'POST', body: { action: 'check-member', email: 'member@test.com' } }, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ is_member: true });
+  });
+
+  test('returns is_member false for a non-member', async () => {
+    Stripe.mockReturnValue({});
+    const res = makeRes();
+    await handler({ method: 'POST', body: { action: 'check-member', email: 'nonmember@test.com' } }, res);
+    expect(res.json).toHaveBeenCalledWith({ is_member: false });
+  });
+
+  test('returns is_member false when email not found', async () => {
+    Stripe.mockReturnValue({});
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({ data: null }),
+          }),
+        }),
+      }),
+    });
+    const res = makeRes();
+    await handler({ method: 'POST', body: { action: 'check-member', email: 'nobody@test.com' } }, res);
+    expect(res.json).toHaveBeenCalledWith({ is_member: false });
+  });
 });

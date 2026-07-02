@@ -186,6 +186,18 @@ module.exports = async (req, res) => {
     return res.status(200).json({ valid: true, discount, promotion_code_id: promo.id, message });
   }
 
+  if (action === 'check-member') {
+    const { email: checkEmail } = req.body || {};
+    if (!checkEmail) return res.status(400).json({ error: 'email required' });
+    const supabase = getSupabase();
+    const { data: user } = await supabase
+      .from('users')
+      .select('is_member')
+      .eq('email', checkEmail)
+      .maybeSingle();
+    return res.status(200).json({ is_member: !!(user && user.is_member) });
+  }
+
   const { price_id, email, items, promotion_code_id, coupon_code, quantity, amount, product_name } = req.body || {};
   const normalizedCouponCode = coupon_code ? coupon_code.toUpperCase() : '';
   if (!email) return res.status(400).json({ error: 'email required' });
