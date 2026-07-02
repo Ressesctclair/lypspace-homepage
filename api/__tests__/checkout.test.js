@@ -139,3 +139,74 @@ describe('action=check-member', () => {
     expect(res.json).toHaveBeenCalledWith({ is_member: false });
   });
 });
+
+describe('member discount', () => {
+  test('applies member coupon when email belongs to a member and no promo code given', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/member' });
+    const mockRetrieve = jest.fn().mockResolvedValue({ id: 'member-5pct-off' });
+    Stripe.mockReturnValue({
+      checkout: { sessions: { create: mockCreate } },
+      coupons: { retrieve: mockRetrieve, create: jest.fn() },
+    });
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({ data: { is_member: true } }),
+          }),
+        }),
+      }),
+    });
+    const res = makeRes();
+    await handler({ method: 'POST', body: { price_id: 'price_xxx', email: 'member@test.com' } }, res);
+    expect(mockRetrieve).toHaveBeenCalledWith('member-5pct-off');
+    const call = mockCreate.mock.calls[0][0];
+    expect(call.discounts).toEqual([{ coupon: 'member-5pct-off' }]);
+  });
+
+  test('creates the member coupon when it does not exist yet', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/member2' });
+    const mockCouponRetrieve = jest.fn().mockRejectedValue(new Error('No such coupon'));
+    const mockCouponCreate = jest.fn().mockResolvedValue({ id: 'member-5pct-off' });
+    Stripe.mockReturnValue({
+      checkout: { sessions: { create: mockCreate } },
+      coupons: { retrieve: mockCouponRetrieve, create: mockCouponCreate },
+    });
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({ data: { is_member: true } }),
+          }),
+        }),
+      }),
+    });
+    const res = makeRes();
+    await handler({ method: 'POST', body: { price_id: 'price_xxx', email: 'member@test.com' } }, res);
+    expect(mockCouponCreate).toHaveBeenCalledWith({ id: 'member-5pct-off', percent_off: 5, duration: 'once' });
+    const call = mockCreate.mock.calls[0][0];
+    expect(call.discounts).toEqual([{ coupon: 'member-5pct-off' }]);
+  });
+
+  test('does not apply member coupon for a non-member', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/nonmember' });
+    Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });
+    const res = makeRes();
+    await handler({ method: 'POST', body: { price_id: 'price_xxx', email: 'nonmember@test.com' } }, res);
+    const call = mockCreate.mock.calls[0][0];
+    expect(call.discounts).toBeUndefined();
+  });
+
+  test('promotion code takes priority over member discount and skips the membership lookup', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/promo' });
+    Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { price_id: 'price_xxx', email: 'member@test.com', promotion_code_id: 'promo_yyy' },
+    }, res);
+    expect(getSupabase).not.toHaveBeenCalled();
+    const call = mockCreate.mock.calls[0][0];
+    expect(call.discounts).toEqual([{ promotion_code: 'promo_yyy' }]);
+  });
+});

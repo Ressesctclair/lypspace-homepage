@@ -239,6 +239,21 @@ module.exports = async (req, res) => {
 
   if (promotion_code_id) {
     params.discounts = [{ promotion_code: promotion_code_id }];
+  } else {
+    const supabase = getSupabase();
+    const { data: user } = await supabase.from('users').select('is_member').eq('email', email).maybeSingle();
+    if (user && user.is_member) {
+      const MEMBER_COUPON_ID = 'member-5pct-off';
+      let memberCouponId;
+      try {
+        await stripe.coupons.retrieve(MEMBER_COUPON_ID);
+        memberCouponId = MEMBER_COUPON_ID;
+      } catch {
+        const created = await stripe.coupons.create({ id: MEMBER_COUPON_ID, percent_off: 5, duration: 'once' });
+        memberCouponId = created.id;
+      }
+      params.discounts = [{ coupon: memberCouponId }];
+    }
   }
 
   const session = await stripe.checkout.sessions.create(params);
