@@ -47,6 +47,41 @@
     </div>
 
     <div class="group">
+      <label for="ship-name">Full name</label>
+      <input id="ship-name" type="text" placeholder="Jane Doe">
+    </div>
+
+    <div class="group">
+      <label for="ship-street">Street address</label>
+      <input id="ship-street" type="text" placeholder="123 Main St">
+    </div>
+
+    <div class="group">
+      <label for="ship-city">City</label>
+      <input id="ship-city" type="text" placeholder="Springfield">
+    </div>
+
+    <div class="group">
+      <label for="ship-state">State / Province</label>
+      <input id="ship-state" type="text" placeholder="IL">
+    </div>
+
+    <div class="group">
+      <label for="ship-postal">Postal code</label>
+      <input id="ship-postal" type="text" placeholder="62701">
+    </div>
+
+    <div class="group">
+      <label for="ship-country">Country</label>
+      <select id="ship-country"></select>
+    </div>
+
+    <div class="group">
+      <label for="ship-phone">Phone</label>
+      <input id="ship-phone" type="text" placeholder="+1 555 123 4567">
+    </div>
+
+    <div class="group">
       <label data-i18n="co_coupon">Discount code (optional)</label>
       <div class="coupon-row">
         <input id="coupon" type="text" data-i18n-ph="co_coupon_ph" placeholder="Enter code">
@@ -76,6 +111,35 @@
     const isDynamic = !priceId && amount > 0;
     const nameEl = document.getElementById('product-name');
     const btn = document.getElementById('checkout-btn');
+
+    const COUNTRIES = [
+      'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia',
+      'Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium',
+      'Belize','Benin','Bhutan','Bolivia','Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria',
+      'Burkina Faso','Burundi','Cabo Verde','Cambodia','Cameroon','Canada','Central African Republic','Chad',
+      'Chile','China','Colombia','Comoros','Congo (Congo-Brazzaville)','Costa Rica','Croatia','Cuba','Cyprus',
+      'Czechia','Democratic Republic of the Congo','Denmark','Djibouti','Dominica','Dominican Republic',
+      'Ecuador','Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji',
+      'Finland','France','Gabon','Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea',
+      'Guinea-Bissau','Guyana','Haiti','Honduras','Hong Kong','Hungary','Iceland','India','Indonesia','Iran',
+      'Iraq','Ireland','Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Kuwait',
+      'Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein','Lithuania',
+      'Luxembourg','Macau','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands',
+      'Mauritania','Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco',
+      'Mozambique','Myanmar','Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger',
+      'Nigeria','North Korea','North Macedonia','Norway','Oman','Pakistan','Palau','Palestine','Panama',
+      'Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal','Qatar','Romania','Russia',
+      'Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines','Samoa','San Marino',
+      'Sao Tome and Principe','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore',
+      'Slovakia','Slovenia','Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain',
+      'Sri Lanka','Sudan','Suriname','Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania',
+      'Thailand','Timor-Leste','Togo','Tonga','Trinidad and Tobago','Tunisia','Turkey','Turkmenistan',
+      'Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States','Uruguay',
+      'Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen','Zambia','Zimbabwe',
+    ];
+    const countrySelect = document.getElementById('ship-country');
+    countrySelect.innerHTML = '<option value="">Select country</option>' +
+      COUNTRIES.map(c => '<option value="' + c + '">' + c + '</option>').join('');
 
     function tr(k) { return window.i18n ? window.i18n.t(k) : k; }
     function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -146,12 +210,27 @@
 
     async function startCheckout() {
       const email = document.getElementById('email').value.trim();
+      const shipName = document.getElementById('ship-name').value.trim();
+      const shipStreet = document.getElementById('ship-street').value.trim();
+      const shipCity = document.getElementById('ship-city').value.trim();
+      const shipState = document.getElementById('ship-state').value.trim();
+      const shipPostal = document.getElementById('ship-postal').value.trim();
+      const shipCountry = document.getElementById('ship-country').value;
+      const shipPhone = document.getElementById('ship-phone').value.trim();
       if (!email) { alert(tr('co_email_req')); return; }
+      if (!shipName || !shipStreet || !shipCity || !shipState || !shipPostal || !shipCountry || !shipPhone) {
+        alert('Please fill in your shipping address.');
+        return;
+      }
       if (!isCart && !priceId && !isDynamic) return;
       btn.disabled = true;
       btn.textContent = tr('co_redirecting');
       try {
-        const body = { email };
+        const body = {
+          email,
+          shipping_name: shipName, shipping_street: shipStreet, shipping_city: shipCity,
+          shipping_state: shipState, shipping_postal_code: shipPostal, shipping_country: shipCountry, shipping_phone: shipPhone,
+        };
         if (isCart) {
           body.items = Cart.getItems().map(i =>
             i.price_id
