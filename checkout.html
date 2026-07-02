@@ -304,11 +304,9 @@
       if (typeof paypal_sdk === 'undefined') return;
 
       function getPayPalAmount() {
-        if (isCart) {
-          return Cart.total().toFixed(2);
-        }
-        const a = parseFloat(params.get('amount') || '0');
-        return (a * qty).toFixed(2);
+        const base = isCart ? Cart.total() : parseFloat(params.get('amount') || '0') * qty;
+        const discounted = activeDiscount === 'member' ? base * 0.95 : base;
+        return discounted.toFixed(2);
       }
 
       paypal_sdk.Buttons({
@@ -316,6 +314,17 @@
         createOrder: function(data, actions) {
           const email = document.getElementById('email').value.trim();
           if (!email) { alert(tr('co_email_req')); return Promise.reject(); }
+          const shipName = document.getElementById('ship-name').value.trim();
+          const shipStreet = document.getElementById('ship-street').value.trim();
+          const shipCity = document.getElementById('ship-city').value.trim();
+          const shipState = document.getElementById('ship-state').value.trim();
+          const shipPostal = document.getElementById('ship-postal').value.trim();
+          const shipCountry = document.getElementById('ship-country').value;
+          const shipPhone = document.getElementById('ship-phone').value.trim();
+          if (!shipName || !shipStreet || !shipCity || !shipState || !shipPostal || !shipCountry || !shipPhone) {
+            alert('Please fill in your shipping address.');
+            return Promise.reject();
+          }
           const amount = getPayPalAmount();
           if (parseFloat(amount) <= 0) return Promise.reject();
           return actions.order.create({
@@ -326,6 +335,26 @@
         onApprove: function(data, actions) {
           return actions.order.capture().then(function(details) {
             if (isCart) Cart.clear();
+            const email = document.getElementById('email').value.trim();
+            const capture = details.purchase_units?.[0]?.payments?.captures?.[0];
+            const capturedAmount = capture ? capture.amount.value : getPayPalAmount();
+            fetch('/api/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'record-paypal-order',
+                email,
+                paypal_order_id: details.id,
+                amount: capturedAmount,
+                shipping_name: document.getElementById('ship-name').value.trim(),
+                shipping_street: document.getElementById('ship-street').value.trim(),
+                shipping_city: document.getElementById('ship-city').value.trim(),
+                shipping_state: document.getElementById('ship-state').value.trim(),
+                shipping_postal_code: document.getElementById('ship-postal').value.trim(),
+                shipping_country: document.getElementById('ship-country').value,
+                shipping_phone: document.getElementById('ship-phone').value.trim(),
+              }),
+            }).catch(function(err) { console.error('Failed to record PayPal order', err); });
             const name = details.payer.name.given_name || '';
             alert('Payment successful! Thank you' + (name ? ', ' + name : '') + '.');
             location.href = '/?paypal=success';
