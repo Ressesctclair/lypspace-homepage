@@ -509,6 +509,16 @@
     const msgEl = document.getElementById('ed-msg');
     msgEl.style.display = 'none';
 
+    const price = parseFloat(document.getElementById('ed-price').value) || 0;
+    const salePriceRaw = document.getElementById('ed-sale-price').value;
+    const salePrice = parseFloat(salePriceRaw);
+    if (salePriceRaw.trim() !== '' && !isNaN(salePrice) && salePrice >= price) {
+      msgEl.textContent = 'Sale price must be less than the regular price';
+      msgEl.className = 'msg err';
+      msgEl.style.display = 'block';
+      return;
+    }
+
     try {
       let body, url = '/api/checkout', method = 'POST';
 
