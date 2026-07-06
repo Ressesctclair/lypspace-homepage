@@ -203,9 +203,10 @@
         // best-effort UX hint only — server enforces this regardless
       }
     }
-    checkForSaleItems();
+    const saleItemsCheckPromise = checkForSaleItems();
 
     async function checkMembership() {
+      await saleItemsCheckPromise;
       if (activeDiscount === 'coupon' || hasSaleItem) return;
       const email = document.getElementById('email').value.trim();
       const msgEl = document.getElementById('discount-msg');
@@ -233,6 +234,8 @@
     document.getElementById('email').addEventListener('blur', checkMembership);
 
     async function applyCode() {
+      await saleItemsCheckPromise;
+      if (hasSaleItem) return;
       const msgEl = document.getElementById('discount-msg');
       const code = document.getElementById('coupon').value.trim();
       const email = document.getElementById('email').value.trim();
