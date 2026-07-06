@@ -187,6 +187,10 @@
         const { inventory } = await r.json();
         hasSaleItem = handles.some(h => {
           const ov = inventory[h];
+          // Only checks sale_price > 0, not sale_price < price: this function doesn't have access to the
+          // authoritative price for catalog products (which may live in the static products.json, not this
+          // table). The admin UI (admin-products.html saveProduct()) prevents sale_price >= price from ever
+          // being saved, which is what keeps this simplification safe.
           return ov && ov.sale_price != null && ov.sale_price > 0;
         });
         if (hasSaleItem) {

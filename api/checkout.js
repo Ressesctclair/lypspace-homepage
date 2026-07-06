@@ -354,6 +354,10 @@ module.exports = async (req, res) => {
         });
         return true;
       }
+      // Only checks sale_price > 0, not sale_price < price: this function doesn't have access to the
+      // authoritative price for catalog products (which may live in the static products.json, not this
+      // table). The admin UI (admin-products.html saveProduct()) prevents sale_price >= price from ever
+      // being saved, which is what keeps this simplification safe.
       return [...(overrides || []), ...(customs || [])].some(r => r.sale_price != null && r.sale_price > 0);
     } catch (err) {
       console.error('anyHandleOnSale: threw, failing closed (treating as on sale)', { handles, error: err });
