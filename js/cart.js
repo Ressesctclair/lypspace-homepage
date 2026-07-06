@@ -248,6 +248,8 @@
       var idx = items.findIndex(function (i) { return i._key === key; });
       if (idx >= 0) {
         items[idx].qty += (item.qty || 1);
+        items[idx].price = item.price;
+        items[idx].handle = item.handle;
       } else {
         items.push({ price_id: item.price_id, handle: item.handle, name: item.name, price: item.price, qty: item.qty || 1, _key: key });
       }
