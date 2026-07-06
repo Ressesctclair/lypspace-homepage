@@ -7,9 +7,13 @@ module.exports = async (req, res) => {
   // ── Product overrides (GET, public) ────────────────────────────
   if (req.method === 'GET' && req.query.action === 'inventory') {
     const supabase = getSupabase();
-    const { data } = await supabase.from('product_overrides').select('*');
+    const [{ data }, { data: customData }] = await Promise.all([
+      supabase.from('product_overrides').select('*'),
+      supabase.from('custom_products').select('handle, sale_price'),
+    ]);
     const map = {};
     (data || []).forEach(r => { map[r.handle] = r; });
+    (customData || []).forEach(r => { if (!map[r.handle]) map[r.handle] = r; });
     return res.status(200).json({ inventory: map });
   }
 

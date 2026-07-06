@@ -219,6 +219,40 @@ describe('member discount', () => {
   });
 });
 
+describe('action=inventory', () => {
+  test('includes product_overrides rows in the inventory map (regression)', async () => {
+    Stripe.mockReturnValue({});
+    getSupabase.mockReturnValue({
+      from: jest.fn((table) => ({
+        select: jest.fn().mockResolvedValue({
+          data: table === 'product_overrides' ? [{ handle: 'dress-21', sale_price: 56 }] : [],
+        }),
+      })),
+    });
+    const res = makeRes();
+    await handler({ method: 'GET', query: { action: 'inventory' } }, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    const payload = res.json.mock.calls[0][0];
+    expect(payload.inventory['dress-21']).toEqual({ handle: 'dress-21', sale_price: 56 });
+  });
+
+  test('includes custom_products sale_price in the inventory map', async () => {
+    Stripe.mockReturnValue({});
+    getSupabase.mockReturnValue({
+      from: jest.fn((table) => ({
+        select: jest.fn().mockResolvedValue({
+          data: table === 'custom_products' ? [{ handle: 'floral-set', sale_price: 20 }] : [],
+        }),
+      })),
+    });
+    const res = makeRes();
+    await handler({ method: 'GET', query: { action: 'inventory' } }, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    const payload = res.json.mock.calls[0][0];
+    expect(payload.inventory['floral-set']).toEqual(expect.objectContaining({ sale_price: 20 }));
+  });
+});
+
 describe('sale price blocks stacking with promo/member discount', () => {
   test('ignores promotion_code_id when the single item handle is on sale', async () => {
     const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/sale1' });
