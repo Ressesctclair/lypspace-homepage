@@ -219,6 +219,71 @@ describe('member discount', () => {
   });
 });
 
+describe('sale price blocks stacking with promo/member discount', () => {
+  test('ignores promotion_code_id when the single item handle is on sale', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/sale1' });
+    Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });
+    getSupabase.mockReturnValue({
+      from: jest.fn((table) => ({
+        select: jest.fn().mockReturnValue({
+          in: jest.fn().mockResolvedValue({
+            data: table === 'product_overrides' ? [{ sale_price: 56 }] : [],
+          }),
+        }),
+      })),
+    });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { price_id: 'price_xxx', email: 'a@b.com', handle: 'dress-21', promotion_code_id: 'promo_yyy' },
+    }, res);
+    const call = mockCreate.mock.calls[0][0];
+    expect(call.discounts).toBeUndefined();
+  });
+
+  test('ignores member discount when a cart item handle is on sale', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/sale2' });
+    Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });
+    getSupabase.mockReturnValue({
+      from: jest.fn((table) => {
+        if (table === 'users') {
+          return { select: jest.fn().mockReturnValue({ eq: jest.fn().mockReturnValue({ maybeSingle: jest.fn().mockResolvedValue({ data: { is_member: true } }) }) }) };
+        }
+        return {
+          select: jest.fn().mockReturnValue({
+            in: jest.fn().mockResolvedValue({ data: table === 'custom_products' ? [{ sale_price: 20 }] : [] }),
+          }),
+        };
+      }),
+    });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: {
+        email: 'member@b.com',
+        items: [{ handle: 'floral-set', price_data: { name: 'Floral Set', amount: 20 }, quantity: 1 }],
+      },
+    }, res);
+    const call = mockCreate.mock.calls[0][0];
+    expect(call.discounts).toBeUndefined();
+  });
+
+  test('still applies promotion_code_id when nothing is on sale', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/nosale' });
+    Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({ select: jest.fn().mockReturnValue({ in: jest.fn().mockResolvedValue({ data: [] }) }) }),
+    });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { price_id: 'price_xxx', email: 'a@b.com', handle: 'dress-22', promotion_code_id: 'promo_yyy' },
+    }, res);
+    const call = mockCreate.mock.calls[0][0];
+    expect(call.discounts).toEqual([{ promotion_code: 'promo_yyy' }]);
+  });
+});
+
 test('includes shipping address fields in session metadata', async () => {
   const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/addr' });
   Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });

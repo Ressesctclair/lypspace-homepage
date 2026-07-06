@@ -330,9 +330,27 @@ module.exports = async (req, res) => {
     },
   };
 
-  if (promotion_code_id) {
+  const { handle: singleHandle } = req.body || {};
+  const saleHandles = [
+    ...(singleHandle ? [singleHandle] : []),
+    ...((items || []).map(i => i.handle).filter(Boolean)),
+  ];
+
+  async function anyHandleOnSale(handles) {
+    if (!handles.length) return false;
+    const supabase = getSupabase();
+    const [{ data: overrides }, { data: customs }] = await Promise.all([
+      supabase.from('product_overrides').select('sale_price').in('handle', handles),
+      supabase.from('custom_products').select('sale_price').in('handle', handles),
+    ]);
+    return [...(overrides || []), ...(customs || [])].some(r => r.sale_price != null && r.sale_price > 0);
+  }
+
+  const onSale = await anyHandleOnSale(saleHandles);
+
+  if (!onSale && promotion_code_id) {
     params.discounts = [{ promotion_code: promotion_code_id }];
-  } else {
+  } else if (!onSale) {
     const supabase = getSupabase();
     const { data: user } = await supabase.from('users').select('is_member').eq('email', email).maybeSingle();
     if (user && user.is_member) {
