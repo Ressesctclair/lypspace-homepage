@@ -108,6 +108,7 @@
     const productName = params.get('name') || 'Product';
     const amount = parseFloat(params.get('amount') || '0');
     const qty = parseInt(params.get('qty') || '1', 10);
+    const singleHandle = params.get('handle');
     const isDynamic = !priceId && amount > 0;
     const nameEl = document.getElementById('product-name');
     const btn = document.getElementById('checkout-btn');
@@ -173,8 +174,39 @@
     let appliedCouponDiscount = null; // { type: 'percent'|'amount', value, currency? }
     let activeDiscount = null; // null | 'coupon' | 'member'
 
+    let hasSaleItem = false;
+
+    async function checkForSaleItems() {
+      const handles = isCart
+        ? Cart.getItems().map(i => i.handle).filter(Boolean)
+        : (singleHandle ? [singleHandle] : []);
+      if (!handles.length) return;
+      try {
+        const r = await fetch('/api/checkout?action=inventory');
+        if (!r.ok) return;
+        const { inventory } = await r.json();
+        hasSaleItem = handles.some(h => {
+          const ov = inventory[h];
+          return ov && ov.sale_price != null && ov.sale_price > 0;
+        });
+        if (hasSaleItem) {
+          const couponInput = document.getElementById('coupon');
+          const applyBtn = document.querySelector('.btn-apply');
+          couponInput.disabled = true;
+          applyBtn.disabled = true;
+          couponInput.placeholder = 'Not available on sale items';
+          const msgEl = document.getElementById('discount-msg');
+          msgEl.textContent = 'Discount pricing — coupon codes and member discount don\'t apply to sale items.';
+          msgEl.className = 'discount-msg';
+        }
+      } catch {
+        // best-effort UX hint only — server enforces this regardless
+      }
+    }
+    checkForSaleItems();
+
     async function checkMembership() {
-      if (activeDiscount === 'coupon') return;
+      if (activeDiscount === 'coupon' || hasSaleItem) return;
       const email = document.getElementById('email').value.trim();
       const msgEl = document.getElementById('discount-msg');
       if (!email) return;
@@ -267,16 +299,18 @@
         if (isCart) {
           body.items = Cart.getItems().map(i =>
             i.price_id
-              ? { price_id: i.price_id, quantity: i.qty }
-              : { price_data: { name: i.name, amount: i.price }, quantity: i.qty }
+              ? { price_id: i.price_id, handle: i.handle, quantity: i.qty }
+              : { price_data: { name: i.name, amount: i.price }, handle: i.handle, quantity: i.qty }
           );
         } else if (isDynamic) {
           body.product_name = decodeURIComponent(productName);
           body.amount = amount;
           body.quantity = qty;
+          if (singleHandle) body.handle = singleHandle;
         } else {
           body.price_id = priceId;
           body.quantity = qty;
+          if (singleHandle) body.handle = singleHandle;
         }
         if (promoCodeId) { body.promotion_code_id = promoCodeId; body.coupon_code = appliedCouponCode; }
         const r = await fetch('/api/checkout', {
