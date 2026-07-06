@@ -151,6 +151,15 @@
     </div>
 
     <div class="field">
+      <label>Sale Price (USD, optional)</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="ed-sale-price" step="0.01" min="0" placeholder="Leave blank for no discount" oninput="updateDiscountPreview()" style="flex:1">
+        <span id="discount-pct-preview" style="font-size:12px;color:#1a7f37;white-space:nowrap;min-width:60px"></span>
+        <button type="button" class="btn outline" style="flex-shrink:0" onclick="clearDiscount()">Clear Discount</button>
+      </div>
+    </div>
+
+    <div class="field">
       <label>Description</label>
       <textarea id="ed-desc" placeholder="Product description…"></textarea>
     </div>
@@ -280,6 +289,8 @@
       ? p.total_qty > 0
       : ('in_stock' in ov ? ov.in_stock : p.total_qty > 0);
     const price = p._custom ? p.price : (ov.price != null ? ov.price : p.price);
+    const salePrice = p._custom ? p.sale_price : ov.sale_price;
+    const onSale = salePrice != null && salePrice > 0 && salePrice < price;
     const img = (p.images || [])[0] || '';
     const editFn = p._custom
       ? `openEditCustom('${esc(p.handle)}')`
@@ -289,11 +300,12 @@
       <div class="product-thumb">${img ? `<img src="${img}" alt="">` : ''}</div>
       <div class="product-info">
         <h3>${esc(p.title)}</h3>
-        <p>${esc(p.type || '')} · $${Number(price).toFixed(2)}</p>
+        <p>${esc(p.type || '')} · ${onSale ? `<s>$${Number(price).toFixed(2)}</s> $${Number(salePrice).toFixed(2)}` : '$' + Number(price).toFixed(2)}</p>
         <div class="badges">
           ${p._custom ? '<span class="badge custom">Custom</span>' : ''}
           <span class="badge ${inStock ? 'in-stock' : 'sold-out'}">${inStock ? 'In Stock' : 'Sold Out'}</span>
           ${(p.variants||[]).length ? `<span class="badge">${p.variants.length} sizes</span>` : ''}
+          ${onSale ? '<span class="badge" style="background:#c00;color:#fff;border-color:#c00">On Sale</span>' : ''}
         </div>
       </div>
       <div class="product-actions">
@@ -315,6 +327,7 @@
     document.getElementById('ed-type').value = '';
     document.getElementById('ed-handle').value = '';
     document.getElementById('ed-price').value = '';
+    document.getElementById('ed-sale-price').value = '';
     document.getElementById('ed-desc').value = '';
     document.getElementById('ed-images').value = '';
     document.getElementById('ed-hidden').checked = false;
@@ -322,6 +335,7 @@
     document.getElementById('ed-msg').style.display = 'none';
     document.getElementById('variant-rows').innerHTML = '';
     updateStockButtons();
+    updateDiscountPreview();
 
     // Add delete button only for custom
     renderSaveRow(false);
@@ -340,9 +354,11 @@
     document.getElementById('custom-fields').style.display = 'none';
     document.getElementById('images-field').style.display = 'none';
     document.getElementById('ed-price').value = ov.price != null ? ov.price : p.price;
+    document.getElementById('ed-sale-price').value = ov.sale_price != null ? ov.sale_price : '';
     document.getElementById('ed-desc').value = ov.description != null ? ov.description : (p.description || '');
     document.getElementById('ed-msg').style.display = 'none';
     updateStockButtons();
+    updateDiscountPreview();
 
     // Variant qtys
     const varQtys = ov.variant_qtys || {};
@@ -377,6 +393,7 @@
     document.getElementById('ed-type').value = p.type || '';
     document.getElementById('ed-handle').value = p.handle;
     document.getElementById('ed-price').value = p.price;
+    document.getElementById('ed-sale-price').value = p.sale_price != null ? p.sale_price : '';
     document.getElementById('ed-desc').value = p.description || '';
     document.getElementById('ed-images').value = (p.images || []).join('\n');
     document.getElementById('ed-msg').style.display = 'none';
@@ -387,6 +404,7 @@
     }).catch(()=>{});
     updateImgPreview();
     updateStockButtons();
+    updateDiscountPreview();
 
     // Variants
     const rows = document.getElementById('variant-rows');
@@ -439,9 +457,26 @@
     return vars;
   }
 
+  function updateDiscountPreview() {
+    const price = parseFloat(document.getElementById('ed-price').value) || 0;
+    const salePrice = parseFloat(document.getElementById('ed-sale-price').value);
+    const el = document.getElementById('discount-pct-preview');
+    if (price > 0 && !isNaN(salePrice) && salePrice > 0 && salePrice < price) {
+      el.textContent = Math.round((1 - salePrice / price) * 100) + '% OFF';
+    } else {
+      el.textContent = '';
+    }
+  }
+
+  function clearDiscount() {
+    document.getElementById('ed-sale-price').value = '';
+    updateDiscountPreview();
+  }
+
   // ── Image preview ─────────────────────────────────────────────
   document.addEventListener('input', e => {
     if (e.target.id === 'ed-images') updateImgPreview();
+    if (e.target.id === 'ed-price') updateDiscountPreview();
   });
   function updateImgPreview() {
     const urls = document.getElementById('ed-images').value.split('\n').map(s => s.trim()).filter(Boolean);
@@ -487,6 +522,7 @@
           handle: editingHandle,
           in_stock: editingInStock,
           price: document.getElementById('ed-price').value,
+          sale_price: document.getElementById('ed-sale-price').value,
           description: document.getElementById('ed-desc').value,
         };
         if (varInputs.length) body.variant_qtys = variant_qtys;
@@ -504,6 +540,7 @@
           handle, title,
           type: document.getElementById('ed-type').value.trim(),
           price: document.getElementById('ed-price').value,
+          sale_price: document.getElementById('ed-sale-price').value,
           description: document.getElementById('ed-desc').value,
           images, variants,
         };
