@@ -126,13 +126,14 @@ module.exports = async (req, res) => {
 
   // ── Product update (admin) ───────────────────────────────────────
   if (action === 'product-update') {
-    const { password, handle, in_stock, price, description, variant_qtys } = req.body || {};
+    const { password, handle, in_stock, price, sale_price, description, variant_qtys } = req.body || {};
     if (password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
     if (!handle) return res.status(400).json({ error: 'handle required' });
     const supabase = getSupabase();
     const update = { handle, updated_at: new Date().toISOString() };
     if (typeof in_stock === 'boolean') update.in_stock = in_stock;
     if (price !== undefined) update.price = price === '' ? null : parseFloat(price);
+    if (sale_price !== undefined) update.sale_price = sale_price === '' ? null : parseFloat(sale_price);
     if (description !== undefined) update.description = description;
     if (variant_qtys !== undefined) update.variant_qtys = variant_qtys;
     await supabase.from('product_overrides').upsert(update);
@@ -141,13 +142,14 @@ module.exports = async (req, res) => {
 
   // ── Create / update custom product (admin) ─────────────────────
   if (action === 'create-product') {
-    const { password, handle, title, type, price, description, images, variants } = req.body || {};
+    const { password, handle, title, type, price, sale_price, description, images, variants } = req.body || {};
     if (password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
     if (!handle || !title) return res.status(400).json({ error: 'handle and title required' });
     const supabase = getSupabase();
     const total_qty = (variants || []).reduce((s, v) => s + (parseInt(v.qty) || 0), 0);
     await supabase.from('custom_products').upsert({
       handle, title, type: type || '', price: parseFloat(price) || 0,
+      sale_price: sale_price ? parseFloat(sale_price) : null,
       description: description || '', images: images || [], variants: variants || [],
       total_qty, created_at: new Date().toISOString()
     });

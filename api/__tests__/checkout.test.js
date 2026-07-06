@@ -288,3 +288,63 @@ describe('action=record-paypal-order', () => {
     expect(res.json).toHaveBeenCalledWith({ recorded: true });
   });
 });
+
+describe('action=product-update', () => {
+  function makeReq(body) { return { method: 'POST', body: { action: 'product-update', password: 'test-admin-pw', ...body } }; }
+
+  beforeEach(() => { process.env.ADMIN_PASSWORD = 'test-admin-pw'; });
+  afterEach(() => { delete process.env.ADMIN_PASSWORD; });
+
+  test('saves sale_price when provided', async () => {
+    const upsert = jest.fn().mockResolvedValue({});
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ upsert }) });
+    const res = makeRes();
+    await handler(makeReq({ handle: 'dress-21', sale_price: '56.00' }), res);
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ handle: 'dress-21', sale_price: 56 }));
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ ok: true });
+  });
+
+  test('clears sale_price when empty string', async () => {
+    const upsert = jest.fn().mockResolvedValue({});
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ upsert }) });
+    const res = makeRes();
+    await handler(makeReq({ handle: 'dress-21', sale_price: '' }), res);
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ handle: 'dress-21', sale_price: null }));
+  });
+
+  test('omits sale_price from update when not provided', async () => {
+    const upsert = jest.fn().mockResolvedValue({});
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ upsert }) });
+    const res = makeRes();
+    await handler(makeReq({ handle: 'dress-21', price: '80' }), res);
+    expect(upsert).toHaveBeenCalledWith(expect.not.objectContaining({ sale_price: expect.anything() }));
+  });
+});
+
+describe('action=create-product', () => {
+  beforeEach(() => { process.env.ADMIN_PASSWORD = 'test-admin-pw'; });
+  afterEach(() => { delete process.env.ADMIN_PASSWORD; });
+
+  test('saves sale_price on a new custom product', async () => {
+    const upsert = jest.fn().mockResolvedValue({});
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ upsert }) });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { action: 'create-product', password: 'test-admin-pw', handle: 'floral-set', title: 'Floral Set', price: '100', sale_price: '75' },
+    }, res);
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ handle: 'floral-set', price: 100, sale_price: 75 }));
+  });
+
+  test('sale_price defaults to null when omitted', async () => {
+    const upsert = jest.fn().mockResolvedValue({});
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ upsert }) });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { action: 'create-product', password: 'test-admin-pw', handle: 'floral-set', title: 'Floral Set', price: '100' },
+    }, res);
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ sale_price: null }));
+  });
+});
