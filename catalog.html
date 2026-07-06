@@ -81,6 +81,9 @@
     }
     .product-name { font-size: 13px; margin-bottom: 4px; letter-spacing: 0.02em; }
     .product-price { font-size: 13px; color: var(--gray); }
+    .price-original { text-decoration: line-through; }
+    .price-discount-pct { color: #c00; font-weight: 600; }
+    .price-sale { color: var(--black); font-weight: 600; }
     .product-type { font-size: 11px; color: var(--gray); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px; }
 
     .no-results { padding: 80px 40px; text-align: center; font-size: 13px; color: var(--gray); letter-spacing: 0.06em; }
@@ -181,6 +184,14 @@
         const inv = await invRes.json();
         inventoryMap = inv.inventory || {};
       }
+      allProducts = allProducts.map(p => {
+        const ov = inventoryMap[p.handle] || {};
+        return {
+          ...p,
+          price: ov.price != null ? ov.price : p.price,
+          sale_price: ov.sale_price != null ? ov.sale_price : (p.sale_price ?? null),
+        };
+      });
       buildFilters();
       render();
     }
@@ -250,6 +261,18 @@
         const img = p.images[0] || '';
         const price = p.price > 0 ? '$' + p.price.toFixed(2) : '';
         const soldOut = isSoldOut(p);
+        const onSale = p.price > 0 && p.sale_price != null && p.sale_price > 0 && p.sale_price < p.price;
+        const pct = onSale ? Math.round((1 - p.sale_price / p.price) * 100) : 0;
+        let priceHtml = '';
+        if (price) {
+          if (soldOut) {
+            priceHtml = `<p class="product-price"><s>${price}</s></p>`;
+          } else if (onSale) {
+            priceHtml = `<p class="product-price"><s class="price-original">${price}</s> <span class="price-discount-pct">${pct}% OFF</span> <span class="price-sale">$${p.sale_price.toFixed(2)}</span></p>`;
+          } else {
+            priceHtml = `<p class="product-price">${price}</p>`;
+          }
+        }
         return `<a href="/product?h=${p.handle}" class="product-card">
           <div class="product-image">
             ${img ? `<img src="${img}" alt="${esc(p.title)}" loading="lazy">` : ''}
@@ -257,7 +280,7 @@
           </div>
           <p class="product-type">${esc(p.type || '')}</p>
           <p class="product-name">${esc(p.title)}</p>
-          ${price ? `<p class="product-price">${soldOut ? '<s>' + price + '</s>' : price}</p>` : ''}
+          ${priceHtml}
         </a>`;
       }).join('');
       renderPagination(totalPages, currentPage);
