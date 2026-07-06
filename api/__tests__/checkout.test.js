@@ -268,6 +268,50 @@ describe('sale price blocks stacking with promo/member discount', () => {
     expect(call.discounts).toBeUndefined();
   });
 
+  test('fails closed (suppresses discount) and still completes checkout when a sale-check query errors', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/dberr' });
+    Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });
+    getSupabase.mockReturnValue({
+      from: jest.fn((table) => ({
+        select: jest.fn().mockReturnValue({
+          in: jest.fn().mockResolvedValue(
+            table === 'product_overrides'
+              ? { data: null, error: { message: 'db error' } }
+              : { data: [] }
+          ),
+        }),
+      })),
+    });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { price_id: 'price_xxx', email: 'a@b.com', handle: 'dress-23', promotion_code_id: 'promo_yyy' },
+    }, res);
+    const call = mockCreate.mock.calls[0][0];
+    expect(call.discounts).toBeUndefined();
+    expect(res.json).toHaveBeenCalledWith({ url: 'https://checkout.stripe.com/dberr' });
+  });
+
+  test('fails closed (suppresses discount) and still completes checkout when the sale-check query throws', async () => {
+    const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/threw' });
+    Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          in: jest.fn().mockRejectedValue(new Error('network exception')),
+        }),
+      }),
+    });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { price_id: 'price_xxx', email: 'a@b.com', handle: 'dress-24', promotion_code_id: 'promo_yyy' },
+    }, res);
+    const call = mockCreate.mock.calls[0][0];
+    expect(call.discounts).toBeUndefined();
+    expect(res.json).toHaveBeenCalledWith({ url: 'https://checkout.stripe.com/threw' });
+  });
+
   test('still applies promotion_code_id when nothing is on sale', async () => {
     const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/nosale' });
     Stripe.mockReturnValue({ checkout: { sessions: { create: mockCreate } } });

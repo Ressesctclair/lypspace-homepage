@@ -339,11 +339,22 @@ module.exports = async (req, res) => {
   async function anyHandleOnSale(handles) {
     if (!handles.length) return false;
     const supabase = getSupabase();
-    const [{ data: overrides }, { data: customs }] = await Promise.all([
-      supabase.from('product_overrides').select('sale_price').in('handle', handles),
-      supabase.from('custom_products').select('sale_price').in('handle', handles),
-    ]);
-    return [...(overrides || []), ...(customs || [])].some(r => r.sale_price != null && r.sale_price > 0);
+    try {
+      const [{ data: overrides, error: overridesError }, { data: customs, error: customsError }] = await Promise.all([
+        supabase.from('product_overrides').select('sale_price').in('handle', handles),
+        supabase.from('custom_products').select('sale_price').in('handle', handles),
+      ]);
+      if (overridesError || customsError) {
+        console.error('anyHandleOnSale: query error, failing closed (treating as on sale)', {
+          handles, overridesError, customsError,
+        });
+        return true;
+      }
+      return [...(overrides || []), ...(customs || [])].some(r => r.sale_price != null && r.sale_price > 0);
+    } catch (err) {
+      console.error('anyHandleOnSale: threw, failing closed (treating as on sale)', { handles, error: err });
+      return true;
+    }
   }
 
   const onSale = await anyHandleOnSale(saleHandles);
