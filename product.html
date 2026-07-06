@@ -90,6 +90,9 @@
     }
     .product-name { font-size: 24px; font-weight: 400; letter-spacing: 0.02em; margin-bottom: 16px; line-height: 1.3; }
     .product-price { font-size: 18px; margin-bottom: 32px; }
+    .price-original { color: var(--gray); text-decoration: line-through; font-weight: 400; font-size: 14px; }
+    .price-discount-pct { color: #c00; font-weight: 600; font-size: 14px; }
+    .price-sale { font-weight: 600; }
     .divider { border: none; border-top: 1px solid var(--border); margin-bottom: 24px; }
     .product-description { font-size: 13px; color: var(--gray); line-height: 1.8; margin-bottom: 24px; }
 
@@ -209,6 +212,7 @@
       const override = invMap[handle] || {};
       soldOut = 'in_stock' in override ? !override.in_stock : (product.total_qty <= 0);
       if (override.price != null) product.price = override.price;
+      product.sale_price = override.sale_price != null ? override.sale_price : (product.sale_price ?? null);
       if (override.description) product.description = override.description;
       if (override.variant_qtys) {
         product.variants = product.variants.map(v => ({
@@ -223,9 +227,25 @@
       attachWheelScroll();
     }
 
+    function isOnSale() {
+      return product.price > 0 && product.sale_price != null && product.sale_price > 0 && product.sale_price < product.price;
+    }
+
+    function discountPct() {
+      return Math.round((1 - product.sale_price / product.price) * 100);
+    }
+
     function currentPrice() {
-      if (selectedVariant) return selectedVariant.price;
-      return product.price;
+      const base = selectedVariant ? selectedVariant.price : product.price;
+      if (isOnSale()) return +(base * (product.sale_price / product.price)).toFixed(2);
+      return base;
+    }
+
+    function priceDisplayHtml(base) {
+      if (base <= 0) return 'Contact for price';
+      if (!isOnSale()) return '$' + base.toFixed(2) + ' USD';
+      const salePrice = +(base * (product.sale_price / product.price)).toFixed(2);
+      return `<s class="price-original">$${base.toFixed(2)}</s> <span class="price-discount-pct">${discountPct()}% OFF</span> <span class="price-sale">$${salePrice.toFixed(2)} USD</span>`;
     }
 
     let currentImgIndex = 0;
@@ -240,7 +260,7 @@
     function renderProduct() {
       const hasVariants = product.variants && product.variants.length > 0;
       const hasImages = product.images && product.images.length > 0;
-      const price = product.price > 0 ? '$' + product.price.toFixed(2) + ' USD' : 'Contact for price';
+      const price = priceDisplayHtml(product.price);
 
       // Build option groups — normalise fragmented size names like "S/M/L" → "SIZE"
       const optGroups = {};
@@ -481,8 +501,8 @@
           }
         }
       }
-      const p = currentPrice();
-      document.getElementById('price-display').textContent = p > 0 ? '$' + p.toFixed(2) + ' USD' : 'Contact for price';
+      const base = selectedVariant ? selectedVariant.price : product.price;
+      document.getElementById('price-display').innerHTML = priceDisplayHtml(base);
       const err = document.getElementById('variant-err');
       if (err) err.style.display = 'none';
     }
@@ -543,7 +563,7 @@
       if (!validateVariant()) return;
       const p = currentPrice();
       const name = encodeURIComponent(product.title + getVariantLabel());
-      window.location.href = `/checkout?name=${name}&amount=${p}&qty=${qty}`;
+      window.location.href = `/checkout?name=${name}&amount=${p}&qty=${qty}&handle=${encodeURIComponent(product.handle)}`;
     }
 
     function showNotFound() {
