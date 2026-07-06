@@ -249,7 +249,7 @@
       if (idx >= 0) {
         items[idx].qty += (item.qty || 1);
       } else {
-        items.push({ price_id: item.price_id, name: item.name, price: item.price, qty: item.qty || 1, _key: key });
+        items.push({ price_id: item.price_id, handle: item.handle, name: item.name, price: item.price, qty: item.qty || 1, _key: key });
       }
       setItems(items);
       openCart();
