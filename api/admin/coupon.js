@@ -1,5 +1,15 @@
 const Stripe = require('stripe');
+const { Resend } = require('resend');
 const { getSupabase } = require('../_lib/supabase');
+
+const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+
+const escHtml = (str) =>
+  String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 
 module.exports = async (req, res) => {
   const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
@@ -39,6 +49,68 @@ module.exports = async (req, res) => {
     );
     orders.sort((a, b) => new Date(b.date) - new Date(a.date));
     return res.status(200).json({ orders });
+  }
+
+  if (req.method === 'POST' && req.query?.resource === 'refund') {
+    const { password, session_id, amount } = req.body || {};
+    if (password !== process.env.ADMIN_PASSWORD)
+      return res.status(401).json({ error: 'Unauthorized' });
+    if (!session_id)
+      return res.status(400).json({ error: 'session_id required' });
+
+    try {
+      const session = await stripe.checkout.sessions.retrieve(session_id);
+      const paymentIntentId =
+        typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
+      if (!paymentIntentId)
+        return res.status(400).json({ error: 'no payment found for this session' });
+
+      const refundParams = { payment_intent: paymentIntentId };
+      if (amount != null) refundParams.amount = Math.round(Number(amount) * 100);
+
+      const refund = await stripe.refunds.create(refundParams);
+
+      const customerEmail = session.customer_details?.email;
+      if (customerEmail) {
+        try {
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          await resend.emails.send({
+            from: FROM_EMAIL,
+            to: customerEmail,
+            subject: 'Refund Confirmation - LYP SPACE',
+            html: `
+              <div style="font-family:Helvetica Neue,Arial,sans-serif;max-width:600px;margin:0 auto;color:#111;padding:40px 0;">
+                <h2 style="font-weight:400;letter-spacing:0.04em;margin-bottom:24px;">Your refund has been processed</h2>
+                <p style="margin-bottom:16px;">Hello,</p>
+                <p style="margin-bottom:24px;">We've processed a refund for your order. It should appear on your original payment method within 5-10 business days.</p>
+                <table style="width:100%;border-collapse:collapse;margin:24px 0;border-top:1px solid #e0e0e0;">
+                  <tr>
+                    <td style="padding:12px 0;color:#6b6b6b;border-bottom:1px solid #e0e0e0;">Order ID</td>
+                    <td style="padding:12px 0;border-bottom:1px solid #e0e0e0;">${escHtml(session_id)}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:12px 0;color:#6b6b6b;">Refund Amount</td>
+                    <td style="padding:12px 0;">${escHtml((refund.amount / 100).toFixed(2))} ${escHtml((refund.currency || 'usd').toUpperCase())}</td>
+                  </tr>
+                </table>
+                <p style="color:#6b6b6b;font-size:12px;border-top:1px solid #e0e0e0;padding-top:24px;">LYP SPACE</p>
+              </div>
+            `,
+          });
+        } catch (err) {
+          console.error('Failed to send refund confirmation email:', err.message);
+        }
+      }
+
+      return res.status(200).json({
+        refunded: true,
+        refund_id: refund.id,
+        amount: refund.amount,
+        status: refund.status,
+      });
+    } catch (err) {
+      return res.status(400).json({ error: err.message || 'refund failed' });
+    }
   }
 
   if (req.method === 'GET') {

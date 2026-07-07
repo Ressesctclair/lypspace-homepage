@@ -1,13 +1,16 @@
 jest.mock('stripe');
+jest.mock('resend');
 jest.mock('../../_lib/supabase', () => ({ getSupabase: jest.fn() }));
-let Stripe, handler, getSupabase;
+let Stripe, Resend, handler, getSupabase;
 
 beforeEach(() => {
   jest.resetModules();
   jest.clearAllMocks();
   process.env.ADMIN_PASSWORD = 'admin-secret';
   process.env.STRIPE_SECRET_KEY = 'sk_test_xxx';
+  process.env.RESEND_API_KEY = 're_test_xxx';
   Stripe = require('stripe');
+  ({ Resend } = require('resend'));
   getSupabase = require('../../_lib/supabase').getSupabase;
   handler = require('../../admin/coupon');
 });
@@ -15,6 +18,7 @@ beforeEach(() => {
 afterEach(() => {
   delete process.env.ADMIN_PASSWORD;
   delete process.env.STRIPE_SECRET_KEY;
+  delete process.env.RESEND_API_KEY;
 });
 
 const makeRes = () => ({ status: jest.fn().mockReturnThis(), json: jest.fn(), end: jest.fn() });
@@ -296,5 +300,84 @@ describe('GET resource=orders', () => {
     expect(res.json).toHaveBeenCalledWith({
       orders: [expect.objectContaining({ session_id: 'cs_4' })],
     });
+  });
+});
+
+describe('POST resource=refund', () => {
+  test('returns 401 for wrong password', async () => {
+    Stripe.mockReturnValue({});
+    const res = makeRes();
+    await handler({ method: 'POST', query: { resource: 'refund' }, body: { password: 'wrong', session_id: 'cs_1' } }, res);
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  test('returns 400 when session_id missing', async () => {
+    Stripe.mockReturnValue({});
+    const res = makeRes();
+    await handler({ method: 'POST', query: { resource: 'refund' }, body: { password: 'admin-secret' } }, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'session_id required' });
+  });
+
+  test('issues a full refund when amount is omitted, and emails the customer in English', async () => {
+    const mockRetrieve = jest.fn().mockResolvedValue({
+      payment_intent: 'pi_123',
+      customer_details: { email: 'buyer@test.com' },
+    });
+    const mockRefundCreate = jest.fn().mockResolvedValue({ id: 're_1', amount: 12600, currency: 'usd', status: 'succeeded' });
+    const mockEmailSend = jest.fn().mockResolvedValue({});
+    Resend.mockImplementation(() => ({ emails: { send: mockEmailSend } }));
+    Stripe.mockReturnValue({
+      checkout: { sessions: { retrieve: mockRetrieve } },
+      refunds: { create: mockRefundCreate },
+    });
+    const res = makeRes();
+    await handler({ method: 'POST', query: { resource: 'refund' }, body: { password: 'admin-secret', session_id: 'cs_1' } }, res);
+    expect(mockRefundCreate).toHaveBeenCalledWith({ payment_intent: 'pi_123' });
+    expect(mockEmailSend).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'buyer@test.com', subject: 'Refund Confirmation - LYP SPACE' })
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ refunded: true, refund_id: 're_1', amount: 12600, status: 'succeeded' });
+  });
+
+  test('issues a partial refund, converting dollars to cents', async () => {
+    const mockRetrieve = jest.fn().mockResolvedValue({ payment_intent: 'pi_456', customer_details: { email: 'buyer@test.com' } });
+    const mockRefundCreate = jest.fn().mockResolvedValue({ id: 're_2', amount: 5000, currency: 'usd', status: 'succeeded' });
+    Resend.mockImplementation(() => ({ emails: { send: jest.fn().mockResolvedValue({}) } }));
+    Stripe.mockReturnValue({
+      checkout: { sessions: { retrieve: mockRetrieve } },
+      refunds: { create: mockRefundCreate },
+    });
+    const res = makeRes();
+    await handler({ method: 'POST', query: { resource: 'refund' }, body: { password: 'admin-secret', session_id: 'cs_1', amount: 50 } }, res);
+    expect(mockRefundCreate).toHaveBeenCalledWith({ payment_intent: 'pi_456', amount: 5000 });
+  });
+
+  test('surfaces the Stripe error message when the refund is rejected', async () => {
+    const mockRetrieve = jest.fn().mockResolvedValue({ payment_intent: 'pi_789', customer_details: { email: 'buyer@test.com' } });
+    const mockRefundCreate = jest.fn().mockRejectedValue(new Error('Refund amount is greater than unrefunded amount'));
+    Stripe.mockReturnValue({
+      checkout: { sessions: { retrieve: mockRetrieve } },
+      refunds: { create: mockRefundCreate },
+    });
+    const res = makeRes();
+    await handler({ method: 'POST', query: { resource: 'refund' }, body: { password: 'admin-secret', session_id: 'cs_1', amount: 999 } }, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Refund amount is greater than unrefunded amount' });
+  });
+
+  test('still returns success when the confirmation email fails to send', async () => {
+    const mockRetrieve = jest.fn().mockResolvedValue({ payment_intent: 'pi_999', customer_details: { email: 'buyer@test.com' } });
+    const mockRefundCreate = jest.fn().mockResolvedValue({ id: 're_3', amount: 12600, currency: 'usd', status: 'succeeded' });
+    Resend.mockImplementation(() => ({ emails: { send: jest.fn().mockRejectedValue(new Error('send failed')) } }));
+    Stripe.mockReturnValue({
+      checkout: { sessions: { retrieve: mockRetrieve } },
+      refunds: { create: mockRefundCreate },
+    });
+    const res = makeRes();
+    await handler({ method: 'POST', query: { resource: 'refund' }, body: { password: 'admin-secret', session_id: 'cs_1' } }, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ refunded: true }));
   });
 });
