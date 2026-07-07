@@ -1,5 +1,6 @@
 jest.mock('stripe');
-let Stripe, handler;
+jest.mock('../../_lib/supabase', () => ({ getSupabase: jest.fn() }));
+let Stripe, handler, getSupabase;
 
 beforeEach(() => {
   jest.resetModules();
@@ -7,6 +8,7 @@ beforeEach(() => {
   process.env.ADMIN_PASSWORD = 'admin-secret';
   process.env.STRIPE_SECRET_KEY = 'sk_test_xxx';
   Stripe = require('stripe');
+  getSupabase = require('../../_lib/supabase').getSupabase;
   handler = require('../../admin/coupon');
 });
 
@@ -158,4 +160,141 @@ test('returns 405 for other methods', async () => {
   const res = makeRes();
   await handler({ method: 'PATCH', body: {}, query: {} }, res);
   expect(res.status).toHaveBeenCalledWith(405);
+});
+
+describe('GET resource=orders', () => {
+  test('returns 401 for wrong password', async () => {
+    Stripe.mockReturnValue({});
+    const res = makeRes();
+    await handler({ method: 'GET', query: { resource: 'orders', password: 'wrong', email: 'a@b.com' } }, res);
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  test('returns 400 when email missing', async () => {
+    Stripe.mockReturnValue({});
+    const res = makeRes();
+    await handler({ method: 'GET', query: { resource: 'orders', password: 'admin-secret' } }, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'email required' });
+  });
+
+  test('returns empty array when customer has no orders', async () => {
+    Stripe.mockReturnValue({});
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({ data: [] }),
+        }),
+      }),
+    });
+    const res = makeRes();
+    await handler({ method: 'GET', query: { resource: 'orders', password: 'admin-secret', email: 'a@b.com' } }, res);
+    expect(res.json).toHaveBeenCalledWith({ orders: [] });
+  });
+
+  test('returns orders with refund_status "none" when nothing refunded', async () => {
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({ data: [{ stripe_session_id: 'cs_1' }] }),
+        }),
+      }),
+    });
+    const mockRetrieve = jest.fn().mockResolvedValue({
+      created: 1700000000,
+      amount_total: 12600,
+      currency: 'usd',
+      payment_intent: { latest_charge: { amount_refunded: 0, refunded: false } },
+    });
+    Stripe.mockReturnValue({ checkout: { sessions: { retrieve: mockRetrieve } } });
+    const res = makeRes();
+    await handler({ method: 'GET', query: { resource: 'orders', password: 'admin-secret', email: 'a@b.com' } }, res);
+    expect(mockRetrieve).toHaveBeenCalledWith('cs_1', { expand: ['payment_intent.latest_charge'] });
+    expect(res.json).toHaveBeenCalledWith({
+      orders: [expect.objectContaining({ session_id: 'cs_1', amount: 12600, refund_status: 'none', amount_refunded: 0 })],
+    });
+  });
+
+  test('returns refund_status "partial" when some but not all was refunded', async () => {
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({ data: [{ stripe_session_id: 'cs_2' }] }),
+        }),
+      }),
+    });
+    Stripe.mockReturnValue({
+      checkout: {
+        sessions: {
+          retrieve: jest.fn().mockResolvedValue({
+            created: 1700000000,
+            amount_total: 20000,
+            currency: 'usd',
+            payment_intent: { latest_charge: { amount_refunded: 5000, refunded: false } },
+          }),
+        },
+      },
+    });
+    const res = makeRes();
+    await handler({ method: 'GET', query: { resource: 'orders', password: 'admin-secret', email: 'a@b.com' } }, res);
+    expect(res.json).toHaveBeenCalledWith({
+      orders: [expect.objectContaining({ refund_status: 'partial', amount_refunded: 5000 })],
+    });
+  });
+
+  test('returns refund_status "full" when charge.refunded is true', async () => {
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({ data: [{ stripe_session_id: 'cs_3' }] }),
+        }),
+      }),
+    });
+    Stripe.mockReturnValue({
+      checkout: {
+        sessions: {
+          retrieve: jest.fn().mockResolvedValue({
+            created: 1700000000,
+            amount_total: 8900,
+            currency: 'usd',
+            payment_intent: { latest_charge: { amount_refunded: 8900, refunded: true } },
+          }),
+        },
+      },
+    });
+    const res = makeRes();
+    await handler({ method: 'GET', query: { resource: 'orders', password: 'admin-secret', email: 'a@b.com' } }, res);
+    expect(res.json).toHaveBeenCalledWith({
+      orders: [expect.objectContaining({ refund_status: 'full', amount_refunded: 8900 })],
+    });
+  });
+
+  test('skips order_links rows with null stripe_session_id (PayPal-only orders)', async () => {
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({
+            data: [
+              { stripe_session_id: null },
+              { stripe_session_id: 'cs_4' },
+            ],
+          }),
+        }),
+      }),
+    });
+    const mockRetrieve = jest.fn().mockResolvedValue({
+      created: 1700000000,
+      amount_total: 5000,
+      currency: 'usd',
+      payment_intent: { latest_charge: { amount_refunded: 0, refunded: false } },
+    });
+    Stripe.mockReturnValue({ checkout: { sessions: { retrieve: mockRetrieve } } });
+    const res = makeRes();
+    await handler({ method: 'GET', query: { resource: 'orders', password: 'admin-secret', email: 'a@b.com' } }, res);
+    expect(mockRetrieve).toHaveBeenCalledTimes(1);
+    expect(mockRetrieve).toHaveBeenCalledWith('cs_4', { expand: ['payment_intent.latest_charge'] });
+    expect(res.json).toHaveBeenCalledWith({
+      orders: [expect.objectContaining({ session_id: 'cs_4' })],
+    });
+  });
 });

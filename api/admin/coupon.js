@@ -1,7 +1,45 @@
 const Stripe = require('stripe');
+const { getSupabase } = require('../_lib/supabase');
 
 module.exports = async (req, res) => {
   const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+
+  if (req.method === 'GET' && req.query?.resource === 'orders') {
+    const { password, email } = req.query || {};
+    if (password !== process.env.ADMIN_PASSWORD)
+      return res.status(401).json({ error: 'Unauthorized' });
+    if (!email)
+      return res.status(400).json({ error: 'email required' });
+
+    const supabase = getSupabase();
+    const { data: links } = await supabase
+      .from('order_links')
+      .select('stripe_session_id')
+      .eq('customer_email', email);
+    const sessionIds = [...new Set((links || []).map((r) => r.stripe_session_id).filter(Boolean))];
+    if (sessionIds.length === 0) return res.status(200).json({ orders: [] });
+
+    const orders = await Promise.all(
+      sessionIds.map(async (stripe_session_id) => {
+        const session = await stripe.checkout.sessions.retrieve(stripe_session_id, {
+          expand: ['payment_intent.latest_charge'],
+        });
+        const charge = session.payment_intent?.latest_charge;
+        const amountRefunded = charge?.amount_refunded || 0;
+        const refundStatus = !amountRefunded ? 'none' : charge?.refunded ? 'full' : 'partial';
+        return {
+          session_id: stripe_session_id,
+          date: new Date(session.created * 1000).toISOString(),
+          amount: session.amount_total,
+          currency: session.currency,
+          refund_status: refundStatus,
+          amount_refunded: amountRefunded,
+        };
+      })
+    );
+    orders.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return res.status(200).json({ orders });
+  }
 
   if (req.method === 'GET') {
     const { password } = req.query || {};
