@@ -11,6 +11,11 @@
   function setItems(items) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     _render();
+    if (items.length > 0) {
+      _renderPayments();
+      _loadStripe(_initStripeExpress);
+      _updateStripeAmount();
+    }
   }
 
   function _esc(s) {
@@ -18,15 +23,16 @@
   }
 
   function openCart() {
-    document.getElementById('_crt-sidebar').classList.add('open');
+    var sidebar = document.getElementById('_crt-sidebar');
     document.getElementById('_crt-overlay').classList.add('open');
     document.body.style.overflow = 'hidden';
-    setTimeout(function () {
-      if (window.Cart.count() > 0) {
-        _renderPayPal();
-        _renderStripeExpress();
-      }
-    }, 350);
+    if (window.Cart.count() > 0) {
+      _renderPayments();
+      _updateStripeAmount();
+    }
+    sidebar.classList.remove('preloading');
+    void sidebar.offsetWidth;
+    sidebar.classList.add('open');
   }
 
   function closeCart() {
@@ -82,9 +88,10 @@
     style.textContent =
       '#_crt-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1998;opacity:0;pointer-events:none;transition:opacity .25s;}' +
       '#_crt-overlay.open{opacity:1;pointer-events:all;}' +
-      '#_crt-sidebar{position:fixed;top:0;right:0;width:400px;max-width:100vw;height:100%;background:#fff;z-index:1999;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.1);}' +
+      '#_crt-sidebar{position:fixed;top:0;right:0;width:400px;max-width:100vw;height:100vh;height:100dvh;background:#fff;z-index:1999;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;box-shadow:-4px 0 20px rgba(0,0,0,.1);}' +
       '#_crt-sidebar.open{transform:translateX(0);}' +
-      '#_crt-items{flex:1;overflow-y:auto;padding:0 24px;}' +
+      '#_crt-sidebar.preloading{transform:none!important;opacity:0!important;pointer-events:none!important;z-index:-1!important;transition:none!important;}' +
+      '#_crt-items{flex:1;min-height:0;overflow-y:auto;padding:0 24px;}' +
       '._crt-badge{background:#111;color:#fff;font-size:10px;border-radius:50%;width:17px;height:17px;display:none;align-items:center;justify-content:center;margin-left:4px;vertical-align:middle;font-weight:600;line-height:1;}';
     document.head.appendChild(style);
 
@@ -117,6 +124,7 @@
           '<div id="_crt-stripe" style="margin-top:8px;"></div>' +
         '</div>' +
       '</div>';
+    sidebar.classList.add('preloading');
     document.body.appendChild(sidebar);
 
     // Inject cart button into header
@@ -134,6 +142,25 @@
     }
 
     _render();
+    _loadStripe(function () {});  // preload SDK early so it's ready when first item is added
+    _loadPayPal(function () {});
+    if (window.Cart.count() > 0) {
+      _renderPayments();
+      _loadStripe(_initStripeExpress);  // returning visitor: items already in cart, init now
+    }
+  }
+
+  var _lastPaymentTotal = -1;
+
+  function _renderPayments() {
+    var total = window.Cart.total();
+    if (total <= 0) return;
+    if (total === _lastPaymentTotal) return;
+    _lastPaymentTotal = total;
+    _renderPayPal();
+    // Stripe Express Checkout is rendered separately in openCart() so it mounts
+    // in a visible container — mounting while sidebar is off-screen (translateX 100%)
+    // causes Stripe to fail detecting Apple Pay / Link / Amazon Pay.
   }
 
   var _paypalLoaded = false;
@@ -205,40 +232,51 @@
     document.head.appendChild(s);
   }
 
-  function _renderStripeExpress() {
+  var _stripeInstance = null;
+  var _stripeElements = null;
+  var _stripeExpressAmount = -1;
+
+  function _initStripeExpress() {
+    if (_stripeElements) return;
     var container = document.getElementById('_crt-stripe');
     if (!container) return;
-    container.innerHTML = '';
-    var amount = window.Cart.total();
-    if (amount <= 0) return;
-    _loadStripe(function () {
-      var stripe = Stripe('pk_live_51SV6CM4IZcEaiWjkmNbTeM0bdf5FBh1upPyZOcns3jMR78rmUMnGroBhD1jzQzHJpS3B5oaaSKaagynJsEaGZWFT00fEX6D4sF');
-      var elements = stripe.elements({ mode: 'payment', amount: Math.round(amount * 100), currency: 'usd' });
-      var expressEl = elements.create('expressCheckout', { buttonHeight: 44 });
-      expressEl.mount('#_crt-stripe');
-      expressEl.on('confirm', function () {
-        elements.submit().then(function (result) {
-          if (result.error) { console.error(result.error); return; }
-          fetch('https://pro.lypspace.digital/api/payment-intent', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount: amount }),
+    var initAmount = Math.max(Math.round(window.Cart.total() * 100), 100);
+    _stripeInstance = Stripe('pk_live_51SV6CM4IZcEaiWjkmNbTeM0bdf5FBh1upPyZOcns3jMR78rmUMnGroBhD1jzQzHJpS3B5oaaSKaagynJsEaGZWFT00fEX6D4sF');
+    _stripeElements = _stripeInstance.elements({ mode: 'payment', amount: initAmount, currency: 'usd' });
+    var expressEl = _stripeElements.create('expressCheckout', { buttonHeight: 44 });
+    expressEl.mount('#_crt-stripe');
+    _stripeExpressAmount = initAmount;
+    expressEl.on('confirm', function () {
+      var currentAmount = window.Cart.total();
+      _stripeElements.submit().then(function (result) {
+        if (result.error) { console.error(result.error); return; }
+        fetch('https://pro.lypspace.digital/api/payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: currentAmount }),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            return _stripeInstance.confirmPayment({
+              elements: _stripeElements,
+              clientSecret: data.clientSecret,
+              confirmParams: { return_url: window.location.origin + '/?payment=success' },
+            });
           })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-              return stripe.confirmPayment({
-                elements: elements,
-                clientSecret: data.clientSecret,
-                confirmParams: { return_url: window.location.origin + '/?payment=success' },
-              });
-            })
-            .then(function (result) {
-              if (result && result.error) console.error(result.error);
-            })
-            .catch(function (err) { console.error('Stripe error', err); });
-        });
+          .then(function (result) {
+            if (result && result.error) console.error(result.error);
+          })
+          .catch(function (err) { console.error('Stripe error', err); });
       });
     });
+  }
+
+  function _updateStripeAmount() {
+    if (!_stripeElements) return;
+    var amount = Math.round(window.Cart.total() * 100);
+    if (amount <= 0 || amount === _stripeExpressAmount) return;
+    _stripeExpressAmount = amount;
+    _stripeElements.update({ amount: amount });
   }
 
   window.Cart = {
@@ -280,9 +318,37 @@
     goCheckout: goCheckout,
   };
 
+  function _initInstagramBanner() {
+    if (!/Instagram|YouTube|FBAN|FB_IAB|TikTok|Twitter/i.test(navigator.userAgent)) return;
+    if (sessionStorage.getItem('_igb_dismissed')) return;
+
+    var banner = document.createElement('div');
+    banner.id = '_igb-banner';
+    banner.style.cssText =
+      'position:fixed;bottom:0;left:0;right:0;background:#111;color:#fff;' +
+      'padding:14px 16px;z-index:9999;display:flex;align-items:center;gap:12px;' +
+      'font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;' +
+      'box-shadow:0 -2px 12px rgba(0,0,0,.3);';
+    banner.innerHTML =
+      '<div style="flex:1;line-height:1.5;">Apple Pay · Link · Amazon Pay 需要在 <strong>Safari</strong> 中使用</div>' +
+      '<button id="_igb-open" style="background:#fff;color:#111;border:none;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border-radius:4px;font-family:inherit;">在 Safari 打开</button>' +
+      '<button id="_igb-close" style="background:none;border:none;color:#aaa;font-size:22px;cursor:pointer;padding:0 4px;line-height:1;font-family:inherit;">×</button>';
+    document.body.appendChild(banner);
+
+    document.getElementById('_igb-open').addEventListener('click', function () {
+      var url = window.location.href;
+      window.location = url.replace(/^https:\/\//, 'x-safari-https://').replace(/^http:\/\//, 'x-safari-http://');
+    });
+    document.getElementById('_igb-close').addEventListener('click', function () {
+      banner.remove();
+      sessionStorage.setItem('_igb_dismissed', '1');
+    });
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', _init);
+    document.addEventListener('DOMContentLoaded', function () { _init(); _initInstagramBanner(); });
   } else {
     _init();
+    _initInstagramBanner();
   }
 })();
