@@ -177,7 +177,9 @@
       allProducts = await prodRes.json();
       if (customRes && customRes.ok) {
         const cd = await customRes.json();
-        const customs = (cd.products || []).map(p => ({ ...p, images: p.images || [], variants: p.variants || [], _custom: true }));
+        const customs = (cd.products || [])
+          .filter(p => !p.unlisted)
+          .map(p => ({ ...p, images: p.images || [], variants: p.variants || [], _custom: true }));
         allProducts = [...customs, ...allProducts];
       }
       if (invRes && invRes.ok) {
