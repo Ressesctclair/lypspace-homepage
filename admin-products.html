@@ -102,6 +102,7 @@
     <select id="cat-filter" onchange="renderList()"><option value="">All categories</option></select>
     <span class="count" id="count"></span>
     <button class="btn" onclick="openCreate()">+ Add Product</button>
+    <button class="btn outline" onclick="openQuickLink()">+ Quick Payment Link</button>
   </div>
 
   <div class="product-list" id="product-list">
@@ -201,6 +202,35 @@
     <div class="save-row" id="ed-save-row">
       <button class="btn" onclick="saveProduct()">Save</button>
       <button class="btn outline" onclick="closeEditor()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quick payment link overlay -->
+<div class="editor-overlay" id="quick-link-overlay">
+  <div class="editor" style="max-width:440px">
+    <button class="editor-close" onclick="closeQuickLink()">✕</button>
+    <h2>Quick Payment Link</h2>
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="ql-title" placeholder="e.g. Custom order for Lisa">
+    </div>
+    <div class="field">
+      <label>Price (USD)</label>
+      <input type="number" id="ql-price" step="0.01" min="0" placeholder="e.g. 150.00">
+    </div>
+    <div class="msg" id="ql-msg"></div>
+    <div id="ql-result" style="display:none;margin-top:8px">
+      <label style="display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);margin-bottom:7px">Payment Link</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" id="ql-url" readonly style="flex:1">
+        <button type="button" onclick="copyQuickLinkUrl()" style="flex-shrink:0;padding:10px 14px;border:1px solid var(--border);background:none;cursor:pointer;font-family:var(--font);font-size:12px;white-space:nowrap">Copy</button>
+      </div>
+      <div id="ql-copy-tip" style="font-size:11px;color:#1a7f37;margin-top:4px;display:none">Copied!</div>
+    </div>
+    <div class="save-row">
+      <button class="btn" id="ql-create-btn" onclick="createQuickLink()">Create Link</button>
+      <button class="btn outline" onclick="closeQuickLink()">Close</button>
     </div>
   </div>
 </div>
@@ -655,6 +685,76 @@
     const url = 'https://lypspace.digital/product?h=' + handle;
     navigator.clipboard.writeText(url).then(() => {
       const tip = document.getElementById('copy-tip');
+      tip.style.display = 'block';
+      setTimeout(() => tip.style.display = 'none', 2000);
+    });
+  }
+
+  function openQuickLink() {
+    document.getElementById('ql-title').value = '';
+    document.getElementById('ql-price').value = '';
+    document.getElementById('ql-msg').style.display = 'none';
+    document.getElementById('ql-result').style.display = 'none';
+    document.getElementById('ql-create-btn').disabled = false;
+    document.getElementById('quick-link-overlay').classList.add('open');
+  }
+
+  function closeQuickLink() {
+    document.getElementById('quick-link-overlay').classList.remove('open');
+  }
+
+  function generateLinkHandle() {
+    const bytes = new Uint8Array(6);
+    crypto.getRandomValues(bytes);
+    return 'link-' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function createQuickLink() {
+    const msgEl = document.getElementById('ql-msg');
+    msgEl.style.display = 'none';
+    const title = document.getElementById('ql-title').value.trim();
+    const price = parseFloat(document.getElementById('ql-price').value);
+    if (!title) { msgEl.textContent = 'Title is required'; msgEl.className = 'msg err'; msgEl.style.display = 'block'; return; }
+    if (isNaN(price) || price <= 0) { msgEl.textContent = 'Enter a price greater than 0'; msgEl.className = 'msg err'; msgEl.style.display = 'block'; return; }
+
+    const handle = generateLinkHandle();
+    document.getElementById('ql-create-btn').disabled = true;
+    try {
+      const r = await fetch('/api/checkout', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create-product', password,
+          handle, title, type: '', price: String(price),
+          description: '', images: [], variants: [], unlisted: true,
+        }),
+      });
+      const d = await r.json();
+      if (d.error === 'Unauthorized') { password = ''; document.getElementById('main').style.display='none'; document.getElementById('login-screen').style.display='block'; document.getElementById('login-err').style.display='block'; return; }
+      if (!d.ok) throw new Error(d.error || 'Failed');
+
+      const url = 'https://lypspace.digital/product?h=' + handle;
+      document.getElementById('ql-url').value = url;
+      document.getElementById('ql-result').style.display = 'block';
+      msgEl.textContent = 'Link created!';
+      msgEl.className = 'msg ok';
+      msgEl.style.display = 'block';
+
+      const cr = await fetch(`/api/checkout?action=products&pw=${encodeURIComponent(password)}`);
+      if (cr.ok) { const cd = await cr.json(); customProducts = cd.products || []; renderList(); }
+    } catch (e) {
+      msgEl.textContent = e.message;
+      msgEl.className = 'msg err';
+      msgEl.style.display = 'block';
+    } finally {
+      document.getElementById('ql-create-btn').disabled = false;
+    }
+  }
+
+  function copyQuickLinkUrl() {
+    const url = document.getElementById('ql-url').value;
+    if (!url) return;
+    navigator.clipboard.writeText(url).then(() => {
+      const tip = document.getElementById('ql-copy-tip');
       tip.style.display = 'block';
       setTimeout(() => tip.style.display = 'none', 2000);
     });
