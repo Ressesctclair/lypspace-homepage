@@ -192,6 +192,11 @@
       <label for="ed-hidden" style="cursor:pointer;font-size:13px">Hidden (Draft — only you can see this product)</label>
     </div>
 
+    <div class="field" style="display:flex;align-items:center;gap:10px;margin-top:8px">
+      <input type="checkbox" id="ed-unlisted" style="width:18px;height:18px;cursor:pointer">
+      <label for="ed-unlisted" style="cursor:pointer;font-size:13px">Unlisted (not shown in Catalog, but the product link still works)</label>
+    </div>
+
     <div class="msg" id="ed-msg"></div>
     <div class="save-row" id="ed-save-row">
       <button class="btn" onclick="saveProduct()">Save</button>
@@ -306,6 +311,7 @@
           <span class="badge ${inStock ? 'in-stock' : 'sold-out'}">${inStock ? 'In Stock' : 'Sold Out'}</span>
           ${(p.variants||[]).length ? `<span class="badge">${p.variants.length} sizes</span>` : ''}
           ${onSale ? '<span class="badge" style="background:#c00;color:#fff;border-color:#c00">On Sale</span>' : ''}
+          ${p.unlisted ? '<span class="badge" style="background:#fff3cd;color:#856404;border-color:#ffe69c">Unlisted</span>' : ''}
         </div>
       </div>
       <div class="product-actions">
@@ -331,6 +337,7 @@
     document.getElementById('ed-desc').value = '';
     document.getElementById('ed-images').value = '';
     document.getElementById('ed-hidden').checked = false;
+    document.getElementById('ed-unlisted').checked = false;
     document.getElementById('img-preview').innerHTML = '';
     document.getElementById('ed-msg').style.display = 'none';
     document.getElementById('variant-rows').innerHTML = '';
@@ -396,6 +403,7 @@
     document.getElementById('ed-sale-price').value = p.sale_price != null ? p.sale_price : '';
     document.getElementById('ed-desc').value = p.description || '';
     document.getElementById('ed-images').value = (p.images || []).join('\n');
+    document.getElementById('ed-unlisted').checked = !!p.unlisted;
     document.getElementById('ed-msg').style.display = 'none';
     document.getElementById('ed-hidden').checked = false;
     fetch('/api/checkout?action=settings').then(r=>r.json()).then(({settings})=>{
@@ -553,6 +561,7 @@
           sale_price: document.getElementById('ed-sale-price').value,
           description: document.getElementById('ed-desc').value,
           images, variants,
+          unlisted: document.getElementById('ed-unlisted').checked,
         };
       }
 
