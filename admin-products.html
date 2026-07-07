@@ -394,6 +394,7 @@
     document.getElementById('ed-sale-price').value = ov.sale_price != null ? ov.sale_price : '';
     document.getElementById('ed-desc').value = ov.description != null ? ov.description : (p.description || '');
     document.getElementById('ed-msg').style.display = 'none';
+    document.getElementById('ed-unlisted').checked = false;
     updateStockButtons();
     updateDiscountPreview();
 
@@ -739,8 +740,13 @@
       msgEl.className = 'msg ok';
       msgEl.style.display = 'block';
 
-      const cr = await fetch(`/api/checkout?action=products&pw=${encodeURIComponent(password)}`);
-      if (cr.ok) { const cd = await cr.json(); customProducts = cd.products || []; renderList(); }
+      // Refresh products list silently — don't overwrite success message if it fails
+      try {
+        const cr = await fetch(`/api/checkout?action=products&pw=${encodeURIComponent(password)}`);
+        if (cr.ok) { const cd = await cr.json(); customProducts = cd.products || []; renderList(); }
+      } catch (refreshErr) {
+        // Silent failure: list refresh is a follow-up action, not critical to the user-facing success
+      }
     } catch (e) {
       msgEl.textContent = e.message;
       msgEl.className = 'msg err';
