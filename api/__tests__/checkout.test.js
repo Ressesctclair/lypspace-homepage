@@ -490,4 +490,62 @@ describe('action=create-product', () => {
     }, res);
     expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ sale_price: null }));
   });
+
+  test('persists unlisted=true when provided', async () => {
+    const upsert = jest.fn().mockResolvedValue({});
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ upsert }) });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { action: 'create-product', password: 'test-admin-pw', handle: 'link-abc123', title: 'Custom Order', price: '150', unlisted: true },
+    }, res);
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ handle: 'link-abc123', unlisted: true }));
+  });
+
+  test('unlisted defaults to false when omitted', async () => {
+    const upsert = jest.fn().mockResolvedValue({});
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ upsert }) });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { action: 'create-product', password: 'test-admin-pw', handle: 'floral-set', title: 'Floral Set', price: '100' },
+    }, res);
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ unlisted: false }));
+  });
+
+  test('sets a large total_qty sentinel for an unlisted product with no variants', async () => {
+    const upsert = jest.fn().mockResolvedValue({});
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ upsert }) });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { action: 'create-product', password: 'test-admin-pw', handle: 'link-abc123', title: 'Custom Order', price: '150', unlisted: true },
+    }, res);
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ total_qty: 999999 }));
+  });
+
+  test('keeps total_qty at 0 for a non-unlisted product with no variants (no regression)', async () => {
+    const upsert = jest.fn().mockResolvedValue({});
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ upsert }) });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: { action: 'create-product', password: 'test-admin-pw', handle: 'floral-set', title: 'Floral Set', price: '100' },
+    }, res);
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ total_qty: 0 }));
+  });
+
+  test('uses the real variant total when an unlisted product has variants', async () => {
+    const upsert = jest.fn().mockResolvedValue({});
+    getSupabase.mockReturnValue({ from: jest.fn().mockReturnValue({ upsert }) });
+    const res = makeRes();
+    await handler({
+      method: 'POST',
+      body: {
+        action: 'create-product', password: 'test-admin-pw', handle: 'link-abc123', title: 'Custom Order', price: '150', unlisted: true,
+        variants: [{ option1_name: 'Size', option1_value: 'M', price: 150, qty: 3 }],
+      },
+    }, res);
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ total_qty: 3 }));
+  });
 });
