@@ -423,5 +423,104 @@
       else { alert(d.error || '停用失败'); }
     }
   </script>
+
+  <!-- ── Refund Management ────────────────────────────── -->
+  <section style="margin-top:56px;max-width:480px;margin-left:auto;margin-right:auto;padding:0 24px 40px;">
+    <h2 style="font-size:18px;font-weight:600;margin-bottom:20px">退款管理</h2>
+
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-size:12px;color:#666;margin-bottom:4px">管理员密码</label>
+      <input id="r-pw" type="password" placeholder="输入管理员密码" style="width:100%;padding:10px 12px;border:1px solid #d0d0d0;font-size:14px;outline:none;">
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <label style="display:block;font-size:12px;color:#666;margin-bottom:4px">客户邮箱</label>
+        <input id="r-email" type="email" placeholder="customer@example.com" style="width:100%;padding:9px 12px;border:1px solid #d0d0d0;font-size:14px">
+      </div>
+      <button onclick="loadRefundOrders()" style="padding:9px 18px;background:#111;color:#fff;border:none;font-size:12px;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;width:auto;margin-top:0">查询订单</button>
+    </div>
+
+    <div id="refund-orders" style="font-size:13px;color:#666">输入客户邮箱后点查询订单</div>
+  </section>
+
+  <script>
+    let refundOrdersCache = [];
+
+    async function loadRefundOrders() {
+      const pw = document.getElementById('r-pw').value;
+      const email = document.getElementById('r-email').value.trim();
+      const el = document.getElementById('refund-orders');
+      if (!pw || !email) { el.textContent = '请填写管理员密码和客户邮箱'; return; }
+      el.textContent = '加载中…';
+      try {
+        const r = await fetch('/api/admin/coupon?resource=orders&password=' + encodeURIComponent(pw) + '&email=' + encodeURIComponent(email));
+        const d = await r.json();
+        if (!d.orders) { el.textContent = d.error || '加载失败'; return; }
+        if (d.orders.length === 0) { el.textContent = '该邮箱没有找到订单'; return; }
+        refundOrdersCache = d.orders;
+        renderRefundOrders();
+      } catch {
+        el.textContent = '请求失败';
+      }
+    }
+
+    function renderRefundOrders() {
+      const el = document.getElementById('refund-orders');
+      el.innerHTML = refundOrdersCache.map((o, i) => {
+        const date = new Date(o.date).toLocaleDateString('zh-CN');
+        const amount = (o.amount / 100).toFixed(2) + ' ' + o.currency.toUpperCase();
+        let statusLabel, actionHtml;
+        if (o.refund_status === 'full') {
+          statusLabel = '<span style="color:#c00">已全额退款</span>';
+          actionHtml = '';
+        } else {
+          statusLabel = o.refund_status === 'partial'
+            ? '<span style="color:#b8860b">部分退款 ' + escHtml((o.amount_refunded / 100).toFixed(2)) + ' ' + escHtml(o.currency.toUpperCase()) + '</span>'
+            : '<span style="color:#888">未退款</span>';
+          actionHtml =
+            '<label style="font-size:12px;margin-right:8px"><input type="radio" name="r-type-' + i + '" value="full" checked onchange="toggleRefundAmount(' + i + ')"> 全额</label>'
+            + '<label style="font-size:12px;margin-right:8px"><input type="radio" name="r-type-' + i + '" value="partial" onchange="toggleRefundAmount(' + i + ')"> 部分</label>'
+            + '<input id="r-amount-' + i + '" type="number" min="0" step="0.01" placeholder="金额" disabled style="width:80px;padding:4px 6px;font-size:12px;border:1px solid #d0d0d0;margin-right:8px">'
+            + '<button onclick="submitRefund(' + i + ')" style="padding:4px 10px;font-size:12px;cursor:pointer;color:#c00;border:1px solid #d0d0d0;background:#fff;width:auto;margin-top:0">退款</button>';
+        }
+        return '<div id="refund-row-' + i + '" style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap">'
+          + '<span>' + escHtml(date) + '</span>'
+          + '<strong>' + escHtml(amount) + '</strong>'
+          + statusLabel
+          + actionHtml
+          + '</div>';
+      }).join('');
+    }
+
+    function toggleRefundAmount(i) {
+      const type = document.querySelector('input[name="r-type-' + i + '"]:checked').value;
+      document.getElementById('r-amount-' + i).disabled = type !== 'partial';
+    }
+
+    async function submitRefund(i) {
+      const order = refundOrdersCache[i];
+      const type = document.querySelector('input[name="r-type-' + i + '"]:checked').value;
+      const amountInput = document.getElementById('r-amount-' + i).value;
+      if (type === 'partial' && !amountInput) { alert('请输入部分退款金额'); return; }
+      if (!confirm('确认给这笔订单' + (type === 'full' ? '全额' : '部分') + '退款？此操作不可撤销。')) return;
+
+      const pw = document.getElementById('r-pw').value;
+      const body = { password: pw, session_id: order.session_id };
+      if (type === 'partial') body.amount = Number(amountInput);
+
+      const r = await fetch('/api/admin/coupon?resource=refund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const d = await r.json();
+      if (!d.refunded) { alert(d.error || '退款失败'); return; }
+
+      order.amount_refunded = (order.amount_refunded || 0) + d.amount;
+      order.refund_status = order.amount_refunded >= order.amount ? 'full' : 'partial';
+      renderRefundOrders();
+    }
+  </script>
 </body>
 </html>
