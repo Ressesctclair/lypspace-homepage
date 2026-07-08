@@ -265,6 +265,7 @@
       // Build option groups — normalise fragmented size names like "S/M/L" → "SIZE"
       const optGroups = {};
       const opt2Groups = {};
+      const opt3Groups = {};
       if (hasVariants) {
         product.variants.forEach(v => {
           const key = normOptName(v.option1_name);
@@ -277,6 +278,13 @@
             if (!opt2Groups[key2]) opt2Groups[key2] = [];
             if (!opt2Groups[key2].find(x => x.value === v.option2_value)) {
               opt2Groups[key2].push({ value: v.option2_value, qty: v.qty, price: v.price });
+            }
+          }
+          if (v.option3_name && v.option3_value) {
+            const key3 = normOptName(v.option3_name);
+            if (!opt3Groups[key3]) opt3Groups[key3] = [];
+            if (!opt3Groups[key3].find(x => x.value === v.option3_value)) {
+              opt3Groups[key3].push({ value: v.option3_value, qty: v.qty, price: v.price });
             }
           }
         });
@@ -301,6 +309,7 @@
       const variantsHtml = [
         ...Object.entries(optGroups).map(([n, o]) => renderOptGroup(n, o)),
         ...Object.entries(opt2Groups).map(([n, o]) => renderOptGroup(n, o)),
+        ...Object.entries(opt3Groups).map(([n, o]) => renderOptGroup(n, o)),
       ].join('');
 
       const root = document.getElementById('product-root');
@@ -485,11 +494,13 @@
       selectedVariant = product.variants.find(v => {
         const k1 = normOptName(v.option1_name);
         const k2 = v.option2_name ? normOptName(v.option2_name) : null;
+        const k3 = v.option3_name ? normOptName(v.option3_name) : null;
         const m1 = !_selectedOpts[k1] || _selectedOpts[k1] === v.option1_value;
         const m2 = !k2 || !_selectedOpts[k2] || _selectedOpts[k2] === v.option2_value;
-        return m1 && m2;
+        const m3 = !k3 || !_selectedOpts[k3] || _selectedOpts[k3] === v.option3_value;
+        return m1 && m2 && m3;
       }) || null;
-      // Auto-highlight option2 when option1 is picked (and vice versa)
+      // Auto-highlight option2/option3 when the other dimensions are picked
       if (selectedVariant) {
         if (selectedVariant.option2_name && selectedVariant.option2_value) {
           const k2 = normOptName(selectedVariant.option2_name);
@@ -497,6 +508,15 @@
             _selectedOpts[k2] = selectedVariant.option2_value;
             document.querySelectorAll(`.var-btn[data-opt="${k2}"]`).forEach(b => {
               b.classList.toggle('active', b.dataset.val === selectedVariant.option2_value);
+            });
+          }
+        }
+        if (selectedVariant.option3_name && selectedVariant.option3_value) {
+          const k3 = normOptName(selectedVariant.option3_name);
+          if (!_selectedOpts[k3]) {
+            _selectedOpts[k3] = selectedVariant.option3_value;
+            document.querySelectorAll(`.var-btn[data-opt="${k3}"]`).forEach(b => {
+              b.classList.toggle('active', b.dataset.val === selectedVariant.option3_value);
             });
           }
         }
@@ -525,6 +545,7 @@
       if (!selectedVariant) return '';
       let label = selectedVariant.option1_value || '';
       if (selectedVariant.option2_value) label += ' / ' + selectedVariant.option2_value;
+      if (selectedVariant.option3_value) label += ' / ' + selectedVariant.option3_value;
       return label ? ` (${label})` : '';
     }
 
