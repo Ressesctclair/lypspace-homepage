@@ -482,7 +482,7 @@
             '<label style="font-size:12px;margin-right:8px"><input type="radio" name="r-type-' + i + '" value="full" checked onchange="toggleRefundAmount(' + i + ')"> 全额</label>'
             + '<label style="font-size:12px;margin-right:8px"><input type="radio" name="r-type-' + i + '" value="partial" onchange="toggleRefundAmount(' + i + ')"> 部分</label>'
             + '<input id="r-amount-' + i + '" type="number" min="0" step="0.01" placeholder="金额" disabled style="width:80px;padding:4px 6px;font-size:12px;border:1px solid #d0d0d0;margin-right:8px">'
-            + '<button onclick="submitRefund(' + i + ')" style="padding:4px 10px;font-size:12px;cursor:pointer;color:#c00;border:1px solid #d0d0d0;background:#fff;width:auto;margin-top:0">退款</button>';
+            + '<button id="r-refund-btn-' + i + '" onclick="submitRefund(' + i + ')" style="padding:4px 10px;font-size:12px;cursor:pointer;color:#c00;border:1px solid #d0d0d0;background:#fff;width:auto;margin-top:0">退款</button>';
         }
         return '<div id="refund-row-' + i + '" style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0f0f0;flex-wrap:wrap">'
           + '<span>' + escHtml(date) + '</span>'
@@ -509,17 +509,33 @@
       const body = { password: pw, session_id: order.session_id };
       if (type === 'partial') body.amount = Number(amountInput);
 
-      const r = await fetch('/api/admin/coupon?resource=refund', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const d = await r.json();
-      if (!d.refunded) { alert(d.error || '退款失败'); return; }
+      const btn = document.getElementById('r-refund-btn-' + i);
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '处理中...';
 
-      order.amount_refunded = (order.amount_refunded || 0) + d.amount;
-      order.refund_status = order.amount_refunded >= order.amount ? 'full' : 'partial';
-      renderRefundOrders();
+      try {
+        const r = await fetch('/api/admin/coupon?resource=refund', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const d = await r.json();
+        if (!d.refunded) {
+          alert(d.error || '退款失败');
+          btn.disabled = false;
+          btn.textContent = originalText;
+          return;
+        }
+
+        order.amount_refunded = (order.amount_refunded || 0) + d.amount;
+        order.refund_status = order.amount_refunded >= order.amount ? 'full' : 'partial';
+        renderRefundOrders();
+      } catch (e) {
+        alert('请求失败');
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
     }
   </script>
 </body>

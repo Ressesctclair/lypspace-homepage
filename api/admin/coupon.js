@@ -59,6 +59,15 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'session_id required' });
 
     try {
+      const supabase = getSupabase();
+      const { data: orderLink } = await supabase
+        .from('order_links')
+        .select('stripe_session_id')
+        .eq('stripe_session_id', session_id)
+        .maybeSingle();
+      if (!orderLink)
+        return res.status(400).json({ error: 'no order found for this session_id' });
+
       const session = await stripe.checkout.sessions.retrieve(session_id);
       const paymentIntentId =
         typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;

@@ -304,6 +304,18 @@ describe('GET resource=orders', () => {
 });
 
 describe('POST resource=refund', () => {
+  beforeEach(() => {
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({ data: { stripe_session_id: 'cs_1' } }),
+          }),
+        }),
+      }),
+    });
+  });
+
   test('returns 401 for wrong password', async () => {
     Stripe.mockReturnValue({});
     const res = makeRes();
@@ -365,6 +377,25 @@ describe('POST resource=refund', () => {
     await handler({ method: 'POST', query: { resource: 'refund' }, body: { password: 'admin-secret', session_id: 'cs_1', amount: 999 } }, res);
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ error: 'Refund amount is greater than unrefunded amount' });
+  });
+
+  test('returns 400 when session_id does not match any order_links row', async () => {
+    getSupabase.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({ data: null }),
+          }),
+        }),
+      }),
+    });
+    const mockRefundCreate = jest.fn();
+    Stripe.mockReturnValue({ refunds: { create: mockRefundCreate } });
+    const res = makeRes();
+    await handler({ method: 'POST', query: { resource: 'refund' }, body: { password: 'admin-secret', session_id: 'cs_unknown' } }, res);
+    expect(mockRefundCreate).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'no order found for this session_id' });
   });
 
   test('still returns success when the confirmation email fails to send', async () => {
