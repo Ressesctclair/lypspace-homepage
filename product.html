@@ -533,9 +533,13 @@
     }
 
     function validateVariant() {
+      const err = document.getElementById('variant-err');
       if (product.variants && product.variants.length > 0 && !selectedVariant) {
-        const err = document.getElementById('variant-err');
-        if (err) err.style.display = 'block';
+        if (err) { err.textContent = 'Please select a size / option'; err.style.display = 'block'; }
+        return false;
+      }
+      if (selectedVariant && selectedVariant.qty <= 0) {
+        if (err) { err.textContent = 'This combination is sold out'; err.style.display = 'block'; }
         return false;
       }
       return true;
