@@ -114,7 +114,7 @@
     .qty-label { font-size: 12px; color: var(--gray); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
     .qty-control { display: flex; align-items: center; border: 1px solid var(--border); width: fit-content; }
     .qty-btn { width: 40px; height: 40px; background: none; border: none; font-size: 18px; cursor: pointer; color: var(--black); }
-    .qty-num { width: 40px; text-align: center; font-size: 14px; }
+    .qty-num { width: 40px; height: 40px; text-align: center; font-size: 14px; border: none; outline: none; background: none; color: var(--black); font-family: var(--font); }
 
     .buy-btn {
       display: block; width: 100%; padding: 16px;
@@ -338,9 +338,10 @@
               <p class="qty-label">Quantity</p>
               <div class="qty-control">
                 <button class="qty-btn" onclick="changeQty(-1)">−</button>
-                <span class="qty-num" id="qty-display">1</span>
+                <input type="number" min="1" class="qty-num" id="qty-display" value="1" oninput="onQtyInput()">
                 <button class="qty-btn" onclick="changeQty(1)">+</button>
               </div>
+              <p class="error-msg" id="qty-warn">Exceeds stock</p>
             </div>
             ${soldOut
               ? `<button class="buy-btn" disabled style="background:#aaa;cursor:not-allowed;">Sold Out</button>`
@@ -525,11 +526,27 @@
       document.getElementById('price-display').innerHTML = priceDisplayHtml(base);
       const err = document.getElementById('variant-err');
       if (err) err.style.display = 'none';
+      checkQtyWarning();
     }
 
     function changeQty(d) {
       qty = Math.max(1, qty + d);
-      document.getElementById('qty-display').textContent = qty;
+      document.getElementById('qty-display').value = qty;
+      checkQtyWarning();
+    }
+
+    function onQtyInput() {
+      const el = document.getElementById('qty-display');
+      const parsed = parseInt(el.value, 10);
+      qty = (!parsed || parsed < 1) ? 1 : parsed;
+      checkQtyWarning();
+    }
+
+    function checkQtyWarning() {
+      const warn = document.getElementById('qty-warn');
+      if (!warn) return;
+      const stockRef = selectedVariant ? selectedVariant.qty : product.total_qty;
+      warn.style.display = (qty > stockRef) ? 'block' : 'none';
     }
 
     function validateVariant() {
