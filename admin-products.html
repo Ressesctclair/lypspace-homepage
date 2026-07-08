@@ -65,7 +65,7 @@
     .toggle-btn.active-out{background:#111;border-color:#111;color:#fff}
 
     /* Variants */
-    .variant-row{display:grid;grid-template-columns:110px 1fr 80px 32px;gap:8px;margin-bottom:8px;align-items:center}
+    .variant-row{display:grid;grid-template-columns:90px 90px 90px 70px 32px;gap:8px;margin-bottom:8px;align-items:center}
     .variant-row input,.variant-row select{margin:0}
     .var-del{background:none;border:1px solid var(--border);cursor:pointer;font-size:14px;padding:0;height:38px;width:32px;display:flex;align-items:center;justify-content:center;color:var(--gray)}
     .var-del:hover{border-color:#c00;color:#c00}
@@ -448,7 +448,7 @@
     // Variants
     const rows = document.getElementById('variant-rows');
     rows.innerHTML = '';
-    (p.variants || []).forEach(v => addVariantRow(v.option1_value, v.qty, v.option1_name || 'Size'));
+    (p.variants || []).forEach(v => addVariantRow(v.option1_value, v.option2_value || '', v.option3_value || '', v.qty));
 
     renderSaveRow(true);
     document.getElementById('editor-overlay').classList.add('open');
@@ -467,15 +467,14 @@
   }
 
   // ── Variants ──────────────────────────────────────────────────
-  function addVariantRow(size = '', qty = 0, type = 'Size') {
+  function addVariantRow(size = '', color = '', style = '', qty = 0) {
     const rows = document.getElementById('variant-rows');
     const div = document.createElement('div');
     div.className = 'variant-row';
-    const typeOpts = ['Size','Color','Style'].map(t =>
-      `<option value="${t}"${t===type?' selected':''}>${t}</option>`).join('');
     div.innerHTML = `
-      <select style="border:1px solid var(--border);padding:8px 6px;font-family:var(--font);font-size:12px;background:var(--white);cursor:pointer">${typeOpts}</select>
-      <input type="text" placeholder="Value (e.g. S, Red, Floral)" value="${esc(String(size))}">
+      <input type="text" placeholder="Size (e.g. S)" value="${esc(String(size))}">
+      <input type="text" placeholder="Color (optional)" value="${esc(String(color))}">
+      <input type="text" placeholder="Style (optional)" value="${esc(String(style))}">
       <input type="number" min="0" placeholder="Qty" value="${qty}">
       <button class="var-del" onclick="this.parentElement.remove()">✕</button>`;
     rows.appendChild(div);
@@ -486,12 +485,16 @@
     const rows = document.querySelectorAll('#variant-rows .variant-row');
     const vars = [];
     rows.forEach(row => {
-      const sel = row.querySelector('select');
       const inputs = row.querySelectorAll('input');
-      const optName = sel ? sel.value : 'Size';
-      const optVal = inputs[0].value.trim();
-      const qty = parseInt(inputs[1].value) || 0;
-      if (optVal) vars.push({ option1_name: optName, option1_value: optVal, price, qty });
+      const sizeVal = inputs[0].value.trim();
+      const colorVal = inputs[1].value.trim();
+      const styleVal = inputs[2].value.trim();
+      const qty = parseInt(inputs[3].value) || 0;
+      if (!sizeVal) return;
+      const v = { option1_name: 'Size', option1_value: sizeVal, price, qty };
+      if (colorVal) { v.option2_name = 'Color'; v.option2_value = colorVal; }
+      if (styleVal) { v.option3_name = 'Style'; v.option3_value = styleVal; }
+      vars.push(v);
     });
     return vars;
   }
