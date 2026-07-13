@@ -209,6 +209,26 @@
     }
     const saleItemsCheckPromise = checkForSaleItems();
 
+    async function autofillDefaultAddress() {
+      try {
+        const r = await fetch('/api/user/orders?resource=addresses');
+        if (!r.ok) return; // 401 (guest) or any server error — leave the form blank
+        const { addresses } = await r.json();
+        if (!addresses || !addresses.length) return;
+        // API returns addresses newest-first, so the earliest-saved one is the last element.
+        const chosen = addresses.find(a => a.is_default) || addresses[addresses.length - 1];
+        document.getElementById('ship-name').value = chosen.name || '';
+        document.getElementById('ship-street').value = chosen.street || '';
+        document.getElementById('ship-city').value = chosen.city || '';
+        document.getElementById('ship-postal').value = chosen.postal_code || '';
+        if (chosen.country) document.getElementById('ship-country').value = chosen.country;
+        // ship-state and ship-phone have no equivalent in the saved-address schema — left for manual entry.
+      } catch {
+        // best-effort autofill only — any failure just leaves the fields blank for manual entry
+      }
+    }
+    autofillDefaultAddress();
+
     async function checkMembership() {
       await saleItemsCheckPromise;
       if (activeDiscount === 'coupon' || hasSaleItem) return;
