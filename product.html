@@ -269,7 +269,7 @@
       const opt3Groups = {};
       if (hasVariants) {
         product.variants.forEach(v => {
-          if (v.option1_name && v.option1_value) {
+          if (v.option1_value) {
             const key = normOptName(v.option1_name);
             if (!optGroups[key]) optGroups[key] = [];
             if (!optGroups[key].find(x => x.value === v.option1_value)) {
@@ -496,7 +496,7 @@
         b.classList.toggle('active', b.dataset.val === val);
       });
       selectedVariant = product.variants.find(v => {
-        const k1 = v.option1_name ? normOptName(v.option1_name) : null;
+        const k1 = v.option1_value ? normOptName(v.option1_name) : null;
         const k2 = v.option2_name ? normOptName(v.option2_name) : null;
         const k3 = v.option3_name ? normOptName(v.option3_name) : null;
         const m1 = !k1 || !_selectedOpts[k1] || _selectedOpts[k1] === v.option1_value;
