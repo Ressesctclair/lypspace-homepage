@@ -131,10 +131,15 @@ module.exports = async (req, res) => {
     if (req.query.password !== process.env.ADMIN_PASSWORD)
       return res.status(401).json({ error: 'Unauthorized' });
     const supabase = getSupabase();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('newsletter_subscribers')
       .select('email, created_at')
       .order('created_at', { ascending: false });
+    if (error) {
+      console.error('[checkout] list-subscribers: query failed — MANUAL RECOVERY NEEDED', {
+        table: 'newsletter_subscribers', error: error.message,
+      });
+    }
     return res.status(200).json({ subscribers: data || [] });
   }
 
@@ -147,22 +152,34 @@ module.exports = async (req, res) => {
   // ── Newsletter subscribe (public) ─────────────────────────────────
   if (action === 'subscribe') {
     const { email: subEmail } = req.body || {};
-    const isValidEmail = typeof subEmail === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(subEmail);
+    const normalizedEmail = typeof subEmail === 'string' ? subEmail.trim().toLowerCase() : subEmail;
+    const isValidEmail = typeof normalizedEmail === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
     if (!isValidEmail) return res.status(400).json({ error: 'Valid email required' });
 
     const supabase = getSupabase();
-    const { data: existing } = await supabase
+    const { data: existing, error: selectError } = await supabase
       .from('newsletter_subscribers')
       .select('email')
-      .eq('email', subEmail)
+      .eq('email', normalizedEmail)
       .maybeSingle();
 
+    if (selectError) {
+      console.error('[checkout] subscribe: select failed — MANUAL RECOVERY NEEDED', {
+        email: normalizedEmail, error: selectError.message,
+      });
+    }
+
     if (!existing) {
-      await supabase.from('newsletter_subscribers').insert({ email: subEmail });
+      const { error: insertError } = await supabase.from('newsletter_subscribers').insert({ email: normalizedEmail });
+      if (insertError) {
+        console.error('[checkout] subscribe: insert failed — MANUAL RECOVERY NEEDED', {
+          email: normalizedEmail, error: insertError.message,
+        });
+      }
       try {
         await resend.emails.send({
           from: FROM_EMAIL,
-          to: subEmail,
+          to: normalizedEmail,
           subject: 'Welcome to LYP SPACE',
           html: `
             <div style="font-family:Helvetica Neue,Arial,sans-serif;max-width:600px;margin:0 auto;color:#111;padding:40px 0;">
@@ -172,7 +189,7 @@ module.exports = async (req, res) => {
           `,
         });
       } catch (err) {
-        console.error('[checkout] subscribe: welcome email failed to send', { email: subEmail, error: err.message });
+        console.error('[checkout] subscribe: welcome email failed to send', { email: normalizedEmail, error: err.message });
       }
     }
 

@@ -54,4 +54,31 @@ describe('GET /api/checkout?action=list-subscribers', () => {
     const { subscribers } = res.json.mock.calls[0][0];
     expect(subscribers).toEqual(rows);
   });
+
+  test('logs error when query fails but still returns 200 with empty list', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const queryError = { message: 'relation "newsletter_subscribers" does not exist' };
+    mockSupabaseFrom.mockImplementation((table) => {
+      if (table === 'newsletter_subscribers') {
+        return {
+          select: () => ({
+            order: () => Promise.resolve({ data: null, error: queryError }),
+          }),
+        };
+      }
+    });
+
+    const req = makeReq({ action: 'list-subscribers', password: 'test-secret' });
+    const res = makeRes();
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ subscribers: [] });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('list-subscribers'),
+      expect.objectContaining({ error: queryError.message })
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
 });

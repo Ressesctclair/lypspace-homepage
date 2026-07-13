@@ -119,4 +119,84 @@ describe('POST /api/checkout action=subscribe', () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ subscribed: true });
   });
+
+  test('normalizes email casing/whitespace before dedup check, insert, and welcome email', async () => {
+    const eqFn = jest.fn(() => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }));
+    const insertFn = jest.fn().mockResolvedValue({ data: null, error: null });
+    mockSupabaseFrom.mockImplementation((table) => {
+      if (table === 'newsletter_subscribers') {
+        return {
+          select: () => ({ eq: eqFn }),
+          insert: insertFn,
+        };
+      }
+    });
+
+    const req = makeReq({ email: '  New@Test.com  ' });
+    const res = makeRes();
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ subscribed: true });
+    expect(eqFn).toHaveBeenCalledWith('email', 'new@test.com');
+    expect(insertFn).toHaveBeenCalledWith({ email: 'new@test.com' });
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    expect(mockSend.mock.calls[0][0].to).toBe('new@test.com');
+  });
+
+  test('logs error when select fails but still proceeds without throwing', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const selectError = { message: 'relation "newsletter_subscribers" does not exist' };
+    mockSupabaseFrom.mockImplementation((table) => {
+      if (table === 'newsletter_subscribers') {
+        return {
+          select: () => ({
+            eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: selectError }) }),
+          }),
+          insert: jest.fn().mockResolvedValue({ data: null, error: null }),
+        };
+      }
+    });
+
+    const req = makeReq({ email: 'select-fail@test.com' });
+    const res = makeRes();
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ subscribed: true });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('subscribe'),
+      expect.objectContaining({ error: selectError.message })
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  test('logs error when insert fails but still proceeds without throwing', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const insertError = { message: 'relation "newsletter_subscribers" does not exist' };
+    mockSupabaseFrom.mockImplementation((table) => {
+      if (table === 'newsletter_subscribers') {
+        return {
+          select: () => ({
+            eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }),
+          }),
+          insert: jest.fn().mockResolvedValue({ data: null, error: insertError }),
+        };
+      }
+    });
+
+    const req = makeReq({ email: 'insert-fail@test.com' });
+    const res = makeRes();
+    await handler(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ subscribed: true });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('subscribe'),
+      expect.objectContaining({ error: insertError.message })
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
 });
