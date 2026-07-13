@@ -1,4 +1,7 @@
 const Stripe = require('stripe');
+const { Resend } = require('resend');
+
+const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 
 module.exports = async (req, res) => {
   req.query = req.query || {};
@@ -126,7 +129,43 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).end();
 
   const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const { action, code, email: validateEmail } = req.body || {};
+
+  // ── Newsletter subscribe (public) ─────────────────────────────────
+  if (action === 'subscribe') {
+    const { email: subEmail } = req.body || {};
+    const isValidEmail = typeof subEmail === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(subEmail);
+    if (!isValidEmail) return res.status(400).json({ error: 'Valid email required' });
+
+    const supabase = getSupabase();
+    const { data: existing } = await supabase
+      .from('newsletter_subscribers')
+      .select('email')
+      .eq('email', subEmail)
+      .maybeSingle();
+
+    if (!existing) {
+      await supabase.from('newsletter_subscribers').insert({ email: subEmail });
+      try {
+        await resend.emails.send({
+          from: FROM_EMAIL,
+          to: subEmail,
+          subject: 'Welcome to LYP SPACE',
+          html: `
+            <div style="font-family:Helvetica Neue,Arial,sans-serif;max-width:600px;margin:0 auto;color:#111;padding:40px 0;">
+              <h2 style="font-weight:400;letter-spacing:0.04em;margin-bottom:24px;">Welcome to LYP SPACE</h2>
+              <p style="margin-bottom:16px;">Thanks for subscribing — you'll be the first to hear about exclusive deals and new arrivals.</p>
+            </div>
+          `,
+        });
+      } catch (err) {
+        console.error('[checkout] subscribe: welcome email failed to send', { email: subEmail, error: err.message });
+      }
+    }
+
+    return res.status(200).json({ subscribed: true });
+  }
 
   // ── Product update (admin) ───────────────────────────────────────
   if (action === 'product-update') {
