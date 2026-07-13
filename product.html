@@ -581,6 +581,11 @@
         if (err) { err.textContent = 'This combination is sold out'; err.style.display = 'block'; }
         return false;
       }
+      const stockRef = selectedVariant ? selectedVariant.qty : product.total_qty;
+      if (qty > stockRef) {
+        checkQtyWarning();
+        return false;
+      }
       return true;
     }
 
