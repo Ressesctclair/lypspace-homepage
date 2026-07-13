@@ -126,6 +126,18 @@ module.exports = async (req, res) => {
     return res.status(200).json({ products });
   }
 
+  // ── Newsletter subscribers list (GET, admin) ─────────────────────
+  if (req.method === 'GET' && req.query.action === 'list-subscribers') {
+    if (req.query.password !== process.env.ADMIN_PASSWORD)
+      return res.status(401).json({ error: 'Unauthorized' });
+    const supabase = getSupabase();
+    const { data } = await supabase
+      .from('newsletter_subscribers')
+      .select('email, created_at')
+      .order('created_at', { ascending: false });
+    return res.status(200).json({ subscribers: data || [] });
+  }
+
   if (req.method !== 'POST') return res.status(405).end();
 
   const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
