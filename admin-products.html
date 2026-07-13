@@ -490,8 +490,9 @@
       const colorVal = inputs[1].value.trim();
       const styleVal = inputs[2].value.trim();
       const qty = parseInt(inputs[3].value) || 0;
-      if (!sizeVal) return;
-      const v = { option1_name: 'Size', option1_value: sizeVal, price, qty };
+      if (!sizeVal && !colorVal && !styleVal) return;
+      const v = { price, qty };
+      if (sizeVal) { v.option1_name = 'Size'; v.option1_value = sizeVal; }
       if (colorVal) { v.option2_name = 'Color'; v.option2_value = colorVal; }
       if (styleVal) { v.option3_name = 'Style'; v.option3_value = styleVal; }
       vars.push(v);

@@ -355,7 +355,7 @@
         p.handle, p.title, p.type||'', p.price,
         (p.description||'').replace(/"/g,'""'),
         p.images.join(' | '),
-        p.variants.map(v=>`${v.option1_name}:${v.option1_value}=$${v.price}`).join(' | ')
+        p.variants.map(v=>[v.option1_value,v.option2_value,v.option3_value].filter(Boolean).join('/')+`=$${v.price}`).join(' | ')
       ]);
       const csv = [headers,...rows].map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n');
       const a = document.createElement('a');
