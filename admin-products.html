@@ -601,7 +601,7 @@
 
       const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const d = await r.json();
-      if (d.error === 'Unauthorized') { password = ''; document.getElementById('main').style.display='none'; document.getElementById('login-screen').style.display='block'; document.getElementById('login-err').style.display='block'; return; }
+      if (d.error === 'Unauthorized') { password = ''; document.getElementById('editor-overlay').classList.remove('open'); document.getElementById('main').style.display='none'; document.getElementById('login-screen').style.display='block'; document.getElementById('login-err').style.display='block'; return; }
       if (!d.ok) throw new Error(d.error || 'Failed');
 
       // Save hidden state for custom products
@@ -733,7 +733,7 @@
         }),
       });
       const d = await r.json();
-      if (d.error === 'Unauthorized') { password = ''; document.getElementById('main').style.display='none'; document.getElementById('login-screen').style.display='block'; document.getElementById('login-err').style.display='block'; return; }
+      if (d.error === 'Unauthorized') { password = ''; document.getElementById('quick-link-overlay').classList.remove('open'); document.getElementById('main').style.display='none'; document.getElementById('login-screen').style.display='block'; document.getElementById('login-err').style.display='block'; return; }
       if (!d.ok) throw new Error(d.error || 'Failed');
 
       const url = 'https://lypspace.digital/product?h=' + handle;
