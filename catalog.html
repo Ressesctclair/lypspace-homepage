@@ -194,6 +194,7 @@
           sale_price: ov.sale_price != null ? ov.sale_price : (p.sale_price ?? null),
         };
       });
+      allProducts.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
       buildFilters();
       render();
     }
