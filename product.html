@@ -216,10 +216,16 @@
       product.sale_price = override.sale_price != null ? override.sale_price : (product.sale_price ?? null);
       if (override.description) product.description = override.description;
       if (override.variant_qtys) {
+        const knownValues = new Set(product.variants.map(v => v.option1_value));
         product.variants = product.variants.map(v => ({
           ...v,
           qty: override.variant_qtys[v.option1_value] ?? v.qty
         }));
+        Object.keys(override.variant_qtys).forEach(sizeVal => {
+          if (!knownValues.has(sizeVal)) {
+            product.variants.push({ option1_name: 'SIZE', option1_value: sizeVal, price: product.price, qty: override.variant_qtys[sizeVal] });
+          }
+        });
       }
 
       document.title = product.title + ' — LYP SPACE';
@@ -258,6 +264,18 @@
       return name;
     }
 
+    const SIZE_ORDER = ['XXS','XS','S','M','L','XL','XXL','XXXL','2XL','3XL','4XL','5XL'];
+    function compareSizeValues(a, b) {
+      const na = a.trim(), nb = b.trim();
+      const isNumA = /^\d+(\.\d+)?$/.test(na), isNumB = /^\d+(\.\d+)?$/.test(nb);
+      if (isNumA && isNumB) return parseFloat(na) - parseFloat(nb);
+      const ia = SIZE_ORDER.indexOf(na.toUpperCase()), ib = SIZE_ORDER.indexOf(nb.toUpperCase());
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return na.localeCompare(nb);
+    }
+
     function renderProduct() {
       const hasVariants = product.variants && product.variants.length > 0;
       const hasImages = product.images && product.images.length > 0;
@@ -291,6 +309,7 @@
             }
           }
         });
+        if (optGroups.SIZE) optGroups.SIZE.sort((a, b) => compareSizeValues(a.value, b.value));
       }
 
       const thumbsHtml = hasImages && product.images.length > 1

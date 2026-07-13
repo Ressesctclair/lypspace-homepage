@@ -402,8 +402,10 @@
     const varQtys = ov.variant_qtys || {};
     const rows = document.getElementById('variant-rows');
     rows.innerHTML = '';
+    const knownValues = new Set();
     if (p.variants && p.variants.length) {
       p.variants.forEach(v => {
+        knownValues.add(v.option1_value);
         const row = document.createElement('div');
         row.className = 'variant-row';
         row.innerHTML = `
@@ -413,6 +415,10 @@
         rows.appendChild(row);
       });
     }
+    // Sizes added via "+ Add Variant" that aren't part of the static catalog entry
+    Object.keys(varQtys).forEach(sizeVal => {
+      if (!knownValues.has(sizeVal)) addVariantRow(sizeVal, '', '', varQtys[sizeVal]);
+    });
     renderSaveRow(false);
     document.getElementById('editor-overlay').classList.add('open');
   }
@@ -567,9 +573,18 @@
 
       if (editingMode === 'edit-override') {
         // Save to product_overrides
-        const varInputs = document.querySelectorAll('#variant-rows input[data-var]');
         const variant_qtys = {};
-        varInputs.forEach(inp => { variant_qtys[inp.dataset.var] = parseInt(inp.value) || 0; });
+        document.querySelectorAll('#variant-rows .variant-row').forEach(row => {
+          const inputs = row.querySelectorAll('input');
+          if (inputs.length === 2) {
+            // existing catalog size: [readonly size, qty]
+            variant_qtys[inputs[0].value.trim()] = parseInt(inputs[1].value) || 0;
+          } else if (inputs.length === 4) {
+            // manually added size via "+ Add Variant": [size, color, style, qty] — only size is stored here
+            const sizeVal = inputs[0].value.trim();
+            if (sizeVal) variant_qtys[sizeVal] = parseInt(inputs[3].value) || 0;
+          }
+        });
         body = {
           action: 'product-update', password,
           handle: editingHandle,
@@ -578,7 +593,7 @@
           sale_price: document.getElementById('ed-sale-price').value,
           description: document.getElementById('ed-desc').value,
         };
-        if (varInputs.length) body.variant_qtys = variant_qtys;
+        if (Object.keys(variant_qtys).length) body.variant_qtys = variant_qtys;
 
       } else {
         // Create or update custom product
