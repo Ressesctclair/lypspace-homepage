@@ -78,6 +78,20 @@
       </table>
       <div id="empty">暂无符合条件的订单</div>
     </div>
+
+    <h1 style="margin-top:40px;">订阅名单</h1>
+    <div id="sub-table-wrap" style="display:none;">
+      <table>
+        <thead>
+          <tr>
+            <th>邮箱</th>
+            <th>订阅时间</th>
+          </tr>
+        </thead>
+        <tbody id="sub-tbody"></tbody>
+      </table>
+      <div id="sub-empty" style="text-align:center;padding:48px 0;font-size:13px;color:#888;display:none;">暂无订阅者</div>
+    </div>
   </div>
 
   <script>
@@ -103,9 +117,43 @@
         document.getElementById('controls').style.display = 'flex';
         document.getElementById('table-wrap').style.display = 'block';
         renderTable();
+        loadSubscribers(pw);
       } catch {
         errEl.textContent = '网络错误，请重试';
       }
+    }
+
+    async function loadSubscribers(pw) {
+      try {
+        const r = await fetch('/api/checkout?action=list-subscribers&password=' + encodeURIComponent(pw));
+        if (!r.ok) return;
+        const { subscribers } = await r.json();
+        renderSubscribers(subscribers || []);
+      } catch {
+        // Subscriber list is secondary to the orders table; a failure here stays silent
+        // rather than overwriting the orders-specific error message in #err.
+      }
+    }
+
+    function renderSubscribers(subscribers) {
+      const tbody = document.getElementById('sub-tbody');
+      const emptyEl = document.getElementById('sub-empty');
+      document.getElementById('sub-table-wrap').style.display = 'block';
+
+      if (subscribers.length === 0) {
+        tbody.innerHTML = '';
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+
+      tbody.innerHTML = subscribers.map(s => {
+        const date = s.created_at ? new Date(s.created_at).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+        return `<tr>
+          <td>${esc(s.email)}</td>
+          <td style="white-space:nowrap;color:#666;">${date}</td>
+        </tr>`;
+      }).join('');
     }
 
     function setFilter(f, btn) {

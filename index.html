@@ -593,6 +593,14 @@
       color: var(--black);
     }
 
+    .signup-msg {
+      margin-top: 14px;
+      font-size: 13px;
+    }
+
+    .signup-msg.success { color: #1a6e3c; }
+    .signup-msg.error { color: #c0392b; }
+
     /* ── FAQ ─────────────────────────────────────────────── */
     .faq-section {
       padding: 72px 40px;
@@ -1091,10 +1099,11 @@
   <section class="signup-section">
     <h2 data-i18n="signup_title">Stay in the loop</h2>
     <p data-i18n="signup_body">Get exclusive deals and early access to new products</p>
-    <form class="signup-form" onsubmit="return false;">
-      <input type="email" data-i18n-ph="signup_ph" placeholder="Your email address" />
-      <button type="submit" data-i18n="subscribe_btn">Subscribe</button>
+    <form class="signup-form" id="signup-form" onsubmit="return handleSubscribe(event)">
+      <input type="email" id="signup-email" data-i18n-ph="signup_ph" placeholder="Your email address" />
+      <button type="submit" id="signup-btn" data-i18n="subscribe_btn">Subscribe</button>
     </form>
+    <p id="signup-msg" class="signup-msg" style="display:none;"></p>
   </section>
 
   <!-- FAQ -->
@@ -1338,6 +1347,51 @@
       } catch(e) {}
     })();
 
+  </script>
+
+  <script>
+    async function handleSubscribe(event) {
+      event.preventDefault();
+      const emailInput = document.getElementById('signup-email');
+      const btn = document.getElementById('signup-btn');
+      const msg = document.getElementById('signup-msg');
+      const email = emailInput.value.trim();
+
+      msg.style.display = 'none';
+      msg.className = 'signup-msg';
+
+      const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (!isValidEmail) {
+        msg.textContent = window.i18n.t('subscribe_invalid');
+        msg.classList.add('error');
+        msg.style.display = 'block';
+        return false;
+      }
+
+      btn.disabled = true;
+      const originalText = btn.textContent;
+      btn.textContent = '...';
+
+      try {
+        const r = await fetch('/api/checkout?action=subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'subscribe', email }),
+        });
+        if (!r.ok) throw new Error('subscribe failed');
+        msg.textContent = window.i18n.t('subscribe_success');
+        msg.classList.add('success');
+        emailInput.value = '';
+      } catch {
+        msg.textContent = window.i18n.t('subscribe_error');
+        msg.classList.add('error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        msg.style.display = 'block';
+      }
+      return false;
+    }
   </script>
 
 </body>

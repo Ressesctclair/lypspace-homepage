@@ -1,4 +1,7 @@
 const Stripe = require('stripe');
+const { Resend } = require('resend');
+
+const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 
 module.exports = async (req, res) => {
   req.query = req.query || {};
@@ -123,10 +126,75 @@ module.exports = async (req, res) => {
     return res.status(200).json({ products });
   }
 
+  // ── Newsletter subscribers list (GET, admin) ─────────────────────
+  if (req.method === 'GET' && req.query.action === 'list-subscribers') {
+    if (req.query.password !== process.env.ADMIN_PASSWORD)
+      return res.status(401).json({ error: 'Unauthorized' });
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('newsletter_subscribers')
+      .select('email, created_at')
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('[checkout] list-subscribers: query failed — MANUAL RECOVERY NEEDED', {
+        table: 'newsletter_subscribers', error: error.message,
+      });
+    }
+    return res.status(200).json({ subscribers: data || [] });
+  }
+
   if (req.method !== 'POST') return res.status(405).end();
 
   const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+  const resend = new Resend(process.env.RESEND_API_KEY);
   const { action, code, email: validateEmail } = req.body || {};
+
+  // ── Newsletter subscribe (public) ─────────────────────────────────
+  if (action === 'subscribe') {
+    const { email: subEmail } = req.body || {};
+    const normalizedEmail = typeof subEmail === 'string' ? subEmail.trim().toLowerCase() : subEmail;
+    const isValidEmail = typeof normalizedEmail === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
+    if (!isValidEmail) return res.status(400).json({ error: 'Valid email required' });
+
+    const supabase = getSupabase();
+    const { data: existing, error: selectError } = await supabase
+      .from('newsletter_subscribers')
+      .select('email')
+      .eq('email', normalizedEmail)
+      .maybeSingle();
+
+    if (selectError) {
+      console.error('[checkout] subscribe: select failed — MANUAL RECOVERY NEEDED', {
+        email: normalizedEmail, error: selectError.message,
+      });
+    }
+
+    if (!existing) {
+      const { error: insertError } = await supabase.from('newsletter_subscribers').insert({ email: normalizedEmail });
+      if (insertError) {
+        console.error('[checkout] subscribe: insert failed — MANUAL RECOVERY NEEDED', {
+          email: normalizedEmail, error: insertError.message,
+        });
+      }
+      try {
+        await resend.emails.send({
+          from: FROM_EMAIL,
+          to: normalizedEmail,
+          subject: 'Welcome to LYP SPACE',
+          html: `
+            <div style="font-family:Helvetica Neue,Arial,sans-serif;max-width:600px;margin:0 auto;color:#111;padding:40px 0;">
+              <h2 style="font-weight:400;letter-spacing:0.04em;margin-bottom:24px;">Welcome to LYP SPACE</h2>
+              <p style="margin-bottom:16px;">Thanks for subscribing — you'll be the first to hear about exclusive deals and new arrivals.</p>
+            </div>
+          `,
+        });
+      } catch (err) {
+        console.error('[checkout] subscribe: welcome email failed to send', { email: normalizedEmail, error: err.message });
+      }
+    }
+
+    return res.status(200).json({ subscribed: true });
+  }
 
   // ── Product update (admin) ───────────────────────────────────────
   if (action === 'product-update') {
