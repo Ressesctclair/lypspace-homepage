@@ -801,7 +801,8 @@
     const pw = document.getElementById('pw-input').value.trim();
     if (!pw) return;
     document.getElementById('pw-err').textContent = '';
-    const r = await fetch('/api/checkout?action=settings');
+    const r = await fetch('/api/checkout?action=list-subscribers&password=' + encodeURIComponent(pw));
+    if (r.status === 401) { document.getElementById('pw-err').textContent = 'Wrong password'; return; }
     if (!r.ok) { document.getElementById('pw-err').textContent = 'Connection error'; return; }
     adminPw = pw;
     document.getElementById('auth-screen').style.display = 'none';
