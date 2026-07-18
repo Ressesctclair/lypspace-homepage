@@ -362,6 +362,7 @@
     document.getElementById('ed-name').value = '';
     document.getElementById('ed-type').value = '';
     document.getElementById('ed-handle').value = '';
+    delete document.getElementById('ed-handle').dataset.manual;
     document.getElementById('ed-price').value = '';
     document.getElementById('ed-sale-price').value = '';
     document.getElementById('ed-desc').value = '';
@@ -386,6 +387,7 @@
     const p = allProducts.find(x => x.handle === handle);
     const ov = overrides[handle] || {};
     editingInStock = 'in_stock' in ov ? ov.in_stock : p.total_qty > 0;
+    document.getElementById('ed-handle').dataset.manual = '1';
 
     document.getElementById('ed-title').textContent = p.title;
     document.getElementById('custom-fields').style.display = 'none';
@@ -436,6 +438,7 @@
     document.getElementById('ed-name').value = p.title;
     document.getElementById('ed-type').value = p.type || '';
     document.getElementById('ed-handle').value = p.handle;
+    document.getElementById('ed-handle').dataset.manual = '1';
     document.getElementById('ed-price').value = p.price;
     document.getElementById('ed-sale-price').value = p.sale_price != null ? p.sale_price : '';
     document.getElementById('ed-desc').value = p.description || '';
