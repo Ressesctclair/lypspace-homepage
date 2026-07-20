@@ -17,10 +17,10 @@ module.exports = async (req, res) => {
     .single();
 
   if (!user || !user.password_hash)
-    return res.status(401).json({ error: 'invalid credentials' });
+    return res.status(401).json({ error: 'Incorrect email or password' });
 
   const valid = await bcrypt.compare(password, user.password_hash);
-  if (!valid) return res.status(401).json({ error: 'invalid credentials' });
+  if (!valid) return res.status(401).json({ error: 'Incorrect email or password' });
 
   setAuthCookie(res, { userId: user.id, email: user.email });
   return res.status(200).json({
