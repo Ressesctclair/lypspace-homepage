@@ -780,7 +780,7 @@
       .banner-content { padding: 20px 24px; }
       .banner-half-content { padding: 20px 24px; }
       .banner { aspect-ratio: 4/3; }
-      .banner #banner-dresses { object-fit: cover; object-position: center 35%; }
+      .banner #banner-dresses { object-fit: cover; object-position: center 65%; }
       .banner-half { aspect-ratio: 4/3; }
       .banner-content h2 { font-size: 20px; }
     }
@@ -1291,7 +1291,7 @@
             if (el) {
               let url = settings[key];
               if (key === 'dresses' && isMobile && url.includes('cloudinary.com'))
-                url = url.replace(/ar_\d+:\d+/, 'ar_4:3').replace(/w_\d+/, 'w_800');
+                url = url.replace(/ar_\d+:\d+/, 'h_660').replace(/w_\d+/, 'w_800');
               el.src = url;
             }
           }
@@ -1299,7 +1299,7 @@
         if (isMobile) {
           const dresImg = document.getElementById('banner-dresses');
           if (dresImg && dresImg.src.includes('cloudinary.com') && dresImg.src.includes('ar_16:5'))
-            dresImg.src = dresImg.src.replace(/ar_\d+:\d+/, 'ar_4:3').replace(/w_\d+/, 'w_800');
+            dresImg.src = dresImg.src.replace(/ar_\d+:\d+/, 'h_660').replace(/w_\d+/, 'w_800');
         }
         for (let i = 1; i <= 35; i++) {
           const k = 'feat' + i;
