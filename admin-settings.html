@@ -49,6 +49,17 @@
   </div>
 </div>
 
+<div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:#fff;border-radius:8px;padding:24px;max-width:480px;width:100%;text-align:center;">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:16px;">Replace this image on the live site?</h3>
+    <img id="confirm-preview" src="" alt="" style="width:100%;border-radius:6px;margin-bottom:16px;display:block;"/>
+    <div style="display:flex;gap:10px;">
+      <button onclick="confirmUpload()" style="flex:1;background:var(--black);color:var(--white);border:none;padding:11px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border-radius:4px;">Save &amp; publish</button>
+      <button onclick="cancelUpload()" style="flex:1;background:#eee;color:var(--black);border:none;padding:11px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border-radius:4px;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div id="main-screen">
   <div class="page">
     <h2>Homepage Banners</h2>
@@ -868,6 +879,8 @@
     if (file) uploadFile(file, key, prevId, stId, dzId);
   }
 
+  let pendingUpload = null;
+
   async function uploadFile(file, key, prevId, stId, dzId) {
     if (!file) return;
     const st = document.getElementById(stId);
@@ -894,6 +907,28 @@
       const transform = TRANSFORMS[key] || 'c_fill,g_auto,w_1400,q_auto,f_auto';
       const url = `https://res.cloudinary.com/${CLOUD}/image/upload/${transform}/${upData.public_id}`;
 
+      pendingUpload = { key, url, prevId, stId };
+      document.getElementById('confirm-preview').src = url;
+      document.getElementById('confirm-overlay').style.display = 'flex';
+      st.textContent = '';
+      st.className = 'status';
+    } catch(err) {
+      st.textContent = 'Error: ' + err.message;
+      st.className = 'status err';
+    } finally {
+      dz.classList.remove('uploading');
+    }
+  }
+
+  async function confirmUpload() {
+    if (!pendingUpload) return;
+    const { key, url, prevId, stId } = pendingUpload;
+    pendingUpload = null;
+    document.getElementById('confirm-overlay').style.display = 'none';
+    const st = document.getElementById(stId);
+    st.textContent = 'Saving…';
+    st.className = 'status';
+    try {
       const saveRes = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -901,16 +936,23 @@
       });
       const saveData = await saveRes.json();
       if (!saveData.ok) throw new Error(saveData.error || 'Save failed');
-
       document.getElementById(prevId).src = url;
       st.textContent = 'Saved ✓ — visible on homepage immediately';
       st.className = 'status ok';
     } catch(err) {
       st.textContent = 'Error: ' + err.message;
       st.className = 'status err';
-    } finally {
-      dz.classList.remove('uploading');
     }
+  }
+
+  function cancelUpload() {
+    if (pendingUpload) {
+      const st = document.getElementById(pendingUpload.stId);
+      st.textContent = 'Cancelled — not saved';
+      st.className = 'status';
+    }
+    pendingUpload = null;
+    document.getElementById('confirm-overlay').style.display = 'none';
   }
 
   // Click-to-browse for all drop zones (label trick — no .click() needed, works in all browsers)
