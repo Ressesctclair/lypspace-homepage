@@ -366,7 +366,11 @@
       a.click();
     }
 
-    loadProducts();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadProducts);
+    } else {
+      loadProducts();
+    }
 
     (async () => {
       const r = await fetch('/api/auth/me', { cache: 'no-store' });
