@@ -1,4 +1,4 @@
-const { isVideoUrl, videoPlaybackUrl, videoPosterUrl, setCoverOffset } = require('../js/media-type');
+const { isVideoUrl, videoPlaybackUrl, videoPosterUrl, setCoverOffset, pickCoverUrl } = require('../js/media-type');
 
 describe('isVideoUrl', () => {
   test('returns true for common video extensions', () => {
@@ -75,5 +75,32 @@ describe('setCoverOffset', () => {
 
   test('replaces an existing #t= fragment rather than appending a second one', () => {
     expect(setCoverOffset('https://example.com/x.mp4#t=1', 20)).toBe('https://example.com/x.mp4#t=20');
+  });
+});
+
+describe('pickCoverUrl', () => {
+  test('returns the first image URL when the array starts with an image', () => {
+    const images = ['https://x.com/a.jpg', 'https://x.com/b.mp4'];
+    expect(pickCoverUrl(images)).toBe('https://x.com/a.jpg');
+  });
+
+  test('skips a leading video and returns the first actual image', () => {
+    const images = ['https://x.com/a.mp4', 'https://x.com/b.jpg', 'https://x.com/c.png'];
+    expect(pickCoverUrl(images)).toBe('https://x.com/b.jpg');
+  });
+
+  test('falls back to the poster frame of the first video when every entry is a video', () => {
+    const images = ['https://x.com/a.mp4', 'https://x.com/b.webm'];
+    expect(pickCoverUrl(images)).toBe('https://x.com/a.jpg');
+  });
+
+  test('honors a #t= cover fragment on the fallback video', () => {
+    const images = ['https://res.cloudinary.com/dhsgdejtf/video/upload/lyp-space/a.mp4#t=5'];
+    expect(pickCoverUrl(images)).toBe('https://res.cloudinary.com/dhsgdejtf/video/upload/so_5/lyp-space/a.jpg');
+  });
+
+  test('returns empty string for an empty or missing array', () => {
+    expect(pickCoverUrl([])).toBe('');
+    expect(pickCoverUrl(undefined)).toBe('');
   });
 });

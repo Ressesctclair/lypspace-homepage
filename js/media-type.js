@@ -29,11 +29,19 @@
     return base + '#t=' + rounded;
   }
 
+  function pickCoverUrl(images) {
+    if (!images || !images.length) return '';
+    var firstImage = images.find(function (u) { return !isVideoUrl(u); });
+    if (firstImage) return firstImage;
+    return videoPosterUrl(images[0]);
+  }
+
   var MediaType = {
     isVideoUrl: isVideoUrl,
     videoPlaybackUrl: videoPlaybackUrl,
     videoPosterUrl: videoPosterUrl,
-    setCoverOffset: setCoverOffset
+    setCoverOffset: setCoverOffset,
+    pickCoverUrl: pickCoverUrl
   };
 
   if (typeof module !== 'undefined' && module.exports) {
