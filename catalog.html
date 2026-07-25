@@ -6,6 +6,7 @@
   <title>Catalog — LYP SPACE</title>
   <script src="/js/i18n.js" defer></script>
   <script src="/js/cart.js" defer></script>
+  <script src="/js/media-type.js" defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -261,7 +262,7 @@
         return;
       }
       grid.innerHTML = pageProducts.map(p => {
-        const img = p.images[0] || '';
+        const img = MediaType.pickCoverUrl(p.images);
         const price = p.price > 0 ? '$' + p.price.toFixed(2) : '';
         const soldOut = isSoldOut(p);
         const onSale = p.price > 0 && p.sale_price != null && p.sale_price > 0 && p.sale_price < p.price;
