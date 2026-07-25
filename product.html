@@ -353,7 +353,7 @@
         <div class="product-layout">
           <div class="image-gallery">
             <div class="main-image" id="main-img">
-              <img id="main-img-el" src="${firstIsVideo ? '' : firstUrl}" alt="${esc(product.title)}" style="${firstIsVideo ? 'display:none' : ''}">
+              ${hasImages ? `<img id="main-img-el" src="${firstIsVideo ? '' : firstUrl}" alt="${esc(product.title)}" style="${firstIsVideo ? 'display:none' : ''}">` : ''}
               ${hasImages ? `<video id="main-vid-el" muted loop playsinline ${firstIsVideo ? `src="${MediaType.videoPlaybackUrl(firstUrl)}" autoplay` : 'style="display:none"'}></video>` : ''}
               <button id="vid-mute-btn" class="vid-mute-btn" style="display:${firstIsVideo ? 'flex' : 'none'}" onclick="toggleMute(event)" aria-label="Toggle video sound">&#128263;</button>
               ${product.images && product.images.length > 1 ? `
