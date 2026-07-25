@@ -117,9 +117,9 @@ git commit -m "feat: add isVideoUrl media-type helper"
 **Interfaces:**
 - Consumes: `isVideoUrl` from Task 1 (same file).
 - Produces:
-  - `MediaType.videoPlaybackUrl(url: string) => string` — strips any `#t=` fragment. Used everywhere a video URL becomes an actual `<video src>` (Task 6 picker, Task 8 main gallery).
-  - `MediaType.videoPosterUrl(url: string) => string` — a Cloudinary derivative URL returning a static JPG frame, honoring a `#t=<seconds>` fragment as the Cloudinary `so_<seconds>` start-offset if present. Used by the admin preview grid (Task 7), product thumbnail row (Task 10), and `pickCoverUrl` (Task 3).
-  - `MediaType.setCoverOffset(url: string, seconds: number) => string` — returns the fragment-stripped URL with a new `#t=<rounded seconds>` appended. Used by the cover-frame picker (Task 6) to write the merchant's chosen frame back into the URL.
+  - `MediaType.videoPlaybackUrl(url: string) => string` — strips any `#t=` fragment. Used everywhere a video URL becomes an actual `<video src>` (Task 5 picker, Task 7 main gallery).
+  - `MediaType.videoPosterUrl(url: string) => string` — a Cloudinary derivative URL returning a static JPG frame, honoring a `#t=<seconds>` fragment as the Cloudinary `so_<seconds>` start-offset if present. Used by the admin preview grid (Task 6), product thumbnail row (Task 9), and `pickCoverUrl` (Task 3).
+  - `MediaType.setCoverOffset(url: string, seconds: number) => string` — returns the fragment-stripped URL with a new `#t=<rounded seconds>` appended. Used by the cover-frame picker (Task 5) to write the merchant's chosen frame back into the URL.
 - **Also widens `isVideoUrl`'s regex** to `/\.(mp4|webm|mov|m4v)(?:[?#].*)?$/i` so a URL carrying a `#t=` fragment is still recognized as a video (query-string handling from Task 1 is preserved — this is a strict superset).
 
 - [ ] **Step 1: Write the failing tests**
@@ -389,7 +389,7 @@ Run: `vercel dev` (from repo root)
 
 In a browser:
 1. Open `http://localhost:3000/catalog` — confirm every existing product card still shows its normal photo cover (no regression for photo-only products).
-2. Revisit this check after Task 5-6 ship a real test video: temporarily make a test product's first `images` entry a video URL and confirm its catalog card shows a still frame, not a broken image icon. Revert the test edit afterward.
+2. Revisit this check after Task 5 ships a real test video: temporarily make a test product's first `images` entry a video URL and confirm its catalog card shows a still frame, not a broken image icon. Revert the test edit afterward.
 
 - [ ] **Step 4: Commit**
 
@@ -400,15 +400,28 @@ git commit -m "fix: pick a real image (or video poster) for catalog card covers"
 
 ---
 
-### Task 5: `admin-products.html` — accept & upload video files
+### Task 5: `admin-products.html` — accept, upload, and pick a cover frame for videos
 
 **Files:**
-- Modify: `admin-products.html:178-186` (drop zone + file input), `admin-products.html:681-718` (`uploadImages`)
+- Modify: `admin-products.html:1-6` (script include), `admin-products.html:178-186` (drop zone + file input), `admin-products.html:681-718` (`uploadImages`), plus new modal markup near the end of `<body>` and new JS functions after `updateImgPreview`.
 
 **Interfaces:**
-- Produces: video uploads now land in Cloudinary's `video/upload` resource type and get appended to the `#ed-images` textarea as `https://res.cloudinary.com/<cloud>/video/upload/<public_id>.<format>` — a URL `MediaType.isVideoUrl()` (Task 1) recognizes. Exposes the list of just-uploaded video URLs so Task 6 can queue the cover-frame picker for them.
+- Consumes: `MediaType.isVideoUrl`, `MediaType.videoPlaybackUrl`, `MediaType.setCoverOffset` from Tasks 1/2.
+- Produces:
+  - Video uploads land in Cloudinary's `video/upload` resource type and get appended to the `#ed-images` textarea as `https://res.cloudinary.com/<cloud>/video/upload/<public_id>.<format>` — a URL `MediaType.isVideoUrl()` recognizes.
+  - `queueCoverPicker(urls: string[])`, `openCoverPicker(url: string)`, `closeCoverPicker()`, `confirmCoverFrame()` — `openCoverPicker` is also called directly from Task 6's preview-grid tile click handler.
 
-- [ ] **Step 1: Widen the drop zone / file input to accept video**
+This task is deliberately one unit rather than split further: the cover-frame picker only exists to handle videos the upload step just produced, and `uploadImages` calling `queueCoverPicker` only makes sense once both pieces (and the `media-type.js` script include they both depend on) land together — splitting them would leave an intermediate state where the page references undefined functions.
+
+- [ ] **Step 1: Load `media-type.js`**
+
+In `admin-products.html`, after line 6 (`<title>Product Manager — LYP SPACE Admin</title>`), add:
+
+```html
+  <script src="/js/media-type.js" defer></script>
+```
+
+- [ ] **Step 2: Widen the drop zone / file input to accept video**
 
 In `admin-products.html`, change line 183-186 from:
 
@@ -428,7 +441,7 @@ to:
       <input type="file" id="img-upload" accept="image/*,video/*" multiple style="display:none" onchange="uploadImages(this.files)">
 ```
 
-- [ ] **Step 2: Branch `uploadImages` on file type**
+- [ ] **Step 3: Branch `uploadImages` on file type and queue the cover-frame picker for any videos**
 
 In `admin-products.html:681-718`, replace the whole `uploadImages` function:
 
@@ -480,47 +493,9 @@ In `admin-products.html:681-718`, replace the whole `uploadImages` function:
   }
 ```
 
-(Compared to today's version: `resourceType` is computed per-file from `file.type`, the upload URL branches to Cloudinary's `video/upload` path with a `.${d.format}` extension when `isVideo`, and the last two new lines hand any newly-uploaded video URLs to `queueCoverPicker` — a function Task 6 defines. Leave that call in place even though `queueCoverPicker` doesn't exist yet; Task 6 adds it in the same file, and this task's manual verification only checks the upload itself, not the picker popup.)
+(Compared to today's version: `resourceType` is computed per-file from `file.type`, the upload URL branches to Cloudinary's `video/upload` path with a `.${d.format}` extension when `isVideo`, and the last two new lines hand any newly-uploaded video URLs to `queueCoverPicker`, defined in Step 5 below.)
 
-- [ ] **Step 3: Manual verification (no jsdom in this repo — see Global Constraints)**
-
-Run: `vercel dev` (from repo root)
-
-In a browser:
-1. Open `/admin-products`, log in, open any product editor.
-2. Open devtools console (so an uncaught "queueCoverPicker is not defined" error, expected until Task 6, is visible but doesn't block the assertions below).
-3. Drag a short `.mp4` file into the drop zone.
-4. Confirm `upload-status` shows "Uploading 1 file(s)…" then "✓ 1 uploaded" — the status update must complete before the expected `queueCoverPicker` error, since it's called after.
-5. Confirm the `#ed-images` textarea now has a new line ending in `.mp4` (not `.jpg`/`.png`, and not truncated).
-6. Drag a `.jpg` in alongside it — confirm it still uploads via the old `image/upload` path with the `c_fill,...` transform prefix, unchanged from before this task.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add admin-products.html
-git commit -m "feat: accept and upload video files in product image uploader"
-```
-
----
-
-### Task 6: `admin-products.html` — cover-frame picker modal
-
-**Files:**
-- Modify: `admin-products.html` (new modal markup near the end of `<body>`, new CSS, new JS functions)
-
-**Interfaces:**
-- Consumes: `MediaType.videoPlaybackUrl`, `MediaType.setCoverOffset` from Task 2. Consumes the `queueCoverPicker(urls: string[])` call already added to `uploadImages` in Task 5.
-- Produces: `queueCoverPicker(urls: string[])`, `openCoverPicker(url: string)`, `closeCoverPicker()`, `confirmCoverFrame()` — `openCoverPicker` is also called directly from Task 7's preview-grid tile click handler.
-
-- [ ] **Step 1: Load `media-type.js`**
-
-In `admin-products.html`, after line 6 (`<title>Product Manager — LYP SPACE Admin</title>`), add:
-
-```html
-  <script src="/js/media-type.js" defer></script>
-```
-
-- [ ] **Step 2: Add the modal markup**
+- [ ] **Step 4: Add the cover-frame picker modal markup**
 
 Find the closing `</body>` tag in `admin-products.html` and insert this immediately before it:
 
@@ -537,9 +512,9 @@ Find the closing `</body>` tag in `admin-products.html` and insert this immediat
   </div>
 ```
 
-- [ ] **Step 3: Add the picker JS functions**
+- [ ] **Step 5: Add the picker JS functions**
 
-In `admin-products.html`, immediately after the existing `updateImgPreview` function (this task runs before Task 7 touches that function, so it's still in its original, unmodified form), add:
+In `admin-products.html`, immediately after the existing `updateImgPreview` function, add:
 
 ```js
   // ── Cover-frame picker ──────────────────────────────────────────
@@ -581,34 +556,37 @@ In `admin-products.html`, immediately after the existing `updateImgPreview` func
   }
 ```
 
-- [ ] **Step 4: Manual verification (no jsdom in this repo — see Global Constraints)**
+- [ ] **Step 6: Manual verification (no jsdom in this repo — see Global Constraints)**
 
 Run: `vercel dev` (from repo root)
 
 In a browser:
-1. Open `/admin-products`, open a product, drag in a short `.mp4` (as in Task 5).
-2. Confirm the cover-frame modal pops up automatically right after the "✓ 1 uploaded" status, showing the video with native controls.
-3. Scrub to a distinctive frame (e.g. partway through), click "Set as Cover".
-4. Confirm the modal closes and the corresponding line in `#ed-images` now ends in `#t=<some number>`.
-5. Drag in two `.mp4` files at once — confirm the picker opens for the first, and immediately after clicking "Set as Cover" (or "Cancel"), it reopens for the second without you having to re-trigger anything.
-6. Click "Cancel" once — confirm the modal closes and that video's textarea line is unchanged (no `#t=` added).
+1. Open `/admin-products`, log in, open any product editor.
+2. Drag a short `.mp4` file into the drop zone.
+3. Confirm `upload-status` shows "Uploading 1 file(s)…" then "✓ 1 uploaded".
+4. Confirm the cover-frame modal pops up automatically right after, showing the video with native controls.
+5. Scrub to a distinctive frame (e.g. partway through), click "Set as Cover".
+6. Confirm the modal closes and the corresponding line in `#ed-images` now ends in `.mp4#t=<some number>`.
+7. Drag in two `.mp4` files at once — confirm the picker opens for the first, and immediately after clicking "Set as Cover" (or "Cancel"), it reopens for the second without you having to re-trigger anything.
+8. Click "Cancel" once — confirm the modal closes and that video's textarea line is unchanged (no `#t=` added).
+9. Drag a `.jpg` in alongside a video — confirm the photo still uploads via the old `image/upload` path with the `c_fill,...` transform prefix, unchanged from before this task, and does not trigger the cover picker.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add admin-products.html
-git commit -m "feat: add cover-frame picker modal for uploaded videos"
+git commit -m "feat: accept video uploads and add a cover-frame picker in the product image uploader"
 ```
 
 ---
 
-### Task 7: `admin-products.html` — video poster + badge in upload preview grid
+### Task 6: `admin-products.html` — video poster + badge in upload preview grid
 
 **Files:**
 - Modify: `admin-products.html:74-75` (CSS), `admin-products.html:548-553` (`updateImgPreview`)
 
 **Interfaces:**
-- Consumes: `MediaType.isVideoUrl`, `MediaType.videoPosterUrl` from Task 1/2. Calls `openCoverPicker` from Task 6 when a video tile is clicked.
+- Consumes: `MediaType.isVideoUrl`, `MediaType.videoPosterUrl` from Task 1/2. Calls `openCoverPicker` from Task 5 when a video tile is clicked.
 
 - [ ] **Step 1: Add badge + clickable-tile CSS**
 
@@ -650,9 +628,9 @@ In `admin-products.html:548-553`, replace `updateImgPreview`:
 Run: `vercel dev` (from repo root)
 
 In a browser:
-1. Open `/admin-products`, open the product you uploaded a video to in Task 5/6.
-2. Confirm the preview grid shows the exact frame you picked in Task 6 (not a default first frame) with a small ▶ badge in the corner, and normal photos render exactly as before (no badge, unchanged size/border, not clickable-looking).
-3. Click the video's preview tile — confirm the cover-frame picker (Task 6) reopens, pre-loaded with that video; pick a different frame, confirm, and see the preview grid update to the new frame.
+1. Open `/admin-products`, open the product you uploaded a video to in Task 5.
+2. Confirm the preview grid shows the exact frame you picked in Task 5 (not a default first frame) with a small ▶ badge in the corner, and normal photos render exactly as before (no badge, unchanged size/border, not clickable-looking).
+3. Click the video's preview tile — confirm the cover-frame picker (Task 5) reopens, pre-loaded with that video; pick a different frame, confirm, and see the preview grid update to the new frame.
 4. Confirm removing/editing the textarea lines still updates the preview live (existing `input` listener behavior, untouched).
 
 - [ ] **Step 4: Commit**
@@ -664,7 +642,7 @@ git commit -m "feat: show chosen cover frame + play badge for videos in admin im
 
 ---
 
-### Task 8: `product.html` — render & play video in the main gallery
+### Task 7: `product.html` — render & play video in the main gallery
 
 **Files:**
 - Modify: `product.html:7-9` (script include), `product.html:57-75` (CSS), `product.html:337-350` (`renderProduct`'s main-image block), `product.html:497-509` (`switchImage`)
@@ -672,7 +650,7 @@ git commit -m "feat: show chosen cover frame + play badge for videos in admin im
 **Interfaces:**
 - Consumes: `MediaType.isVideoUrl`, `MediaType.videoPlaybackUrl` from Task 1/2.
 - Produces: `toggleMute(event)` — new function, wired to the mute-icon button's `onclick`.
-- Note: `switchImage(i)`'s signature and thumbnail-highlighting behavior (`document.querySelectorAll('.thumb')...`) are unchanged — Task 10 (thumbnail rendering) and Task 9 (zoom/pan guards) both call the same `switchImage` and read `currentImgIndex` this task keeps using.
+- Note: `switchImage(i)`'s signature and thumbnail-highlighting behavior (`document.querySelectorAll('.thumb')...`) are unchanged — Task 9 (thumbnail rendering) and Task 8 (zoom/pan guards) both call the same `switchImage` and read `currentImgIndex` this task keeps using.
 
 - [ ] **Step 1: Load `media-type.js`**
 
@@ -812,7 +790,7 @@ In `product.html:497-509`, replace `switchImage`:
 
 Run: `vercel dev` (from repo root)
 
-In a browser, open a product page for the test product from Task 5-7 (which now has one video with a chosen cover frame + at least one photo in `images`):
+In a browser, open a product page for the test product from Task 5-6 (which now has one video with a chosen cover frame + at least one photo in `images`):
 1. Confirm the thumbnail/catalog card shows the picked cover frame, not the video's default first frame (proves the `#t=` fragment survived through `pickCoverUrl`/`videoPosterUrl`).
 2. Click through to the video slide — confirm it starts playing automatically **from 0:00** (not from the chosen cover-frame timestamp), muted, looping, no visible controls bar.
 3. Click the speaker icon — confirm sound turns on and the icon flips to the "sound on" glyph; click again — confirm it mutes again.
@@ -829,13 +807,13 @@ git commit -m "feat: play video slides inline in the product gallery with mute t
 
 ---
 
-### Task 9: `product.html` — skip pinch/zoom/pan for video slides
+### Task 8: `product.html` — skip pinch/zoom/pan for video slides
 
 **Files:**
 - Modify: `product.html:392-491` (`attachWheelScroll` — wheel, mouse-drag, and touch handlers)
 
 **Interfaces:**
-- Consumes: `MediaType.isVideoUrl`, `currentImgIndex`, `product.images` (all already in scope in this function per Task 8).
+- Consumes: `MediaType.isVideoUrl`, `currentImgIndex`, `product.images` (all already in scope in this function per Task 7).
 
 - [ ] **Step 1: Guard the wheel handler's zoom/pan branches**
 
@@ -932,7 +910,7 @@ Leave `touchstart` and `touchend` unmodified — swipe-to-switch (the `_imgScale
 Run: `vercel dev` (from repo root)
 
 On a touch device or Chrome DevTools device-emulation + desktop:
-1. On the video slide from Task 8, try ctrl+scroll (desktop) or pinch (mobile) — confirm nothing zooms and the video keeps playing normally.
+1. On the video slide from Task 7, try ctrl+scroll (desktop) or pinch (mobile) — confirm nothing zooms and the video keeps playing normally.
 2. Plain scroll / swipe left-right on the video slide — confirm it still switches to the next/previous slide.
 3. On a photo slide, confirm ctrl+scroll zoom, plain-scroll pan-while-zoomed, and pinch-zoom all work exactly as before this task (no regression).
 
@@ -945,7 +923,7 @@ git commit -m "fix: disable pinch/zoom/pan on video slides in product gallery"
 
 ---
 
-### Task 10: `product.html` — video poster + badge in thumbnail row
+### Task 9: `product.html` — video poster + badge in thumbnail row
 
 **Files:**
 - Modify: `product.html:76-83` (CSS), `product.html:315-320` (`thumbsHtml`)
@@ -1007,7 +985,7 @@ Run: `vercel dev` (from repo root)
 
 In a browser, open the test product page again:
 1. Confirm the video's thumbnail shows the picked cover frame with a ▶ badge, and photo thumbnails are unchanged (no badge).
-2. Click the video thumbnail — confirm it activates the video slide (Task 8 behavior) and gets the `.active` border like any other thumbnail.
+2. Click the video thumbnail — confirm it activates the video slide (Task 7 behavior) and gets the `.active` border like any other thumbnail.
 3. Confirm thumbnails never autoplay (they're plain `<img>`, not `<video>`).
 
 - [ ] **Step 4: Commit**
@@ -1021,5 +999,5 @@ git commit -m "feat: show cover frame + play badge for video thumbnails"
 
 ## Post-plan cleanup
 
-- [ ] Delete the test video/image lines from the product used for manual verification in Tasks 5-10 (or leave them if the user wants to keep the test video live — confirm with the user before removing real product data).
+- [ ] Delete the test video/image lines from the product used for manual verification in Tasks 5-9 (or leave them if the user wants to keep the test video live — confirm with the user before removing real product data).
 - [ ] Run the full test suite once more: `npx jest` — expect all suites (including the pre-existing `checkout-*` tests) to pass, confirming no cross-contamination.
