@@ -417,12 +417,13 @@
       el.addEventListener('wheel', function(e) {
         e.preventDefault();
         const imgEl = document.getElementById('main-img-el');
-        if (e.ctrlKey) {
+        const activeIsVideo = MediaType.isVideoUrl(product.images[currentImgIndex]);
+        if (e.ctrlKey && !activeIsVideo) {
           const factor = e.deltaY > 0 ? 0.9 : 1.1;
           _imgScale = Math.max(1, Math.min(4, _imgScale * factor));
           if (_imgScale <= 1.05) { _imgScale = 1; _panX = 0; _panY = 0; lockSwipe(1500); }
           applyTransform(imgEl);
-        } else if (_imgScale > 1.05) {
+        } else if (!activeIsVideo && _imgScale > 1.05) {
           // Pan with plain scroll when zoomed
           _panX -= e.deltaX; _panY -= e.deltaY;
           applyTransform(imgEl);
@@ -468,7 +469,8 @@
       el.addEventListener('touchmove', function(e) {
         e.preventDefault();
         const imgEl = document.getElementById('main-img-el');
-        if (e.touches.length === 2 && _pinchActive && _pinchStart > 0) {
+        const activeIsVideo = MediaType.isVideoUrl(product.images[currentImgIndex]);
+        if (!activeIsVideo && e.touches.length === 2 && _pinchActive && _pinchStart > 0) {
           const s = Math.max(1, Math.min(4, _imgScale * pinchDist(e.touches) / _pinchStart));
           if (imgEl) {
             const W = el.offsetWidth, H = el.offsetHeight;
@@ -477,7 +479,7 @@
             const cy = Math.max(-mY, Math.min(mY, _panY));
             imgEl.style.transform = `scale(${s}) translate(${cx/s}px,${cy/s}px)`;
           }
-        } else if (e.touches.length === 1 && _isPanning) {
+        } else if (!activeIsVideo && e.touches.length === 1 && _isPanning) {
           _panX = _panStartX + (e.touches[0].clientX - _tx);
           _panY = _panStartY + (e.touches[0].clientY - _ty);
           applyTransform(imgEl);
