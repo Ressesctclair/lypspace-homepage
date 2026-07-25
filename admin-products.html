@@ -555,7 +555,7 @@
       const isVideo = MediaType.isVideoUrl(u);
       const thumbSrc = isVideo ? MediaType.videoPosterUrl(u) : u;
       const clickAttr = isVideo ? ` data-video-url="${esc(u)}" onclick="openCoverPicker(this.dataset.videoUrl)"` : '';
-      return `<div class="preview-item${isVideo ? ' is-video' : ''}"${clickAttr}><img src="${esc(thumbSrc)}" alt="" onerror="this.style.opacity=.3">${isVideo ? '<span class="video-badge">&#9654;</span>' : ''}</div>`;
+      return `<div class="preview-item${isVideo ? ' is-video' : ''}"${clickAttr}><img src="${esc(thumbSrc)}" alt="" onerror="this.style.opacity=.3">${isVideo ? '<span class="video-badge"><svg viewBox="0 0 24 24" width="9" height="9" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span>' : ''}</div>`;
     }).join('');
   }
 

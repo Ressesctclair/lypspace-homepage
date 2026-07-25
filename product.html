@@ -338,7 +338,7 @@
             const thumbSrc = isVideo ? MediaType.videoPosterUrl(img) : img;
             return `<div class="thumb ${i===0?'active':''}" onclick="switchImage(${i})">
               <img src="${thumbSrc}" alt="${esc(product.title)} ${i+1}" loading="lazy">
-              ${isVideo ? '<span class="video-badge">&#9654;</span>' : ''}
+              ${isVideo ? '<span class="video-badge"><svg viewBox="0 0 24 24" width="10" height="10" fill="#fff"><path d="M8 5v14l11-7z"/></svg></span>' : ''}
             </div>`;
           }).join('')}</div>` : '';
 
