@@ -427,7 +427,7 @@
           // Pan with plain scroll when zoomed
           _panX -= e.deltaX; _panY -= e.deltaY;
           applyTransform(imgEl);
-        } else if (product.images.length > 1 && !_swipeLocked) {
+        } else if (!e.ctrlKey && product.images.length > 1 && !_swipeLocked) {
           lockSwipe(1500);
           switchImage((currentImgIndex + (e.deltaY > 0 ? 1 : -1) + product.images.length) % product.images.length);
         }
