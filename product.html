@@ -88,8 +88,16 @@
       width: 72px; height: 72px; background: var(--light-gray);
       overflow: hidden; cursor: pointer; border: 2px solid transparent; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
+      position: relative;
     }
     .thumb.active { border-color: var(--black); }
+    .thumb .video-badge {
+      position: absolute; bottom: 4px; right: 4px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: rgba(0,0,0,.6); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; pointer-events: none;
+    }
     .thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
 
     /* Product info */
@@ -323,11 +331,14 @@
       }
 
       const thumbsHtml = hasImages && product.images.length > 1
-        ? `<div class="thumb-row">${product.images.map((img, i) =>
-            `<div class="thumb ${i===0?'active':''}" onclick="switchImage(${i})">
-              <img src="${img}" alt="${esc(product.title)} ${i+1}" loading="lazy">
-            </div>`
-          ).join('')}</div>` : '';
+        ? `<div class="thumb-row">${product.images.map((img, i) => {
+            const isVideo = MediaType.isVideoUrl(img);
+            const thumbSrc = isVideo ? MediaType.videoPosterUrl(img) : img;
+            return `<div class="thumb ${i===0?'active':''}" onclick="switchImage(${i})">
+              <img src="${thumbSrc}" alt="${esc(product.title)} ${i+1}" loading="lazy">
+              ${isVideo ? '<span class="video-badge">&#9654;</span>' : ''}
+            </div>`;
+          }).join('')}</div>` : '';
 
       const renderOptGroup = (name, opts) =>
         `<div class="variant-group">
