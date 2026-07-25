@@ -73,7 +73,10 @@
 
     /* Image preview */
     .img-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .img-preview .preview-item{position:relative;width:60px;height:60px}
     .img-preview img{width:60px;height:60px;object-fit:contain;background:var(--light);border:1px solid var(--border)}
+    .img-preview .preview-item.is-video{cursor:pointer}
+    .img-preview .video-badge{position:absolute;bottom:2px;right:2px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:8px;pointer-events:none}
 
     .save-row{display:flex;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);flex-wrap:wrap}
     .msg{font-size:12px;padding:8px 12px;display:none;margin-top:8px}
@@ -548,9 +551,12 @@
   });
   function updateImgPreview() {
     const urls = document.getElementById('ed-images').value.split('\n').map(s => s.trim()).filter(Boolean);
-    document.getElementById('img-preview').innerHTML = urls.slice(0, 8).map(u =>
-      `<img src="${esc(u)}" alt="" onerror="this.style.opacity=.3">`
-    ).join('');
+    document.getElementById('img-preview').innerHTML = urls.slice(0, 8).map(u => {
+      const isVideo = MediaType.isVideoUrl(u);
+      const thumbSrc = isVideo ? MediaType.videoPosterUrl(u) : u;
+      const clickAttr = isVideo ? ` data-video-url="${esc(u)}" onclick="openCoverPicker(this.dataset.videoUrl)"` : '';
+      return `<div class="preview-item${isVideo ? ' is-video' : ''}"${clickAttr}><img src="${esc(thumbSrc)}" alt="" onerror="this.style.opacity=.3">${isVideo ? '<span class="video-badge">&#9654;</span>' : ''}</div>`;
+    }).join('');
   }
 
   // ── Cover-frame picker ──────────────────────────────────────────
