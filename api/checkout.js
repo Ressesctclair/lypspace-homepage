@@ -208,7 +208,8 @@ module.exports = async (req, res) => {
     if (sale_price !== undefined) update.sale_price = sale_price === '' ? null : parseFloat(sale_price);
     if (description !== undefined) update.description = description;
     if (variant_qtys !== undefined) update.variant_qtys = variant_qtys;
-    await supabase.from('product_overrides').upsert(update);
+    const { error } = await supabase.from('product_overrides').upsert(update);
+    if (error) { console.error('[checkout] product-update failed', error); return res.status(500).json({ error: 'Save failed: ' + error.message }); }
     return res.status(200).json({ ok: true });
   }
 
@@ -236,13 +237,14 @@ module.exports = async (req, res) => {
     const total_qty = hasVariants
       ? variants.reduce((s, v) => s + (parseInt(v.qty) || 0), 0)
       : (unlisted ? 999999 : 0);
-    await supabase.from('custom_products').upsert({
+    const { error } = await supabase.from('custom_products').upsert({
       handle: finalHandle, title, type: type || '', price: parseFloat(price) || 0,
       sale_price: sale_price ? parseFloat(sale_price) : null,
       description: description || '', images: images || [], variants: variants || [],
       unlisted: !!unlisted,
       total_qty, created_at: new Date().toISOString()
     });
+    if (error) { console.error('[checkout] create-product failed', error); return res.status(500).json({ error: 'Save failed: ' + error.message }); }
     return res.status(200).json({ ok: true, handle: finalHandle });
   }
 
@@ -252,7 +254,8 @@ module.exports = async (req, res) => {
     if (password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
     if (!key) return res.status(400).json({ error: 'key required' });
     const supabase = getSupabase();
-    await supabase.from('site_settings').upsert({ key, value, updated_at: new Date().toISOString() });
+    const { error } = await supabase.from('site_settings').upsert({ key, value, updated_at: new Date().toISOString() });
+    if (error) { console.error('[checkout] save-setting failed', error); return res.status(500).json({ error: 'Save failed: ' + error.message }); }
     return res.status(200).json({ ok: true });
   }
 
@@ -268,7 +271,8 @@ module.exports = async (req, res) => {
     } else {
       hiddenHandles = hiddenHandles.filter(h => h !== handle);
     }
-    await supabase.from('site_settings').upsert({ key: 'hidden_products', value: JSON.stringify(hiddenHandles), updated_at: new Date().toISOString() });
+    const { error } = await supabase.from('site_settings').upsert({ key: 'hidden_products', value: JSON.stringify(hiddenHandles), updated_at: new Date().toISOString() });
+    if (error) { console.error('[checkout] toggle-hidden failed', error); return res.status(500).json({ error: 'Save failed: ' + error.message }); }
     return res.status(200).json({ ok: true });
   }
 
@@ -277,7 +281,8 @@ module.exports = async (req, res) => {
     const { password, handle } = req.body || {};
     if (password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
     const supabase = getSupabase();
-    await supabase.from('custom_products').delete().eq('handle', handle);
+    const { error } = await supabase.from('custom_products').delete().eq('handle', handle);
+    if (error) { console.error('[checkout] delete-product failed', error); return res.status(500).json({ error: 'Delete failed: ' + error.message }); }
     return res.status(200).json({ ok: true });
   }
 

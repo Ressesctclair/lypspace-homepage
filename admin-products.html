@@ -724,10 +724,12 @@
   // ── Delete custom ─────────────────────────────────────────────
   async function deleteCustom(handle) {
     if (!confirm('Delete this product? This cannot be undone.')) return;
-    await fetch('/api/checkout', {
+    const r = await fetch('/api/checkout', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'delete-product', password, handle })
     });
+    const d = await r.json();
+    if (!d.ok) { alert(d.error || 'Delete failed'); return; }
     customProducts = customProducts.filter(p => p.handle !== handle);
     renderList();
   }
