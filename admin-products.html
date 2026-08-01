@@ -675,6 +675,7 @@
           description: document.getElementById('ed-desc').value,
           images, variants,
           unlisted: document.getElementById('ed-unlisted').checked,
+          isNew: editingMode === 'create',
         };
       }
 
@@ -682,6 +683,14 @@
       const d = await r.json();
       if (d.error === 'Unauthorized') { password = ''; document.getElementById('editor-overlay').classList.remove('open'); document.getElementById('main').style.display='none'; document.getElementById('login-screen').style.display='block'; document.getElementById('login-err').style.display='block'; return; }
       if (!d.ok) throw new Error(d.error || 'Failed');
+
+      // If the auto-generated handle collided with an existing product, the
+      // server disambiguated it — reflect the actual saved handle in the form.
+      let renamedNotice = '';
+      if (editingMode === 'create' && d.handle && d.handle !== document.getElementById('ed-handle').value.trim()) {
+        document.getElementById('ed-handle').value = d.handle;
+        renamedNotice = ` (handle was already taken, saved as "${d.handle}")`;
+      }
 
       // Save hidden state for custom products
       if (editingMode !== 'edit-override') {
@@ -700,11 +709,11 @@
         Object.assign(overrides[editingHandle], body);
       }
 
-      msgEl.textContent = 'Saved!';
+      msgEl.textContent = 'Saved!' + renamedNotice;
       msgEl.className = 'msg ok';
       msgEl.style.display = 'block';
       renderList();
-      setTimeout(closeEditor, 700);
+      setTimeout(closeEditor, renamedNotice ? 2500 : 700);
     } catch(e) {
       msgEl.textContent = e.message;
       msgEl.className = 'msg err';

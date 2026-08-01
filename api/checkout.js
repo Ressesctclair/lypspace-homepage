@@ -214,22 +214,36 @@ module.exports = async (req, res) => {
 
   // ── Create / update custom product (admin) ─────────────────────
   if (action === 'create-product') {
-    const { password, handle, title, type, price, sale_price, description, images, variants, unlisted } = req.body || {};
+    const { password, handle, title, type, price, sale_price, description, images, variants, unlisted, isNew } = req.body || {};
     if (password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Unauthorized' });
     if (!handle || !title) return res.status(400).json({ error: 'handle and title required' });
     const supabase = getSupabase();
+
+    // A brand-new product whose auto-generated handle collides with an existing
+    // one would otherwise silently overwrite it via upsert — disambiguate instead.
+    let finalHandle = handle;
+    if (isNew) {
+      const { data: existingHandles } = await supabase.from('custom_products').select('handle');
+      const taken = new Set((existingHandles || []).map(r => r.handle));
+      if (taken.has(finalHandle)) {
+        let n = 2;
+        while (taken.has(`${handle}-${n}`)) n++;
+        finalHandle = `${handle}-${n}`;
+      }
+    }
+
     const hasVariants = variants && variants.length > 0;
     const total_qty = hasVariants
       ? variants.reduce((s, v) => s + (parseInt(v.qty) || 0), 0)
       : (unlisted ? 999999 : 0);
     await supabase.from('custom_products').upsert({
-      handle, title, type: type || '', price: parseFloat(price) || 0,
+      handle: finalHandle, title, type: type || '', price: parseFloat(price) || 0,
       sale_price: sale_price ? parseFloat(sale_price) : null,
       description: description || '', images: images || [], variants: variants || [],
       unlisted: !!unlisted,
       total_qty, created_at: new Date().toISOString()
     });
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({ ok: true, handle: finalHandle });
   }
 
   // ── Save site setting (admin) ──────────────────────────────────
