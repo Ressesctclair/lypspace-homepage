@@ -285,11 +285,21 @@
     }
 
     const SIZE_ORDER = ['XXS','XS','S','M','L','XL','XXL','XXXL','2XL','3XL','4XL','5XL'];
+    const SIZE_ORDER_BY_LENGTH = [...SIZE_ORDER].sort((a, b) => b.length - a.length);
+    function leadingSizeIndex(str) {
+      const upper = str.trim().toUpperCase();
+      for (const token of SIZE_ORDER_BY_LENGTH) {
+        if (upper.startsWith(token) && !/[A-Z0-9]/.test(upper[token.length] || '')) {
+          return SIZE_ORDER.indexOf(token);
+        }
+      }
+      return -1;
+    }
     function compareSizeValues(a, b) {
       const na = a.trim(), nb = b.trim();
       const isNumA = /^\d+(\.\d+)?$/.test(na), isNumB = /^\d+(\.\d+)?$/.test(nb);
       if (isNumA && isNumB) return parseFloat(na) - parseFloat(nb);
-      const ia = SIZE_ORDER.indexOf(na.toUpperCase()), ib = SIZE_ORDER.indexOf(nb.toUpperCase());
+      const ia = leadingSizeIndex(na), ib = leadingSizeIndex(nb);
       if (ia !== -1 && ib !== -1) return ia - ib;
       if (ia !== -1) return -1;
       if (ib !== -1) return 1;
