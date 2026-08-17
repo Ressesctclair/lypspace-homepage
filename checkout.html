@@ -192,7 +192,7 @@
       'Venezuela': '+58', 'Vietnam': '+84', 'Yemen': '+967', 'Zambia': '+260', 'Zimbabwe': '+263',
     };
     const phoneCodeSelect = document.getElementById('ship-phone-code');
-    phoneCodeSelect.innerHTML = '<option value="">Code</option>' +
+    phoneCodeSelect.innerHTML = '<option value="">+</option>' +
       COUNTRIES.map(c => '<option value="' + DIAL_CODES[c] + '">' + DIAL_CODES[c] + ' ' + c + '</option>').join('');
     countrySelect.addEventListener('change', function() {
       const code = DIAL_CODES[this.value];
