@@ -23,7 +23,7 @@
     .coupon-row { display: flex; gap: 8px; }
     .coupon-row input { flex: 1; }
     .phone-row { display: flex; gap: 8px; }
-    .phone-row select { width: 130px; flex: none; }
+    .phone-row .phone-code { width: 130px; flex: none; }
     .phone-row input { flex: 1; }
     .btn-apply { padding: 11px 16px; background: #fff; border: 1px solid #d0d0d0; font-size: 13px; cursor: pointer; white-space: nowrap; }
     .btn-apply:hover { background: #f5f5f5; }
@@ -83,7 +83,8 @@
     <div class="group">
       <label for="ship-phone-number">Phone</label>
       <div class="phone-row">
-        <select id="ship-phone-code"></select>
+        <input id="ship-phone-code" class="phone-code" type="text" list="ship-phone-code-list" placeholder="+" autocomplete="off">
+        <datalist id="ship-phone-code-list"></datalist>
         <input id="ship-phone-number" type="text" placeholder="555 123 4567">
       </div>
     </div>
@@ -191,17 +192,19 @@
       'United States': '+1', 'Uruguay': '+598', 'Uzbekistan': '+998', 'Vanuatu': '+678', 'Vatican City': '+39',
       'Venezuela': '+58', 'Vietnam': '+84', 'Yemen': '+967', 'Zambia': '+260', 'Zimbabwe': '+263',
     };
-    const phoneCodeSelect = document.getElementById('ship-phone-code');
-    phoneCodeSelect.innerHTML = '<option value="" hidden>+</option>' +
-      COUNTRIES.map(c => '<option value="' + DIAL_CODES[c] + '">' + DIAL_CODES[c] + ' ' + c + '</option>').join('');
+    const phoneCodeInput = document.getElementById('ship-phone-code');
+    document.getElementById('ship-phone-code-list').innerHTML =
+      COUNTRIES.map(c => '<option value="' + DIAL_CODES[c] + '">' + c + '</option>').join('');
     countrySelect.addEventListener('change', function() {
       const code = DIAL_CODES[this.value];
-      if (code) phoneCodeSelect.value = code;
+      if (code) phoneCodeInput.value = code;
     });
     function getShipPhone() {
-      const code = phoneCodeSelect.value;
+      let code = phoneCodeInput.value.trim();
       const number = document.getElementById('ship-phone-number').value.trim();
-      return (code && number) ? (code + number) : '';
+      if (!code || !number) return '';
+      if (!code.startsWith('+')) code = '+' + code;
+      return code + number;
     }
 
     function tr(k) { return window.i18n ? window.i18n.t(k) : k; }
@@ -286,7 +289,7 @@
         if (chosen.country) {
           document.getElementById('ship-country').value = chosen.country;
           const code = DIAL_CODES[chosen.country];
-          if (code) phoneCodeSelect.value = code;
+          if (code) phoneCodeInput.value = code;
         }
         // ship-state and ship-phone-number have no equivalent in the saved-address schema — left for manual entry.
       } catch {
