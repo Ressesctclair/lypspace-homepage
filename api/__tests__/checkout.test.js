@@ -151,7 +151,7 @@ describe('action=check-member', () => {
 describe('member discount', () => {
   test('applies member coupon when email belongs to a member and no promo code given', async () => {
     const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/member' });
-    const mockRetrieve = jest.fn().mockResolvedValue({ id: 'member-5pct-off' });
+    const mockRetrieve = jest.fn().mockResolvedValue({ id: 'member-15pct-off' });
     Stripe.mockReturnValue({
       checkout: { sessions: { create: mockCreate } },
       coupons: { retrieve: mockRetrieve, create: jest.fn() },
@@ -167,15 +167,15 @@ describe('member discount', () => {
     });
     const res = makeRes();
     await handler({ method: 'POST', body: { price_id: 'price_xxx', email: 'member@test.com' } }, res);
-    expect(mockRetrieve).toHaveBeenCalledWith('member-5pct-off');
+    expect(mockRetrieve).toHaveBeenCalledWith('member-15pct-off');
     const call = mockCreate.mock.calls[0][0];
-    expect(call.discounts).toEqual([{ coupon: 'member-5pct-off' }]);
+    expect(call.discounts).toEqual([{ coupon: 'member-15pct-off' }]);
   });
 
   test('creates the member coupon when it does not exist yet', async () => {
     const mockCreate = jest.fn().mockResolvedValue({ url: 'https://checkout.stripe.com/member2' });
     const mockCouponRetrieve = jest.fn().mockRejectedValue(new Error('No such coupon'));
-    const mockCouponCreate = jest.fn().mockResolvedValue({ id: 'member-5pct-off' });
+    const mockCouponCreate = jest.fn().mockResolvedValue({ id: 'member-15pct-off' });
     Stripe.mockReturnValue({
       checkout: { sessions: { create: mockCreate } },
       coupons: { retrieve: mockCouponRetrieve, create: mockCouponCreate },
@@ -191,9 +191,9 @@ describe('member discount', () => {
     });
     const res = makeRes();
     await handler({ method: 'POST', body: { price_id: 'price_xxx', email: 'member@test.com' } }, res);
-    expect(mockCouponCreate).toHaveBeenCalledWith({ id: 'member-5pct-off', percent_off: 5, duration: 'once' });
+    expect(mockCouponCreate).toHaveBeenCalledWith({ id: 'member-15pct-off', percent_off: 15, duration: 'once' });
     const call = mockCreate.mock.calls[0][0];
-    expect(call.discounts).toEqual([{ coupon: 'member-5pct-off' }]);
+    expect(call.discounts).toEqual([{ coupon: 'member-15pct-off' }]);
   });
 
   test('does not apply member coupon for a non-member', async () => {

@@ -244,7 +244,7 @@
         const d = await r.json();
         if (d.is_member) {
           activeDiscount = 'member';
-          msgEl.textContent = '✓ Member discount applied — 5% off';
+          msgEl.textContent = '✓ Member discount applied — 15% off';
           msgEl.className = 'discount-msg ok';
         } else if (activeDiscount === 'member') {
           activeDiscount = null;
@@ -375,7 +375,7 @@
             ? base * (1 - appliedCouponDiscount.value / 100)
             : base - appliedCouponDiscount.value;
         } else if (activeDiscount === 'member') {
-          discounted = base * 0.95;
+          discounted = base * 0.85;
         }
         return Math.max(0, discounted).toFixed(2);
       }
