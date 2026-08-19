@@ -2,6 +2,7 @@ const Stripe = require('stripe');
 const { Resend } = require('resend');
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+const MEMBER_COUPON_ID = 'member-15pct-off';
 
 module.exports = async (req, res) => {
   req.query = req.query || {};
@@ -43,6 +44,12 @@ module.exports = async (req, res) => {
           const session = await stripe.checkout.sessions.retrieve(stripe_session_id, {
             expand: ['line_items'],
           });
+          let coupon = null;
+          if (session.metadata?.coupon_code) {
+            coupon = session.metadata.coupon_code;
+          } else if (session.discounts?.some(d => d.coupon === MEMBER_COUPON_ID)) {
+            coupon = 'Member discount (15%)';
+          }
           return {
             session_id: stripe_session_id,
             date: new Date(session.created * 1000).toISOString(),
@@ -53,6 +60,7 @@ module.exports = async (req, res) => {
               name: i.description,
               quantity: i.quantity,
             })),
+            coupon,
             status: shipment ? 'shipped' : 'processing',
             tracking: shipment
               ? { carrier: shipment.carrier, number: shipment.tracking_number }
@@ -464,7 +472,6 @@ module.exports = async (req, res) => {
     const supabase = getSupabase();
     const { data: user } = await supabase.from('users').select('is_member').eq('email', email).maybeSingle();
     if (user && user.is_member) {
-      const MEMBER_COUPON_ID = 'member-15pct-off';
       let memberCouponId;
       try {
         await stripe.coupons.retrieve(MEMBER_COUPON_ID);

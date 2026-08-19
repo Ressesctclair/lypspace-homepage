@@ -70,6 +70,7 @@
             <th>买家邮箱</th>
             <th>商品</th>
             <th>金额</th>
+            <th>优惠码</th>
             <th>状态</th>
             <th>操作</th>
           </tr>
@@ -196,6 +197,7 @@
           <td>${esc(o.customer_email)}</td>
           <td>${itemsHtml}</td>
           <td style="white-space:nowrap;">${currency} ${amount}</td>
+          <td style="white-space:nowrap;">${o.coupon ? esc(o.coupon) : '—'}</td>
           <td>${badge}</td>
           <td>${action}</td>
         </tr>`;

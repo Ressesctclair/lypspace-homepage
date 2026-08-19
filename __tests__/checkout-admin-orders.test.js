@@ -95,4 +95,45 @@ describe('GET /api/checkout?action=admin-orders', () => {
     expect(orders[1].status).toBe('shipped');
     expect(orders[1].tracking).toEqual({ carrier: 'UPS', number: '1Z999' });
   });
+
+  test('surfaces the coupon code used on each order', async () => {
+    const orderLinks = [
+      { stripe_session_id: 'cs_promo', customer_email: 'a@test.com' },
+      { stripe_session_id: 'cs_member', customer_email: 'b@test.com' },
+      { stripe_session_id: 'cs_none', customer_email: 'c@test.com' },
+    ];
+
+    mockSupabaseFrom.mockImplementation((table) => {
+      if (table === 'order_links') {
+        return { select: () => Promise.resolve({ data: orderLinks, error: null }) };
+      }
+      if (table === 'shipments') {
+        return { select: () => Promise.resolve({ data: [], error: null }) };
+      }
+    });
+
+    stripeMockInstance.checkout.sessions.retrieve
+      .mockResolvedValueOnce({
+        id: 'cs_promo', created: 1751000000, amount_total: 1000, currency: 'usd',
+        line_items: { data: [] }, metadata: { coupon_code: 'FIRSTORDERDISCOUNT' },
+      })
+      .mockResolvedValueOnce({
+        id: 'cs_member', created: 1751000001, amount_total: 1000, currency: 'usd',
+        line_items: { data: [] }, metadata: {}, discounts: [{ coupon: 'member-15pct-off', promotion_code: null }],
+      })
+      .mockResolvedValueOnce({
+        id: 'cs_none', created: 1751000002, amount_total: 1000, currency: 'usd',
+        line_items: { data: [] }, metadata: {},
+      });
+
+    const req = makeReq({ action: 'admin-orders', password: 'test-secret' });
+    const res = makeRes();
+    await handler(req, res);
+
+    const { orders } = res.json.mock.calls[0][0];
+    const bySession = Object.fromEntries(orders.map(o => [o.session_id, o.coupon]));
+    expect(bySession.cs_promo).toBe('FIRSTORDERDISCOUNT');
+    expect(bySession.cs_member).toBe('Member discount (15%)');
+    expect(bySession.cs_none).toBeNull();
+  });
 });
