@@ -206,13 +206,26 @@
 
     // Point every "Catalog" link back at the catalog page the shopper came from
     // (page number, category and search) instead of resetting to page 1.
+    // Primary source: rp/rc/rq on this page's own URL (set by the catalog's
+    // product-card links) — this survives in-app browsers and new tabs where
+    // sessionStorage isn't shared. Falls back to sessionStorage, then to the
+    // plain catalog, for links that don't carry those params (e.g. from Home).
     const catalogHref = (() => {
       try {
-        const st = JSON.parse(sessionStorage.getItem('lypspace_catalog_state') || '{}');
+        const own = new URLSearchParams(location.search);
+        let q = own.get('rq') || '';
+        let cat = own.get('rc') || '';
+        let page = parseInt(own.get('rp'), 10) || 0;
+        if (!q && !cat && !page) {
+          const st = JSON.parse(sessionStorage.getItem('lypspace_catalog_state') || '{}');
+          q = st.q || '';
+          cat = (st.cat && st.cat !== 'All') ? st.cat : '';
+          page = st.page > 1 ? st.page : 0;
+        }
         const params = new URLSearchParams();
-        if (st.q) params.set('q', st.q);
-        if (st.cat && st.cat !== 'All') params.set('cat', st.cat);
-        if (st.page > 1) params.set('page', st.page);
+        if (q) params.set('q', q);
+        if (cat) params.set('cat', cat);
+        if (page > 1) params.set('page', page);
         const qs = params.toString();
         return '/catalog' + (qs ? '?' + qs : '');
       } catch (e) { return '/catalog'; }

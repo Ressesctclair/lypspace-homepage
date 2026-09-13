@@ -254,6 +254,15 @@
       const start = (currentPage - 1) * PAGE_SIZE;
       const pageProducts = products.slice(start, start + PAGE_SIZE);
 
+      // Carried on every product link so the product page can send the
+      // shopper back to this exact page/category/search, independent of
+      // sessionStorage (which some in-app browsers don't share across taps).
+      const backParams = new URLSearchParams();
+      if (searchTerm) backParams.set('rq', searchTerm);
+      if (activeCategory && activeCategory !== 'All') backParams.set('rc', activeCategory);
+      if (currentPage > 1) backParams.set('rp', currentPage);
+      const backQS = backParams.toString();
+
       const grid = document.getElementById('catalog-grid');
       document.getElementById('product-count').textContent = products.length + ' products';
       if (!products.length) {
@@ -277,7 +286,7 @@
             priceHtml = `<p class="product-price">${price}</p>`;
           }
         }
-        return `<a href="/product?h=${p.handle}" class="product-card">
+        return `<a href="/product?h=${p.handle}${backQS ? '&' + backQS : ''}" class="product-card">
           <div class="product-image">
             ${img ? `<img src="${img}" alt="${esc(p.title)}" loading="lazy">` : ''}
             ${soldOut ? `<div class="sold-out-badge"><span>Sold Out</span></div>` : ''}
