@@ -288,6 +288,20 @@
         </a>`;
       }).join('');
       renderPagination(totalPages, currentPage);
+      saveCatalogState();
+      syncCatalogUrl();
+    }
+
+    // Remember where the shopper was so returning from a product page lands
+    // on the same page / category / search instead of resetting to page 1.
+    function saveCatalogState() {
+      try {
+        sessionStorage.setItem('lypspace_catalog_state', JSON.stringify({
+          page: currentPage,
+          cat: activeCategory,
+          q: searchTerm
+        }));
+      } catch (e) {}
     }
 
     function renderPagination(totalPages, page) {
@@ -313,6 +327,18 @@
       currentPage = n;
       render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Mirror the current view in the URL so refresh / back-forward keep the page.
+    function syncCatalogUrl() {
+      try {
+        const params = new URLSearchParams();
+        if (searchTerm) params.set('q', searchTerm);
+        if (activeCategory && activeCategory !== 'All') params.set('cat', activeCategory);
+        if (currentPage > 1) params.set('page', currentPage);
+        const qs = params.toString();
+        history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
+      } catch (e) {}
     }
 
     function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -349,6 +375,8 @@
       activeCategory = catParam;
       document.getElementById('catalog-title').textContent = catParam;
     }
+    const pageParam = parseInt(urlParams.get('page'), 10);
+    if (pageParam > 1) currentPage = pageParam;
 
     function exportCSV() {
       if (!allProducts.length) { alert('Products not loaded yet.'); return; }

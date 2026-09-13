@@ -204,6 +204,22 @@
     let qty = 1;
     let soldOut = false;
 
+    // Point every "Catalog" link back at the catalog page the shopper came from
+    // (page number, category and search) instead of resetting to page 1.
+    const catalogHref = (() => {
+      try {
+        const st = JSON.parse(sessionStorage.getItem('lypspace_catalog_state') || '{}');
+        const params = new URLSearchParams();
+        if (st.q) params.set('q', st.q);
+        if (st.cat && st.cat !== 'All') params.set('cat', st.cat);
+        if (st.page > 1) params.set('page', st.page);
+        const qs = params.toString();
+        return '/catalog' + (qs ? '?' + qs : '');
+      } catch (e) { return '/catalog'; }
+    })();
+
+    document.querySelectorAll('a[href="/catalog"]').forEach(a => { a.href = catalogHref; });
+
     const handle = new URLSearchParams(location.search).get('h');
 
     async function init() {
@@ -709,7 +725,7 @@
       document.getElementById('product-root').innerHTML = `
         <div class="not-found">
           <p style="font-size:13px;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray);margin-bottom:16px;">Product not found</p>
-          <a href="/catalog" style="font-size:13px;text-decoration:underline;">← Back to catalog</a>
+          <a href="${catalogHref}" style="font-size:13px;text-decoration:underline;">← Back to catalog</a>
         </div>`;
     }
 
